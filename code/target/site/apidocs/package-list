@@ -1,0 +1,6 @@
+org.opendaylight.flowguard.cli.api
+org.opendaylight.flowguard.cli.commands
+org.opendaylight.flowguard.cli.impl
+org.opendaylight.flowguard.impl
+org.opendaylight.yang.gen.v1.urn.opendaylight.params.xml.ns.yang.flowguard.rev170505
+org.opendaylight.yang.gen.v1.urn.opendaylight.params.xml.ns.yang.flowguard.rev170505.rule.registry
