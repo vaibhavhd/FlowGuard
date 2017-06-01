@@ -73,8 +73,7 @@ import org.slf4j.LoggerFactory;
  * @author Amer Tahir
  * @edited KC Wang
  */
-public class Firewall implements IFirewallService, IOFMessageListener,
-        IFloodlightModule, IStorageSourceListener {
+public class Firewall {
     public String RESULT_PATH="/home/whan7/evaluation/result.txt";
     public Map<TopologyStruct, TopologyStruct> TopologyStorage;
     // Map<DPID, Map<Name, FlowMod>>; FlowMod can be null to indicate non-active
@@ -103,13 +102,7 @@ public class Firewall implements IFirewallService, IOFMessageListener,
     	LINK_ID, LINK_SRC_SWITCH, LINK_SRC_PORT, LINK_DST_SWITCH, LINK_DST_PORT};
     protected boolean AUTOPORTFAST_DEFAULT = false;
     protected boolean autoPortFastFeature = AUTOPORTFAST_DEFAULT;
-    protected IResultSet topologyResult;
 
-    // service modules needed
-    protected IFloodlightProviderService floodlightProvider;
-    protected IStorageSourceService storageSource;
-    protected IDeviceService deviceSource;
-    protected IRestApiService restApi;
     protected static Logger logger;
 
     protected List<FirewallRule> rules; // protected by synchronized
@@ -185,45 +178,21 @@ public class Firewall implements IFirewallService, IOFMessageListener,
     	STATICENTRY_COLUMN_DL_TYPE, STATICENTRY_COLUMN_NW_TOS, STATICENTRY_COLUMN_NW_PROTO, STATICENTRY_COLUMN_NW_SRC,
     	STATICENTRY_COLUMN_NW_DST, STATICENTRY_COLUMN_TP_DST, STATICENTRY_COLUMN_TP_SRC, STATICENTRY_COLUMN_ACTIONS };
 
-    @Override
+
     public String getName() {
         return "firewall";
     }
 
-    @Override
     public boolean isCallbackOrderingPrereq(OFType type, String name) {
         // no prereq
         return false;
     }
 
-    @Override
+
     public boolean isCallbackOrderingPostreq(OFType type, String name) {
         return (type.equals(OFType.PACKET_IN) && name.equals("forwarding"));
     }
 
-    @Override
-    public Collection<Class<? extends IFloodlightService>> getModuleServices() {
-        Collection<Class<? extends IFloodlightService>> l = new ArrayList<Class<? extends IFloodlightService>>();
-        l.add(IFirewallService.class);
-        return l;
-    }
-
-    @Override
-    public Map<Class<? extends IFloodlightService>, IFloodlightService> getServiceImpls() {
-        Map<Class<? extends IFloodlightService>, IFloodlightService> m = new HashMap<Class<? extends IFloodlightService>, IFloodlightService>();
-        // We are the class that implements the service
-        m.put(IFirewallService.class, this);
-        return m;
-    }
-
-    @Override
-    public Collection<Class<? extends IFloodlightService>> getModuleDependencies() {
-        Collection<Class<? extends IFloodlightService>> l = new ArrayList<Class<? extends IFloodlightService>>();
-        l.add(IFloodlightProviderService.class);
-        l.add(IStorageSourceService.class);
-        l.add(IRestApiService.class);
-        return l;
-    }
 
     /**
      * Reads the rules from the storage and creates a sorted arraylist of
@@ -242,8 +211,8 @@ public class Firewall implements IFirewallService, IOFMessageListener,
             Map<String, Object> row;
 
             // (..., null, null) for no predicate, no ordering
-            IResultSet resultSet = storageSource.executeQuery(TABLE_NAME,
-                    ColumnNames, null, null);
+            // TODO get rules. IResultSet resultSet = storageSource.executeQuery(TABLE_NAME,
+                    //ColumnNames, null, null);
 
             // put retrieved rows into FirewallRules
             for (Iterator<IResultSet> it = resultSet.iterator(); it.hasNext();) {
@@ -260,7 +229,7 @@ public class Firewall implements IFirewallService, IOFMessageListener,
                 try {
                     r.ruleid = Integer
                             .parseInt((String) row.get(COLUMN_RULEID));
-                    r.dpid = Long.parseLong((String) row.get(COLUMN_DPID));
+                    r.dpid = (String) row.get(COLUMN_DPID);
 
                     for (String key : row.keySet()) {
                         if (row.get(key) == null)
@@ -398,7 +367,7 @@ public class Firewall implements IFirewallService, IOFMessageListener,
                 if (r.action != null)
                     l.add(r);
             }
-        } catch (StorageException e) {
+        } catch (Exception e) {
             logger.error("failed to access storage: {}", e.getMessage());
             // if the table doesn't exist, then wait to populate later via
             // setStorageSource()
@@ -410,7 +379,7 @@ public class Firewall implements IFirewallService, IOFMessageListener,
         return l;
     }
 
-    @Override
+/*
     public void init(FloodlightModuleContext context)
             throws FloodlightModuleException {
         floodlightProvider = context
@@ -484,8 +453,8 @@ public class Firewall implements IFirewallService, IOFMessageListener,
 
         return Command.CONTINUE;
     }
+*/
 
-    @Override
     public void enableFirewall(boolean enabled){
     	long start = System.nanoTime();
 
@@ -493,7 +462,7 @@ public class Firewall implements IFirewallService, IOFMessageListener,
         this.enabled = enabled;
         if(this.enabled == true){
             this.sg = new ShiftedGraph();
-            sg.initialize(this.floodlightProvider, this.storageSource, this.deviceSource, this);
+            // TODO sg.initialize(this.floodlightProvider, this.storageSource, this.deviceSource, this);
             this.importTopology();
             sg.buildTopology(this.TopologyStorage);
             this.importStaticFlow();
@@ -530,15 +499,14 @@ public class Firewall implements IFirewallService, IOFMessageListener,
         readTopologyConfigFromStorage();
     }
 
-    @Override
     public List<FirewallRule> getRules() {
         return this.rules;
     }
 
+    /*
     // Only used to serve REST GET
     // Similar to readRulesFromStorage(), which actually checks and stores
     // record into FirewallRule list
-    @Override
     public List<Map<String, Object>> getStorageRules() {
         ArrayList<Map<String, Object>> l = new ArrayList<Map<String, Object>>();
         try {
@@ -555,21 +523,18 @@ public class Firewall implements IFirewallService, IOFMessageListener,
         }
         return l;
     }
+    */
 
-    @Override
     public String getSubnetMask() {
         return IPv4.fromIPv4Address(this.subnet_mask);
     }
 
-    @Override
     public void setSubnetMask(String newMask) {
         if (newMask.trim().isEmpty())
             return;
         this.subnet_mask = IPv4.toIPv4Address(newMask.trim());
     }
 
-
-    @Override
     public synchronized void addRule(FirewallRule rule) {
     	long start = System.nanoTime();
 
@@ -599,7 +564,7 @@ public class Firewall implements IFirewallService, IOFMessageListener,
         // add rule to database
         Map<String, Object> entry = new HashMap<String, Object>();
         entry.put(COLUMN_RULEID, Integer.toString(rule.ruleid));
-        entry.put(COLUMN_DPID, Long.toString(rule.dpid));
+        entry.put(COLUMN_DPID, rule.dpid);
         entry.put(COLUMN_IN_PORT, Short.toString(rule.in_port));
         entry.put(COLUMN_DL_SRC, Long.toString(rule.dl_src));
         entry.put(COLUMN_DL_DST, Long.toString(rule.dl_dst));
@@ -633,7 +598,7 @@ public class Firewall implements IFirewallService, IOFMessageListener,
                 Boolean.toString(rule.wildcard_tp_dst));
         entry.put(COLUMN_PRIORITY, Integer.toString(rule.priority));
         entry.put(COLUMN_ACTION, Integer.toString(rule.action.ordinal()));
-        storageSource.insertRow(TABLE_NAME, entry);
+        // TODO add rule storageSource.insertRow(TABLE_NAME, entry);
 
     	long end = System.nanoTime();
         try {
@@ -649,7 +614,6 @@ public class Firewall implements IFirewallService, IOFMessageListener,
         }
     }
 
-    @Override
     public synchronized void deleteRule(int ruleid) {
         Iterator<FirewallRule> iter = this.rules.iterator();
         while (iter.hasNext()) {
@@ -661,7 +625,7 @@ public class Firewall implements IFirewallService, IOFMessageListener,
             }
         }
         // delete from database
-        storageSource.deleteRow(TABLE_NAME, Integer.toString(ruleid));
+        // TODO delete rule storageSource.deleteRow(TABLE_NAME, Integer.toString(ruleid));
     }
 
     /**
@@ -834,7 +798,6 @@ public class Firewall implements IFirewallService, IOFMessageListener,
         return Command.CONTINUE;
     }
 
-    @Override
     public boolean isEnabled() {
         return enabled;
     }
@@ -863,13 +826,13 @@ public class Firewall implements IFirewallService, IOFMessageListener,
         try {
             Map<String, Object> row;
             // null1=no predicate, null2=no ordering
-            IResultSet resultSet = storageSource.executeQuery(STATICENTRY_TABLE_NAME,
-            		STATICENTRY_ColumnNames, null, null);
+           // TODO DB IResultSet resultSet = storageSource.executeQuery(STATICENTRY_TABLE_NAME,
+            		//STATICENTRY_ColumnNames, null, null);
             for (Iterator<IResultSet> it = resultSet.iterator(); it.hasNext();) {
                 row = it.next().getRow();
                 parseRow(row, entries);
             }
-        } catch (StorageException e) {
+        } catch (Exception e) {
             logger.error("failed to access storage: {}", e.getMessage());
             // if the table doesn't exist, then wait to populate later via
             // setStorageSource()
@@ -908,7 +871,7 @@ public class Firewall implements IFirewallService, IOFMessageListener,
             entryName = (String) row.get(STATICENTRY_COLUMN_NAME);
             if (!entries.containsKey(switchName))
                 entries.put(switchName, new HashMap<String, OFFlowMod>());
-            StaticFlowEntries.initDefaultFlowMod(flowMod, entryName);
+            // TODO StaticFlowEntries.initDefaultFlowMod(flowMod, entryName);
 
             for (String key : row.keySet()) {
                 if (row.get(key) == null)
@@ -928,12 +891,12 @@ public class Firewall implements IFirewallService, IOFMessageListener,
                         return;
                     }
                 } else if (key.equals(STATICENTRY_COLUMN_ACTIONS)){
-                    StaticFlowEntries.parseActionString(flowMod, (String) row.get(STATICENTRY_COLUMN_ACTIONS), logger);
+                    // TODO StaticFlowEntries.parseActionString(flowMod, (String) row.get(STATICENTRY_COLUMN_ACTIONS), logger);
                 } else if (key.equals(STATICENTRY_COLUMN_COOKIE)) {
-                    flowMod.setCookie(
-                            StaticFlowEntries.computeEntryCookie(flowMod,
-                                    Integer.valueOf((String) row.get(STATICENTRY_COLUMN_COOKIE)),
-                                    entryName));
+                    //flowMod.setCookie(
+                          //TODO  StaticFlowEntries.computeEntryCookie(flowMod,
+                                //    Integer.valueOf((String) row.get(STATICENTRY_COLUMN_COOKIE)),
+                                   // entryName));
                 } else if (key.equals(STATICENTRY_COLUMN_PRIORITY)) {
                     flowMod.setPriority(U16.t(Integer.valueOf((String) row.get(STATICENTRY_COLUMN_PRIORITY))));
                 } else { // the rest of the keys are for OFMatch().fromString()
@@ -971,7 +934,7 @@ public class Firewall implements IFirewallService, IOFMessageListener,
     protected void readTopologyConfigFromStorage() {
     	//String[] columns = { LINK_ID };
     	this.TopologyStorage = new ConcurrentHashMap<TopologyStruct, TopologyStruct>();
-        IResultSet resultSet = storageSource.executeQuery(LINK_TABLE_NAME, Topology_Columns, null, null);
+        // TODO DB IResultSet resultSet = storageSource.executeQuery(LINK_TABLE_NAME, Topology_Columns, null, null);
         Map<String, Object> row;
         for(Iterator<IResultSet> it = resultSet.iterator();it.hasNext();){
         	row = it.next().getRow();
@@ -989,7 +952,7 @@ public class Firewall implements IFirewallService, IOFMessageListener,
         	}
         }
     }
-    @Override
+
     public void rowsModified(String tableName, Set<Object> rowKeys) {
         // This handles both rowInsert() and rowUpdate()
     	logger.debug("Modifying Table {}", tableName);
@@ -1046,7 +1009,6 @@ public class Firewall implements IFirewallService, IOFMessageListener,
         }
     }
 
-    @Override
     public void rowsDeleted(String tableName, Set<Object> rowKeys) {
         if (logger.isDebugEnabled()) {
             logger.debug("Deleting from table {}", tableName);

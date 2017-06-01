@@ -42,7 +42,7 @@ public class FlowguardImpl implements FlowguardService  {
     }
 
     @Override
-      public Future<RpcResult<AddRuleOutput>> addRule(AddRuleInput input) {
+    public Future<RpcResult<AddRuleOutput>> addRule(AddRuleInput input) {
 
         //TODO
     	LOG.info("Preparing to add the FIREWALL rule");

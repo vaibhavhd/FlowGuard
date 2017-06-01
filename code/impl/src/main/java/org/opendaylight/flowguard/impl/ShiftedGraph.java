@@ -189,7 +189,13 @@ public class ShiftedGraph {
         this.firewall = firewall;
     }*/
 
+    /**
+     * Used for replicating the topology of switches.
+     * The topology is a map of src-dest (key-val) pair.
+     * @param topo
+     */
     public void buildTopology(Map<TopologyStruct, TopologyStruct> topo){
+        /* Clear the local topology before building one */
         if(this.TopologyStorage != null){
             this.TopologyStorage.clear();
         } else {
@@ -197,7 +203,7 @@ public class ShiftedGraph {
         }
 
         for(TopologyStruct key : topo.keySet()){
-            if(topo.get(key) == null || key==null) {
+            if(key==null || topo.get(key) == null) {
                 break;
             }
             TopologyStruct dst = new TopologyStruct();
@@ -210,6 +216,7 @@ public class ShiftedGraph {
     }
 
     public void buildRuleNode(Map<String, Map<String, OFFlowMod>> entries){
+        // TODO EnteriesFromStorage is not used or referenced. Remove it.
         if(this.entriesFromStorage != null){
             this.entriesFromStorage.clear();
         } else {
@@ -604,6 +611,11 @@ public class ShiftedGraph {
         }
 
     }
+
+    /*
+     * Take the sample "flowinfo" and propagate the flow in the network
+     * to the "target" switch.
+     */
     public void propagateFlow(FlowInfo flowinfo, TopologyStruct target, int index){
 
         FlowInfo sample = flowinfo;
@@ -613,17 +625,19 @@ public class ShiftedGraph {
         while(true){
             String SWITCHDPID = sample.next_switch_dpid;
             if(sample.next_switch_dpid.equals(SWITCHDPID.toString())){
+                /* Get all the flow rules present in the next switch */
                 List<RuleNode> ruletable = this.rulenodes.get(SWITCHDPID);
                 int i = 0;
                 int table_size = 0;
                 if(ruletable != null){
                     table_size = ruletable.size();
+                    /* The switch has no flows. Stop the propagation */
                     if(table_size == 0) {
                         return;
                     }
                 }
                 else if(sample.next_switch_dpid.equals(targetdpid)){
-                    //normal execution
+                    /* After propagation,if the final dpid is same as target, the sample packet has been reached. */
                     System.out.println("Flows are reached to the Destination!!!");
                     this.printFlowInfo(sample, true);
                     return;
@@ -632,6 +646,7 @@ public class ShiftedGraph {
                     this.printFlowInfo(sample, false);
                     return;
                 }
+
                 if(sample.is_finished == true){
                     System.out.println("Flows are stopped at " + sample.rule_node_name + " !!!");
                     this.printFlowInfo(sample, false);
