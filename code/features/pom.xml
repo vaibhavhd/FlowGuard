@@ -133,6 +133,12 @@ and is available at http://www.eclipse.org/legal/epl-v10.html INTERNAL
           <version>${openflowplugin.version}</version>
     </dependency>
     <dependency>
+      <groupId>org.opendaylight.controller.thirdparty</groupId>
+      <artifactId>org.openflow.openflowj</artifactId>
+      <version>1.0.2</version>
+    </dependency>
+
+    <dependency>
       <groupId>${project.groupId}</groupId>
       <artifactId>flowguard-impl</artifactId>
       <version>${project.version}</version>

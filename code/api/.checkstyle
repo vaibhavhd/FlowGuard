@@ -11,36 +11,20 @@
   </local-check-config>
   <fileset name="java-sources-check-license" enabled="true" check-config-name="maven-checkstyle-plugin check-license" local="true">
     <file-match-pattern match-pattern="^src/main/java.*\.java" include-pattern="true"/>
-    <file-match-pattern match-pattern="^src/main/yang/.*\.java" include-pattern="true"/>
-    <file-match-pattern match-pattern="^target/generated-sources/mdsal-binding.*\.java" include-pattern="true"/>
     <file-match-pattern match-pattern="^src/test/java.*\.java" include-pattern="true"/>
     <file-match-pattern match-pattern="^src/main/java.*org/opendaylight/yang/gen/.*" include-pattern="false"/>
     <file-match-pattern match-pattern="^src/main/java.*.*protobuff/messages/.*" include-pattern="false"/>
     <file-match-pattern match-pattern="^src/main/java.*.*thrift/gen/.*\.java" include-pattern="false"/>
-    <file-match-pattern match-pattern="^src/main/yang.*org/opendaylight/yang/gen/.*" include-pattern="false"/>
-    <file-match-pattern match-pattern="^src/main/yang.*.*protobuff/messages/.*" include-pattern="false"/>
-    <file-match-pattern match-pattern="^src/main/yang.*.*thrift/gen/.*\.java" include-pattern="false"/>
-    <file-match-pattern match-pattern="^target/generated-sources/mdsal-binding.*org/opendaylight/yang/gen/.*" include-pattern="false"/>
-    <file-match-pattern match-pattern="^target/generated-sources/mdsal-binding.*.*protobuff/messages/.*" include-pattern="false"/>
-    <file-match-pattern match-pattern="^target/generated-sources/mdsal-binding.*.*thrift/gen/.*\.java" include-pattern="false"/>
     <file-match-pattern match-pattern="^src/test/java.*org/opendaylight/yang/gen/.*" include-pattern="false"/>
     <file-match-pattern match-pattern="^src/test/java.*.*protobuff/messages/.*" include-pattern="false"/>
     <file-match-pattern match-pattern="^src/test/java.*.*thrift/gen/.*\.java" include-pattern="false"/>
   </fileset>
   <fileset name="java-sources-default" enabled="true" check-config-name="maven-checkstyle-plugin default" local="true">
     <file-match-pattern match-pattern="^src/main/java.*\.java" include-pattern="true"/>
-    <file-match-pattern match-pattern="^src/main/yang/.*\.java" include-pattern="true"/>
-    <file-match-pattern match-pattern="^target/generated-sources/mdsal-binding.*\.java" include-pattern="true"/>
     <file-match-pattern match-pattern="^src/test/java.*\.java" include-pattern="true"/>
     <file-match-pattern match-pattern="^src/main/java.*org/opendaylight/yang/gen/.*" include-pattern="false"/>
     <file-match-pattern match-pattern="^src/main/java.*.*protobuff/messages/.*" include-pattern="false"/>
     <file-match-pattern match-pattern="^src/main/java.*.*thrift/gen/.*\.java" include-pattern="false"/>
-    <file-match-pattern match-pattern="^src/main/yang.*org/opendaylight/yang/gen/.*" include-pattern="false"/>
-    <file-match-pattern match-pattern="^src/main/yang.*.*protobuff/messages/.*" include-pattern="false"/>
-    <file-match-pattern match-pattern="^src/main/yang.*.*thrift/gen/.*\.java" include-pattern="false"/>
-    <file-match-pattern match-pattern="^target/generated-sources/mdsal-binding.*org/opendaylight/yang/gen/.*" include-pattern="false"/>
-    <file-match-pattern match-pattern="^target/generated-sources/mdsal-binding.*.*protobuff/messages/.*" include-pattern="false"/>
-    <file-match-pattern match-pattern="^target/generated-sources/mdsal-binding.*.*thrift/gen/.*\.java" include-pattern="false"/>
     <file-match-pattern match-pattern="^src/test/java.*org/opendaylight/yang/gen/.*" include-pattern="false"/>
     <file-match-pattern match-pattern="^src/test/java.*.*protobuff/messages/.*" include-pattern="false"/>
     <file-match-pattern match-pattern="^src/test/java.*.*thrift/gen/.*\.java" include-pattern="false"/>

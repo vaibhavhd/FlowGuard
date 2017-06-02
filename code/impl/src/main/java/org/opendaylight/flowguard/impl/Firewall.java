@@ -1,4 +1,11 @@
 /*
+ * Copyright © 2017 Vaibhav and others.  All rights reserved.
+ *
+ * This program and the accompanying materials are made available under the
+ * terms of the Eclipse Public License v1.0 which accompanies this distribution,
+ * and is available at http://www.eclipse.org/legal/epl-v10.html
+ */
+/*
  *    Copyright 2011, Big Switch Networks, Inc.
  *    Originally created by Amer Tahir
  *	  Modified by Vaibhav Dixit
@@ -21,6 +28,7 @@ import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
@@ -28,6 +36,7 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
 
 import org.openflow.protocol.OFFlowMod;
 import org.openflow.protocol.OFMatch;
@@ -37,6 +46,7 @@ import org.openflow.protocol.OFType;
 import org.openflow.util.HexString;
 import org.openflow.util.U16;
 
+/*
 import net.floodlightcontroller.core.FloodlightContext;
 import net.floodlightcontroller.core.IOFMessageListener;
 import net.floodlightcontroller.core.IOFSwitch;
@@ -62,7 +72,7 @@ import net.floodlightcontroller.storage.IResultSet;
 import net.floodlightcontroller.storage.IStorageSourceListener;
 import net.floodlightcontroller.storage.IStorageSourceService;
 import net.floodlightcontroller.storage.StorageException;
-
+*/
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -107,7 +117,7 @@ public class Firewall {
 
     protected List<FirewallRule> rules; // protected by synchronized
     protected boolean enabled;
-    protected int subnet_mask = IPv4.toIPv4Address("255.255.255.0");
+    //TODO protected int subnet_mask = IPv4.toIPv4Address("255.255.255.0");
 
     // constant strings for storage/parsing
     public static final String TABLE_NAME = "controller_firewallrules";
@@ -215,7 +225,7 @@ public class Firewall {
                     //ColumnNames, null, null);
 
             // put retrieved rows into FirewallRules
-            for (Iterator<IResultSet> it = resultSet.iterator(); it.hasNext();) {
+           /* for (Iterator<IResultSet> it = resultSet.iterator(); it.hasNext();) {
                 row = it.next().getRow();
                 // now, parse row
                 FirewallRule r = new FirewallRule();
@@ -366,7 +376,7 @@ public class Firewall {
                 }
                 if (r.action != null)
                     l.add(r);
-            }
+            }*/
         } catch (Exception e) {
             logger.error("failed to access storage: {}", e.getMessage());
             // if the table doesn't exist, then wait to populate later via
@@ -496,7 +506,7 @@ public class Firewall {
     }
 
     public void importTopology(){
-        readTopologyConfigFromStorage();
+        //readTopologyConfigFromStorage();
     }
 
     public List<FirewallRule> getRules() {
@@ -525,14 +535,14 @@ public class Firewall {
     }
     */
 
-    public String getSubnetMask() {
-        return IPv4.fromIPv4Address(this.subnet_mask);
-    }
+  //TODO public String getSubnetMask() {
+      //TODO return IPv4.fromIPv4Address(this.subnet_mask);
+  //TODO }
 
     public void setSubnetMask(String newMask) {
         if (newMask.trim().isEmpty())
             return;
-        this.subnet_mask = IPv4.toIPv4Address(newMask.trim());
+      //TODO this.subnet_mask = IPv4.toIPv4Address(newMask.trim());
     }
 
     public synchronized void addRule(FirewallRule rule) {
@@ -659,7 +669,7 @@ public class Firewall {
      * @return an instance of RuleWildcardsPair that specify rule that matches
      *         and the wildcards for the firewall decision
      */
-    protected RuleWildcardsPair matchWithRule(IOFSwitch sw, OFPacketIn pi,
+    /*protected RuleWildcardsPair matchWithRule(IOFSwitch sw, OFPacketIn pi,
             FloodlightContext cntx) {
         FirewallRule matched_rule = null;
         Ethernet eth = IFloodlightProviderService.bcStore.get(cntx,
@@ -691,7 +701,7 @@ public class Firewall {
             ret.wildcards = wildcards.allow;
         }
         return ret;
-    }
+    }*/
 
     /**
      * Checks whether an IP address is a broadcast address or not (determines
@@ -701,7 +711,7 @@ public class Firewall {
      *            the IP address to check
      * @return true if it is a broadcast address, false otherwise
      */
-    protected boolean IPIsBroadcast(int IPAddress) {
+    /*protected boolean IPIsBroadcast(int IPAddress) {
         // inverted subnet mask
         int inv_subnet_mask = ~this.subnet_mask;
         return ((IPAddress & inv_subnet_mask) == inv_subnet_mask);
@@ -747,7 +757,7 @@ public class Firewall {
                 decision.addToContext(cntx);
             }
             return Command.CONTINUE;
-        }
+        }*/
         /*
          * ARP response (unicast) can be let through without filtering through
          * rules by uncommenting the code below
@@ -761,7 +771,7 @@ public class Firewall {
 
         // check if we have a matching rule for this packet/flow
         // and no decision is taken yet
-        if (decision == null) {
+      /*  if (decision == null) {
             RuleWildcardsPair match_ret = this.matchWithRule(sw, pi, cntx);
             FirewallRule rule = match_ret.rule;
 
@@ -797,7 +807,7 @@ public class Firewall {
 
         return Command.CONTINUE;
     }
-
+*/
     public boolean isEnabled() {
         return enabled;
     }
@@ -828,10 +838,10 @@ public class Firewall {
             // null1=no predicate, null2=no ordering
            // TODO DB IResultSet resultSet = storageSource.executeQuery(STATICENTRY_TABLE_NAME,
             		//STATICENTRY_ColumnNames, null, null);
-            for (Iterator<IResultSet> it = resultSet.iterator(); it.hasNext();) {
+           /*//TODO  for (Iterator<IResultSet> it = resultSet.iterator(); it.hasNext();) {
                 row = it.next().getRow();
                 parseRow(row, entries);
-            }
+            } */
         } catch (Exception e) {
             logger.error("failed to access storage: {}", e.getMessage());
             // if the table doesn't exist, then wait to populate later via
@@ -849,7 +859,7 @@ public class Firewall {
      * @param row
      * @param entries
      */
-    void parseRow(Map<String, Object> row, Map<String, Map<String, OFFlowMod>> entries) {
+   /* void parseRow(Map<String, Object> row, Map<String, Map<String, OFFlowMod>> entries) {
         String switchName = null;
         String entryName = null;
 
@@ -1021,5 +1031,5 @@ public class Firewall {
             }
             sg.staticEntryDeleted((String) obj);
         }
-    }
+    }*/
 }

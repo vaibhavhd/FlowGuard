@@ -29,7 +29,6 @@
     <file-match-pattern match-pattern="^src/main/java.*.*protobuff/messages/.*" include-pattern="false"/>
     <file-match-pattern match-pattern="^src/main/java.*.*thrift/gen/.*\.java" include-pattern="false"/>
     <file-match-pattern match-pattern="^src/main/resources.*\.properties" include-pattern="true"/>
-    <file-match-pattern match-pattern="^target/generated-resources/script.*\.properties" include-pattern="true"/>
     <file-match-pattern match-pattern="^src/test/resources.*\.properties" include-pattern="true"/>
   </fileset>
 </fileset-config>

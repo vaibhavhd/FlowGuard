@@ -12,6 +12,8 @@ import java.util.Map;
 import org.opendaylight.controller.md.sal.binding.api.DataBroker;
 import org.opendaylight.controller.md.sal.binding.api.DataChangeListener;
 import org.opendaylight.controller.md.sal.binding.api.WriteTransaction;
+import org.opendaylight.controller.md.sal.binding.api.ReadWriteTransaction;
+
 import org.opendaylight.controller.md.sal.common.api.data.AsyncDataBroker;
 import org.opendaylight.controller.md.sal.common.api.data.AsyncDataChangeEvent;
 import org.opendaylight.controller.md.sal.common.api.data.LogicalDatastoreType;
@@ -60,6 +62,9 @@ public class RuleRegistryDataChangeListenerFuture extends AbstractFuture<RuleReg
         db.registerDataChangeListener(LogicalDatastoreType.OPERATIONAL, ruleIID, this,
             AsyncDataBroker.DataChangeScope.SUBTREE);
         LOG.info("DataChangeListener registered with MD-SAL for path {}", ruleIID);
+
+        /* Retrieve all the static flow enteried from the switches */
+
       }
 
       @Override
@@ -109,11 +114,13 @@ public class RuleRegistryDataChangeListenerFuture extends AbstractFuture<RuleReg
         flowBuilder.setHardTimeout(0);
         flowBuilder.setIdleTimeout(0);
 
-        FirewallRule rule = createFirewallRule(input.getNode(), input.getSourcePort());
-        this.shiftedGraph.buildSourceProbeNode(rule);
+        //FirewallRule rule = createFirewallRule(input.getNode(), input.getSourcePort());
+        //this.shiftedGraph.buildSourceProbeNode(rule);
 
         /*
-         * Perform transaction to store rule
+         * Perform transaction to store rule.
+         * The instance identifier here provides location where the flow would be written in CONFIG database.
+         * Nodes -> Node -> "add" -> Table -> Flow -> build[flow]()
          */
         InstanceIdentifier<Flow> flowIID =
             InstanceIdentifier.builder(Nodes.class).child(Node.class, new NodeKey(nodeId))
@@ -125,6 +132,7 @@ public class RuleRegistryDataChangeListenerFuture extends AbstractFuture<RuleReg
         Preconditions.checkNotNull(db);
         WriteTransaction transaction = db.newWriteOnlyTransaction();
         transaction.merge( LogicalDatastoreType.CONFIGURATION, flowIID, flowBuilder.build(),true);
+
         CheckedFuture<Void, TransactionCommitFailedException> future = transaction.submit();
         Futures.addCallback(future, new LoggingFuturesCallBack<Void>("Failed add firewall rule", LOG));
 
