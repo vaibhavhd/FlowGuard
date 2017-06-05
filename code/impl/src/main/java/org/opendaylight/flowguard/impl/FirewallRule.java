@@ -8,7 +8,7 @@
 package org.opendaylight.flowguard.impl;
 
 //import com.fasterxml.jackson.databind.annotation.JsonSerialize;
-import org.openflow.protocol.OFMatch;
+//import org.openflow.protocol.OFMatch;
 
 import org.opendaylight.flowguard.packet.Ethernet;
 import org.opendaylight.flowguard.packet.IPacket;
@@ -186,9 +186,9 @@ public class FirewallRule implements Comparable<FirewallRule> {
         if (wildcard_in_port == false && in_port != inPort)
             return false;
         if (action == FirewallRule.FirewallAction.DENY) {
-            wildcards.drop &= ~OFMatch.OFPFW_IN_PORT;
+            wildcards.drop &= ~Firewall.OFPFW_IN_PORT;
         } else {
-            wildcards.allow &= ~OFMatch.OFPFW_IN_PORT;
+            wildcards.allow &= ~Firewall.OFPFW_IN_PORT;
         }
 
         // mac address (src and dst) match?
@@ -196,18 +196,18 @@ public class FirewallRule implements Comparable<FirewallRule> {
                 && dl_src != packet.getSourceMAC().toLong())
             return false;
         if (action == FirewallRule.FirewallAction.DENY) {
-            wildcards.drop &= ~OFMatch.OFPFW_DL_SRC;
+            wildcards.drop &= ~Firewall.OFPFW_DL_SRC;
         } else {
-            wildcards.allow &= ~OFMatch.OFPFW_DL_SRC;
+            wildcards.allow &= ~Firewall.OFPFW_DL_SRC;
         }
 
         if (wildcard_dl_dst == false
                 && dl_dst != packet.getDestinationMAC().toLong())
             return false;
         if (action == FirewallRule.FirewallAction.DENY) {
-            wildcards.drop &= ~OFMatch.OFPFW_DL_DST;
+            wildcards.drop &= ~Firewall.OFPFW_DL_DST;
         } else {
-            wildcards.allow &= ~OFMatch.OFPFW_DL_DST;
+            wildcards.allow &= ~Firewall.OFPFW_DL_DST;
         }
 
         // dl_type check: ARP, IP
@@ -220,9 +220,9 @@ public class FirewallRule implements Comparable<FirewallRule> {
                     return false;
                 else {
                     if (action == FirewallRule.FirewallAction.DENY) {
-                        wildcards.drop &= ~OFMatch.OFPFW_DL_TYPE;
+                        wildcards.drop &= ~Firewall.OFPFW_DL_TYPE;
                     } else {
-                        wildcards.allow &= ~OFMatch.OFPFW_DL_TYPE;
+                        wildcards.allow &= ~Firewall.OFPFW_DL_TYPE;
                     }
                 }
             } else if (dl_type == Ethernet.TYPE_IPv4) {
@@ -230,9 +230,9 @@ public class FirewallRule implements Comparable<FirewallRule> {
                     return false;
                 else {
                     if (action == FirewallRule.FirewallAction.DENY) {
-                        wildcards.drop &= ~OFMatch.OFPFW_NW_PROTO;
+                        wildcards.drop &= ~Firewall.OFPFW_NW_PROTO;
                     } else {
-                        wildcards.allow &= ~OFMatch.OFPFW_NW_PROTO;
+                        wildcards.allow &= ~Firewall.OFPFW_NW_PROTO;
                     }
                     // IP packets, proceed with ip address check
                     pkt_ip = (IPv4) pkt;
@@ -243,11 +243,11 @@ public class FirewallRule implements Comparable<FirewallRule> {
                                     nw_src_maskbits, pkt_ip.getSourceAddress()) == false)
                         return false;
                     if (action == FirewallRule.FirewallAction.DENY) {
-                        wildcards.drop &= ~OFMatch.OFPFW_NW_SRC_ALL;
-                        wildcards.drop |= (nw_src_maskbits << OFMatch.OFPFW_NW_SRC_SHIFT);
+                        wildcards.drop &= ~Firewall.OFPFW_NW_SRC_ALL;
+                        wildcards.drop |= (nw_src_maskbits << Firewall.OFPFW_NW_SRC_SHIFT);
                     } else {
-                        wildcards.allow &= ~OFMatch.OFPFW_NW_SRC_ALL;
-                        wildcards.allow |= (nw_src_maskbits << OFMatch.OFPFW_NW_SRC_SHIFT);
+                        wildcards.allow &= ~Firewall.OFPFW_NW_SRC_ALL;
+                        wildcards.allow |= (nw_src_maskbits << Firewall.OFPFW_NW_SRC_SHIFT);
                     }
 
                     if (wildcard_nw_dst == false
@@ -256,11 +256,11 @@ public class FirewallRule implements Comparable<FirewallRule> {
                                     pkt_ip.getDestinationAddress()) == false)
                         return false;
                     if (action == FirewallRule.FirewallAction.DENY) {
-                        wildcards.drop &= ~OFMatch.OFPFW_NW_DST_ALL;
-                        wildcards.drop |= (nw_dst_maskbits << OFMatch.OFPFW_NW_DST_SHIFT);
+                        wildcards.drop &= ~Firewall.OFPFW_NW_DST_ALL;
+                        wildcards.drop |= (nw_dst_maskbits << Firewall.OFPFW_NW_DST_SHIFT);
                     } else {
-                        wildcards.allow &= ~OFMatch.OFPFW_NW_DST_ALL;
-                        wildcards.allow |= (nw_dst_maskbits << OFMatch.OFPFW_NW_DST_SHIFT);
+                        wildcards.allow &= ~Firewall.OFPFW_NW_DST_ALL;
+                        wildcards.allow |= (nw_dst_maskbits << Firewall.OFPFW_NW_DST_SHIFT);
                     }
 
                     // nw_proto check
@@ -289,9 +289,9 @@ public class FirewallRule implements Comparable<FirewallRule> {
                             }
                         }
                         if (action == FirewallRule.FirewallAction.DENY) {
-                            wildcards.drop &= ~OFMatch.OFPFW_NW_PROTO;
+                            wildcards.drop &= ~Firewall.OFPFW_NW_PROTO;
                         } else {
-                            wildcards.allow &= ~OFMatch.OFPFW_NW_PROTO;
+                            wildcards.allow &= ~Firewall.OFPFW_NW_PROTO;
                         }
 
                         // TCP/UDP source and destination ports match?
@@ -300,18 +300,18 @@ public class FirewallRule implements Comparable<FirewallRule> {
                             if (tp_src != 0 && tp_src != pkt_tp_src)
                                 return false;
                             if (action == FirewallRule.FirewallAction.DENY) {
-                                wildcards.drop &= ~OFMatch.OFPFW_TP_SRC;
+                                wildcards.drop &= ~Firewall.OFPFW_TP_SRC;
                             } else {
-                                wildcards.allow &= ~OFMatch.OFPFW_TP_SRC;
+                                wildcards.allow &= ~Firewall.OFPFW_TP_SRC;
                             }
 
                             // does the destination port match?
                             if (tp_dst != 0 && tp_dst != pkt_tp_dst)
                                 return false;
                             if (action == FirewallRule.FirewallAction.DENY) {
-                                wildcards.drop &= ~OFMatch.OFPFW_TP_DST;
+                                wildcards.drop &= ~Firewall.OFPFW_TP_DST;
                             } else {
-                                wildcards.allow &= ~OFMatch.OFPFW_TP_DST;
+                                wildcards.allow &= ~Firewall.OFPFW_TP_DST;
                             }
                         }
                     }
@@ -323,9 +323,9 @@ public class FirewallRule implements Comparable<FirewallRule> {
             }
         }
         if (action == FirewallRule.FirewallAction.DENY) {
-            wildcards.drop &= ~OFMatch.OFPFW_DL_TYPE;
+            wildcards.drop &= ~Firewall.OFPFW_DL_TYPE;
         } else {
-            wildcards.allow &= ~OFMatch.OFPFW_DL_TYPE;
+            wildcards.allow &= ~Firewall.OFPFW_DL_TYPE;
         }
 
         // all applicable checks passed

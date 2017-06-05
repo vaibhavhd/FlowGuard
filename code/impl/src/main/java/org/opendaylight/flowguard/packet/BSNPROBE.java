@@ -26,7 +26,7 @@ package org.opendaylight.flowguard.packet;
 
 import java.nio.ByteBuffer;
 import java.util.Arrays;
-import org.openflow.util.HexString;
+//import org.openflow.util.HexString;
 
 /**
  * @author Shudong Zhou (shudong.zhou@bigswitch.com)
@@ -185,11 +185,11 @@ public class BSNPROBE extends BasePacket {
     	StringBuffer sb = new StringBuffer("\n");
     	sb.append("BSN Probe packet");
     	sb.append("\nSource Mac: ");
-    	sb.append(HexString.toHexString(srcMac));
+    	// TODO sb.append(HexString.toHexString(srcMac));
     	sb.append("\nDestination Mac: ");
-    	sb.append(HexString.toHexString(dstMac));
+    	// TODO sb.append(HexString.toHexString(dstMac));
     	sb.append("\nSource Switch: ");
-    	sb.append(HexString.toHexString(srcSwDpid));
+    	// TODO sb.append(HexString.toHexString(srcSwDpid));
     	sb.append(" port: " + srcPortNo);
     	sb.append("\nSequence No.:" + sequenceId);
 

@@ -38,7 +38,7 @@ import org.opendaylight.yang.gen.v1.urn.opendaylight.params.xml.ns.yang.flowguar
 import org.opendaylight.yangtools.concepts.ListenerRegistration;
 import org.opendaylight.yangtools.yang.binding.DataObject;
 import org.opendaylight.yangtools.yang.binding.InstanceIdentifier;
-import org.openflow.util.HexString;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

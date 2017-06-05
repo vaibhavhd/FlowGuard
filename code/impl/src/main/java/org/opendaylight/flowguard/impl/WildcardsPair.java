@@ -23,10 +23,12 @@
 */
 
 package org.opendaylight.flowguard.impl;
+import org.opendaylight.yang.gen.v1.urn.opendaylight.flow.types.rev131026.flow.Match;
 
-import org.openflow.protocol.OFMatch;
+//import org.openflow.protocol.OFMatch;
 
 public class WildcardsPair {
-    public int allow = OFMatch.OFPFW_ALL;
-    public int drop = OFMatch.OFPFW_ALL;
+
+    public int allow = Firewall.OFPFW_ALL;
+    public int drop = Firewall.OFPFW_ALL;
 }

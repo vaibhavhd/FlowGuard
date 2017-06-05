@@ -23,8 +23,8 @@ import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 
-import org.openflow.protocol.OFFlowMod;
-import org.openflow.protocol.OFMatch;
+//import org.openflow.protocol.OFFlowMod;
+/*import org.openflow.protocol.OFMatch;
 import org.openflow.protocol.OFPort;
 import org.openflow.protocol.action.OFAction;
 import org.openflow.protocol.action.OFActionOutput;
@@ -32,7 +32,7 @@ import org.openflow.protocol.action.OFActionStripVirtualLan;
 import org.openflow.protocol.action.OFActionType;
 import org.openflow.protocol.action.OFActionVirtualLanIdentifier;
 import org.openflow.util.HexString;
-
+*/
 import org.slf4j.Logger;
 import org.restlet.resource.Post;
 import org.restlet.resource.Resource;
@@ -55,11 +55,12 @@ import net.floodlightcontroller.staticflowentry.*;
 import org.opendaylight.flowguard.impl.FirewallRule.FirewallAction;
 import org.opendaylight.flowguard.packet.Ethernet;
 import org.opendaylight.flowguard.packet.IPv4;
+import org.opendaylight.yang.gen.v1.urn.opendaylight.flow.inventory.rev130819.tables.table.FlowBuilder;
 
 
 public class ShiftedGraph {
     // Map<DPID, Map<Name, FlowMod>>; FlowMod can be null to indicate non-active
-    public Map<String, Map<String, OFFlowMod>> entriesFromStorage;
+    public Map<String, Map<String, FlowBuilder>> entriesFromStorage;
     public Map<String, List<RuleNode>> rulenodes;
     public Map<TopologyStruct, TopologyStruct> TopologyStorage;
     public Map<String, Map<FlowInfo, TopologyStruct>> SourceProbeNodeStorage;
@@ -215,12 +216,12 @@ public class ShiftedGraph {
 
     }
 
-    public void buildRuleNode(Map<String, Map<String, OFFlowMod>> entries){
+    public void buildRuleNode(Map<String, Map<String, FlowBuilder>> entries){
         // TODO EnteriesFromStorage is not used or referenced. Remove it.
         if(this.entriesFromStorage != null){
             this.entriesFromStorage.clear();
         } else {
-            this.entriesFromStorage = new ConcurrentHashMap<String, Map<String, OFFlowMod>>();
+            this.entriesFromStorage = new ConcurrentHashMap<String, Map<String, FlowBuilder>>();
         }
         if(this.rulenodes != null){
             this.rulenodes.clear();
@@ -230,7 +231,7 @@ public class ShiftedGraph {
 
         long start = System.nanoTime();
         for(String key : entries.keySet()){
-            Map<String, OFFlowMod> row;
+            Map<String, FlowBuilder> row;
             if(entries.get(key) == null) {
                 break;
             }
@@ -398,7 +399,7 @@ public class ShiftedGraph {
             return;
         }
         String keyword = "ftag1";
-        Map<String, Map<String, OFFlowMod>> entries = new ConcurrentHashMap<String, Map<String, OFFlowMod>>();
+        Map<String, Map<String, FlowBuilder>> entries = new ConcurrentHashMap<String, Map<String, FlowBuilder>>();
        /* try {
             Map<String, Object> row;
             // null1=no predicate, null2=no ordering
@@ -469,10 +470,10 @@ public class ShiftedGraph {
         */
     }
 
-    public void setVlan(Map<String, Map<String, OFFlowMod>> entries, String dpid, String rulename, int strip){
-        System.out.println("S1-Dependency Breaking applied!!");
+    public void setVlan(Map<String, Map<String, FlowBuilder>> entries, String dpid, String rulename, int strip){
+    /*    System.out.println("S1-Dependency Breaking applied!!");
         this.resolution_method = 1;
-        OFFlowMod flowmod = new OFFlowMod();
+        FlowBuilder flowmod = new FlowBuilder();
         try {
             flowmod = entries.get(dpid).get(rulename).clone();
         } catch (Exception e) {
@@ -484,7 +485,7 @@ public class ShiftedGraph {
         boolean has_vlan_value = false;
         while(itr2.hasNext()){
             OFAction action = (OFAction)itr2.next();
-            if(action.getType() == OFActionType.SET_VLAN_VID){  /* TODO Prev it was SET_VLAN_ID */
+            if(action.getType() == OFActionType.SET_VLAN_VID){   TODO Prev it was SET_VLAN_ID
                 has_vlan_value = true;
                 break;
             }
@@ -513,7 +514,7 @@ public class ShiftedGraph {
                 // TODO this.storageSource.insertRowAsync(STATICENTRY_TABLE_NAME, fmMap);
             }
         }
-
+*/
     }
 
 
@@ -653,6 +654,7 @@ public class ShiftedGraph {
                     return;
                 }
                 int counter = 0;
+                /*
                 if(index == 0){
                     for(i = index; i < table_size; i++){
                         if(sample.next_switch_dpid.equals(SWITCHDPID.toString()) && sample.next_ingress_port == ruletable.get(i).in_port
@@ -722,7 +724,7 @@ public class ShiftedGraph {
                         continue;
                     }
                 }
-
+*/
             }
             index = 0;
             //end of while
@@ -936,7 +938,7 @@ public class ShiftedGraph {
     }
 
 
-    public void staticEntryModified(String dpid, String rulename, OFFlowMod newFlowMod){
+    public void staticEntryModified(String dpid, String rulename, FlowBuilder newFlowMod){
 
         List<RuleNode> ruletable = new ArrayList<RuleNode>();
 

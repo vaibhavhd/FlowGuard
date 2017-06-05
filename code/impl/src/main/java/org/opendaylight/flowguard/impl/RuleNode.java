@@ -15,21 +15,24 @@ import java.util.Map;
 import java.util.Set;
 
 // TODO import net.floodlightcontroller.staticflowentry.StaticFlowEntries;
-import org.openflow.protocol.action.OFActionDataLayerDestination;
+/*import org.openflow.protocol.action.OFActionDataLayerDestination;
 import org.openflow.protocol.action.OFActionDataLayerSource;
 import org.openflow.protocol.action.OFActionNetworkLayerDestination;
 import org.openflow.protocol.action.OFActionNetworkLayerSource;
 import org.openflow.protocol.action.OFActionVirtualLanIdentifier;
+*/
+import org.opendaylight.yang.gen.v1.urn.opendaylight.flow.inventory.rev130819.tables.table.FlowBuilder;
 
-import org.openflow.protocol.OFFlowMod;
+import org.opendaylight.yang.gen.v1.urn.opendaylight.inventory.rev130819.NodeConnectorId;
+/*import org.openflow.protocol.OFFlowMod;
 import org.openflow.protocol.action.*;
-
+*/
 public class RuleNode {
     String switch_name;
     String rule_name;
     public short vlan = -1;
     public short length = 0;
-    public short in_port = 0;
+    public NodeConnectorId in_port;
     public byte[] dl_src;
     public byte[] dl_dst;
     public short dl_type = 0;
@@ -58,19 +61,19 @@ public class RuleNode {
 
 
 
-    public List<RuleNode> addruletable(Map<String, OFFlowMod> row){
+    public List<RuleNode> addruletable(Map<String, FlowBuilder> row){
 
         List<RuleNode> ruletable = new ArrayList<RuleNode>();
         Set<String> keys = row.keySet();
         Iterator<String> itr = keys.iterator();
-        while(itr.hasNext()){
+        /*while(itr.hasNext()){
             Object key = itr.next();
-            OFFlowMod value = row.get(key.toString());
+            FlowBuilder value = row.get(key.toString());
             RuleNode instance = new RuleNode();
             //instance.switch_name = ;
             instance.rule_name = key.toString();
             instance.length = value.getLength();
-            instance.in_port = value.getMatch().getInputPort();
+            instance.in_port = value.getMatch().getInPort();//.getInputPort();
             instance.vlan = value.getMatch().getDataLayerVirtualLan();
             instance.dl_src = value.getMatch().getDataLayerSource();
             instance.dl_dst = value.getMatch().getDataLayerDestination();
@@ -117,9 +120,9 @@ public class RuleNode {
                 case SET_NW_DST:
                     instance.action_nw_dst_prefix = ((OFActionNetworkLayerDestination)a).getNetworkAddress();
                     break;
-               /* TODO case SET_VLAN_ID:
+              TODO case SET_VLAN_ID:
                     instance.vlan = ((OFActionVirtualLanIdentifier)a).getVirtualLanIdentifier();
-                    break; */
+                    break;
                 default:
                     System.out.println("Could not decode action: {}");
                     break;
@@ -135,7 +138,7 @@ public class RuleNode {
             } else {
                 ruletable.add(instance);
             }
-        }
+        } */
         ruletable = RuleNode.computedependency(ruletable);
         return ruletable;
     }
@@ -230,12 +233,12 @@ public class RuleNode {
         return ruletable;
     }
 
-    public static List<RuleNode> addrulenode(List<RuleNode> ruletable, String flowname, OFFlowMod newflowmod){
+    public static List<RuleNode> addrulenode(List<RuleNode> ruletable, String flowname, FlowBuilder newflowmod){
 
-        OFFlowMod value = newflowmod;
+        FlowBuilder value = newflowmod;
         RuleNode instance = new RuleNode();
         //instance.switch_name = ;
-        instance.rule_name = flowname;
+        /*instance.rule_name = flowname;
            instance.length = value.getLength();
            instance.in_port = value.getMatch().getInputPort();
         instance.vlan = value.getMatch().getDataLayerVirtualLan();
@@ -283,9 +286,9 @@ public class RuleNode {
                case SET_NW_DST:
                    instance.action_nw_dst_prefix = ((OFActionNetworkLayerDestination)a).getNetworkAddress();
                    break;
-               /* TODO case SET_VLAN_ID:
+                TODO case SET_VLAN_ID:
                    instance.vlan = ((OFActionVirtualLanIdentifier)a).getVirtualLanIdentifier();
-                   break; */
+                   break;
                default:
                    System.out.println("Could not decode action: {}");
                    break;
@@ -305,7 +308,7 @@ public class RuleNode {
                ruletable.add(i, instance);
            } else {
                ruletable.add(instance);
-           }
+           }*/
            ruletable = RuleNode.computedependency(ruletable);
 
         return ruletable;
@@ -385,7 +388,7 @@ public class RuleNode {
         }
 
 
-        if(processingflow.current_ingress_port==rulenode.in_port && rulenode.dl_type==2048 ){
+       // TODO if(processingflow.current_ingress_port==rulenode.in_port && rulenode.dl_type==2048 ){
                //initiate flowinfo in the corresponding rulenode
                //if(rulenode.dltype==2054) then it just forwards the packet;
                //10.0.0.1 = 167772161
@@ -660,7 +663,7 @@ public class RuleNode {
             else{
                 //just return rulenode without any changes
             }
-        }
+
         return rulenode;
     }
 

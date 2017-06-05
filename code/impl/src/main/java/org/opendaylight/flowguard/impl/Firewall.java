@@ -38,14 +38,15 @@ import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 
-import org.openflow.protocol.OFFlowMod;
+import org.opendaylight.yang.gen.v1.urn.opendaylight.flow.inventory.rev130819.tables.table.FlowBuilder;
+/*import org.openflow.protocol.OFFlowMod;
 import org.openflow.protocol.OFMatch;
 import org.openflow.protocol.OFMessage;
 import org.openflow.protocol.OFPacketIn;
 import org.openflow.protocol.OFType;
 import org.openflow.util.HexString;
 import org.openflow.util.U16;
-
+*/
 /*
 import net.floodlightcontroller.core.FloodlightContext;
 import net.floodlightcontroller.core.IOFMessageListener;
@@ -84,10 +85,34 @@ import org.slf4j.LoggerFactory;
  * @edited KC Wang
  */
 public class Firewall {
+    final public static int OFPFW_ALL = ((1 << 22) - 1);
+    final public static int OFPFW_IN_PORT = 1 << 0; /* Switch input port. */
+    final public static int OFPFW_DL_VLAN = 1 << 1; /* VLAN id. */
+    final public static int OFPFW_DL_SRC = 1 << 2; /* Ethernet source address. */
+    final public static int OFPFW_DL_DST = 1 << 3; /*
+                                                    * Ethernet destination
+                                                    * address.
+                                                    */
+    final public static int OFPFW_DL_TYPE = 1 << 4; /* Ethernet frame type. */
+    final public static int OFPFW_NW_PROTO = 1 << 5; /* IP protocol. */
+    final public static int OFPFW_TP_SRC = 1 << 6; /* TCP/UDP source port. */
+    final public static int OFPFW_TP_DST = 1 << 7; /* TCP/UDP destination port. */
+
+    final public static int OFPFW_NW_SRC_SHIFT = 8;
+    final public static int OFPFW_NW_SRC_BITS = 6;
+    final public static int OFPFW_NW_SRC_MASK = ((1 << OFPFW_NW_SRC_BITS) - 1) << OFPFW_NW_SRC_SHIFT;
+    final public static int OFPFW_NW_SRC_ALL = 32 << OFPFW_NW_SRC_SHIFT;
+
+    /* IP destination address wildcard bit count. Same format as source. */
+    final public static int OFPFW_NW_DST_SHIFT = 14;
+    final public static int OFPFW_NW_DST_BITS = 6;
+    final public static int OFPFW_NW_DST_MASK = ((1 << OFPFW_NW_DST_BITS) - 1) << OFPFW_NW_DST_SHIFT;
+    final public static int OFPFW_NW_DST_ALL = 32 << OFPFW_NW_DST_SHIFT;
+
     public String RESULT_PATH="/home/whan7/evaluation/result.txt";
     public Map<TopologyStruct, TopologyStruct> TopologyStorage;
     // Map<DPID, Map<Name, FlowMod>>; FlowMod can be null to indicate non-active
-    protected Map<String, Map<String, OFFlowMod>> entriesFromStorage;
+    protected Map<String, Map<String, FlowBuilder>> entriesFromStorage;
     // Entry Name -> DPID of Switch it's on
     protected Map<String, String> entry2dpid;
     public ShiftedGraph sg;
@@ -192,7 +217,7 @@ public class Firewall {
     public String getName() {
         return "firewall";
     }
-
+/*
     public boolean isCallbackOrderingPrereq(OFType type, String name) {
         // no prereq
         return false;
@@ -203,7 +228,7 @@ public class Firewall {
         return (type.equals(OFType.PACKET_IN) && name.equals("forwarding"));
     }
 
-
+*/
     /**
      * Reads the rules from the storage and creates a sorted arraylist of
      * FirewallRule from them.
@@ -822,7 +847,7 @@ public class Firewall {
      */
 
     public Map<String, String> computeEntry2DpidMap(
-                Map<String, Map<String, OFFlowMod>> map) {
+                Map<String, Map<String, FlowBuilder>> map) {
         Map<String, String> ret = new ConcurrentHashMap<String, String>();
         for(String dpid : map.keySet()) {
             for( String entry: map.get(dpid).keySet())
@@ -831,8 +856,8 @@ public class Firewall {
         return ret;
     }
 
-    public Map<String, Map<String, OFFlowMod>> readEntriesFromStorage() {
-        Map<String, Map<String, OFFlowMod>> entries = new ConcurrentHashMap<String, Map<String, OFFlowMod>>();
+    public Map<String, Map<String, FlowBuilder>> readEntriesFromStorage() {
+        Map<String, Map<String, FlowBuilder>> entries = new ConcurrentHashMap<String, Map<String, FlowBuilder>>();
         try {
             Map<String, Object> row;
             // null1=no predicate, null2=no ordering

@@ -30,7 +30,7 @@ import java.util.HashMap;
 import java.util.Map;
 
 import org.opendaylight.flowguard.util.MACAddress;
-import org.openflow.util.HexString;
+//import org.openflow.util.HexString;
 
 /**
  *
@@ -425,9 +425,9 @@ public class Ethernet extends BasePacket {
         sb.append("\ndl_vlan_pcp: ");
         sb.append(this.getPriorityCode());
         sb.append("\ndl_src: ");
-        sb.append(HexString.toHexString(this.getSourceMACAddress()));
+     // TODO sb.append(HexString.toHexString(this.getSourceMACAddress()));
         sb.append("\ndl_dst: ");
-        sb.append(HexString.toHexString(this.getDestinationMACAddress()));
+     // TODO sb.append(HexString.toHexString(this.getDestinationMACAddress()));
 
 
         if (pkt instanceof ARP) {
