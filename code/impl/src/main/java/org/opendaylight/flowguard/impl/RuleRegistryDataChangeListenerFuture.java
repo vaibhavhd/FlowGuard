@@ -35,6 +35,7 @@ import org.opendaylight.yang.gen.v1.urn.opendaylight.flow.types.rev131026.flow.M
 import org.opendaylight.yang.gen.v1.urn.opendaylight.inventory.rev130819.NodeId;
 import org.opendaylight.yang.gen.v1.urn.opendaylight.inventory.rev130819.Nodes;
 import org.opendaylight.yang.gen.v1.urn.opendaylight.inventory.rev130819.nodes.Node;
+import org.opendaylight.yang.gen.v1.urn.opendaylight.inventory.rev130819.nodes.NodeBuilder;
 import org.opendaylight.yang.gen.v1.urn.opendaylight.inventory.rev130819.nodes.NodeKey;
 import org.opendaylight.yang.gen.v1.urn.opendaylight.params.xml.ns.yang.flowguard.rev170505.RuleRegistry;
 import org.opendaylight.yang.gen.v1.urn.opendaylight.params.xml.ns.yang.flowguard.rev170505.rule.registry.RuleRegistryEntry;
@@ -170,24 +171,32 @@ public class RuleRegistryDataChangeListenerFuture extends AbstractFuture<RuleReg
 
       private void importStaticFlows() {
           /* Nodes -> Node -> Table -> Flow -> build[flow]() */
-
+          ReadTransaction readTx = db.newReadOnlyTransaction();
           InstanceIdentifier<Nodes> nodesIdentifier = InstanceIdentifier.builder(Nodes.class).toInstance();
+          Optional<Nodes> optNodes= null;
+          Optional<Table> optTable = null;
+          List<Node> nodeList;
+          List<Flow> flowList;
 
-          Optional<Nodes> nodes= null;
           try {
               /* Retrieve all the switches in the operational data tree */
-              ReadTransaction readTx = db.newReadOnlyTransaction();
-              nodes= readTx.read(LogicalDatastoreType.OPERATIONAL, nodesIdentifier).get();
-              List<Node> nodeList = nodes.get().getNode();
+              optNodes = readTx.read(LogicalDatastoreType.OPERATIONAL, nodesIdentifier).get();
+              nodeList = optNodes.get().getNode();
+              LOG.info("No. of detected nodes: {}", nodeList.size());
 
               /* Iterate through the list of nodes(switches) for flow tables per node */
               for(Node node : nodeList){
-                  LOG.info("Node: {}", node.toString());
                   InstanceIdentifier<Table> table = InstanceIdentifier.builder(Nodes.class).child(Node.class, new NodeKey(node.getId()))
                           .augmentation(FlowCapableNode.class)
                           .child(Table.class, new TableKey((short)0)).toInstance();
+                  optTable = readTx.read(LogicalDatastoreType.OPERATIONAL, table).get();
+                  flowList = optTable.get().getFlow();
+                  LOG.info("No. of detected flows in table ID {}: {}",optTable.get().getId(), flowList.size());
 
-                  LOG.info("Table from Node {} = {}", node.toString(), table.toString());
+                  /* Iterate throught the list of flows */
+                  for(Flow flow : flowList) {
+                      LOG.info("Flow found with name: {}", flow.getFlowName());
+                  }
               }
 
           } catch (InterruptedException | ExecutionException e) {
