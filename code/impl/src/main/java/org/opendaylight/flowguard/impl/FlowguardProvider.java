@@ -8,13 +8,23 @@
 package org.opendaylight.flowguard.impl;
 
 import org.opendaylight.controller.md.sal.binding.api.DataBroker;
+import org.opendaylight.controller.md.sal.binding.api.ReadTransaction;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import org.opendaylight.controller.md.sal.binding.api.WriteTransaction;
 import org.opendaylight.controller.md.sal.common.api.data.LogicalDatastoreType;
+import org.opendaylight.controller.md.sal.common.api.data.TransactionCommitFailedException;
 import org.opendaylight.controller.sal.binding.api.BindingAwareBroker.ProviderContext;
 import org.opendaylight.controller.sal.binding.api.BindingAwareBroker.RpcRegistration;
+import org.opendaylight.yang.gen.v1.urn.opendaylight.flow.inventory.rev130819.FlowCapableNode;
+import org.opendaylight.yang.gen.v1.urn.opendaylight.flow.inventory.rev130819.tables.Table;
+import org.opendaylight.yang.gen.v1.urn.opendaylight.flow.inventory.rev130819.tables.TableKey;
+import org.opendaylight.yang.gen.v1.urn.opendaylight.flow.inventory.rev130819.tables.table.Flow;
+import org.opendaylight.yang.gen.v1.urn.opendaylight.inventory.rev130819.NodeId;
+import org.opendaylight.yang.gen.v1.urn.opendaylight.inventory.rev130819.Nodes;
+import org.opendaylight.yang.gen.v1.urn.opendaylight.inventory.rev130819.nodes.Node;
+import org.opendaylight.yang.gen.v1.urn.opendaylight.inventory.rev130819.nodes.NodeKey;
 import org.opendaylight.yang.gen.v1.urn.opendaylight.params.xml.ns.yang.flowguard.rev170505.FlowguardService;
 import org.opendaylight.controller.sal.binding.api.BindingAwareProvider;
 import org.opendaylight.controller.sal.binding.api.RpcProviderRegistry;
@@ -22,6 +32,8 @@ import org.opendaylight.controller.sal.binding.api.RpcProviderRegistry;
 //import org.opendaylight.yang.gen.v1.urn.opendaylight.params.xml.ns.yang.flowguard.rev150105.RuleBuilder;
 import org.opendaylight.yangtools.yang.binding.InstanceIdentifier;
 
+import com.google.common.base.Preconditions;
+import com.google.common.util.concurrent.CheckedFuture;
 import com.google.common.util.concurrent.FutureCallback;
 import com.google.common.util.concurrent.Futures;
 
@@ -34,10 +46,10 @@ public class FlowguardProvider {
     private final ShiftedGraph shiftedGraph;
     private RpcRegistration<FlowguardService> serviceRegistration;
 
-    public FlowguardProvider(final DataBroker dataBroker, RpcProviderRegistry rpcProviderRegistry, ShiftedGraph shiftedGraph) {
+    public FlowguardProvider(final DataBroker dataBroker, RpcProviderRegistry rpcProviderRegistry) {
         this.dataBroker = dataBroker;
         this.rpcProviderRegistry = rpcProviderRegistry;
-        this.shiftedGraph = shiftedGraph;
+        this.shiftedGraph = new ShiftedGraph();
     }
 
     /**
@@ -55,6 +67,15 @@ public class FlowguardProvider {
          * Initialize the operational data store
          */
         initIntentsOperational();
+
+        /* Create the network topology using static flows.
+         * Pull the flows from the nodes.
+         */
+        /*this.importTopology();
+        sg.buildTopology(this.TopologyStorage);
+        this.importStaticFlow();
+        sg.buildRuleNode(this.entriesFromStorage);
+        sg.buildSourceProbeNode(this.rules);*/
     }
 
     /**
@@ -65,36 +86,13 @@ public class FlowguardProvider {
         serviceRegistration.close();
     }
 
-//	public static final InstanceIdentifier<Rule> RULE_IID = InstanceIdentifier.builder(Rule.class).build();
-
    /**
      * Populates Intents' initial operational data into the MD-SAL operational
      * data store.
      */
     protected void initIntentsOperational() {
         // Build the initial intents operational data
-/*        Rule rules = new RuleBuilder().build();
-
-        // Put the Intents operational data into the MD-SAL data store
-        WriteTransaction tx = dataBroker.newWriteOnlyTransaction();
-        tx.put(LogicalDatastoreType.OPERATIONAL, RULE_IID, rules);
-
-        // Perform the tx.submit asynchronously
-        Futures.addCallback(tx.submit(), new FutureCallback<Void>() {
-
-            @Override
-            public void onSuccess(final Void result) {
-                LOG.info("initIntentsOperational: transaction succeeded");
-            }
-
-            @Override
-            public void onFailure(final Throwable throwable) {
-                LOG.error("initIntentsOperational: transaction failed");
-            }
-        });
-
-        LOG.info("initIntentsOperational: operational status populated: {}", rules);
-*/    }
+    }
 
     /**
      * Populates Intents' default config data into the MD-SAL configuration data
@@ -102,15 +100,5 @@ public class FlowguardProvider {
      * fashion
      */
     protected void initIntentsConfiguration() {
- /*   	// Build the initial intents operational data
-        Rule rules = new RuleBuilder().build();
-
-        // Put the Intents operational data into the MD-SAL data store
-        WriteTransaction tx = dataBroker.newWriteOnlyTransaction();
-        tx.put(LogicalDatastoreType.CONFIGURATION, RULE_IID, rules);
-        // Perform the tx.submit synchronously
-        tx.submit();
-
-        LOG.info("initIntentsConfiguration: default config populated: {}", rules);
-    */}
+    }
 }

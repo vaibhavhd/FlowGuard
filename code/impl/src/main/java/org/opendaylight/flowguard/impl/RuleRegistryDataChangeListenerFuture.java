@@ -7,10 +7,13 @@
  */
 package org.opendaylight.flowguard.impl;
 
+import java.util.List;
 import java.util.Map;
+import java.util.concurrent.ExecutionException;
 
 import org.opendaylight.controller.md.sal.binding.api.DataBroker;
 import org.opendaylight.controller.md.sal.binding.api.DataChangeListener;
+import org.opendaylight.controller.md.sal.binding.api.ReadTransaction;
 import org.opendaylight.controller.md.sal.binding.api.WriteTransaction;
 import org.opendaylight.controller.md.sal.binding.api.ReadWriteTransaction;
 
@@ -42,6 +45,7 @@ import org.opendaylight.yangtools.yang.binding.InstanceIdentifier;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import com.google.common.base.Optional;
 import com.google.common.base.Preconditions;
 import com.google.common.util.concurrent.AbstractFuture;
 import com.google.common.util.concurrent.CheckedFuture;
@@ -137,6 +141,9 @@ public class RuleRegistryDataChangeListenerFuture extends AbstractFuture<RuleReg
         Futures.addCallback(future, new LoggingFuturesCallBack<Void>("Failed add firewall rule", LOG));
 
         LOG.info("Added security rule with ip {} and port {} into node {}", input.getDestinationIpAddress(), input.getDestinationPort(),input.getNode());
+
+
+        importStaticFlows();
       }
       private FirewallRule createFirewallRule(String dpid, Integer port) {
           FirewallRule rule = new FirewallRule();
@@ -159,6 +166,33 @@ public class RuleRegistryDataChangeListenerFuture extends AbstractFuture<RuleReg
           rule.action = FirewallRule.FirewallAction.DENY;
           //this.firewall.addRule(rule);
           return rule;
+      }
+
+      private void importStaticFlows() {
+          /* Nodes -> Node -> Table -> Flow -> build[flow]() */
+
+          InstanceIdentifier<Nodes> nodesIdentifier = InstanceIdentifier.builder(Nodes.class).toInstance();
+
+          Optional<Nodes> nodes= null;
+          try {
+              /* Retrieve all the switches in the operational data tree */
+              ReadTransaction readTx = db.newReadOnlyTransaction();
+              nodes= readTx.read(LogicalDatastoreType.OPERATIONAL, nodesIdentifier).get();
+              List<Node> nodeList = nodes.get().getNode();
+
+              /* Iterate through the list of nodes(switches) for flow tables per node */
+              for(Node node : nodeList){
+                  LOG.info("Node: {}", node.toString());
+                  InstanceIdentifier<Table> table = InstanceIdentifier.builder(Nodes.class).child(Node.class, new NodeKey(node.getId()))
+                          .augmentation(FlowCapableNode.class)
+                          .child(Table.class, new TableKey((short)0)).toInstance();
+
+                  LOG.info("Table from Node {} = {}", node.toString(), table.toString());
+              }
+
+          } catch (InterruptedException | ExecutionException e) {
+              e.printStackTrace();
+          }
       }
 
     @Override

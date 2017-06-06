@@ -18,15 +18,11 @@ and is available at http://www.eclipse.org/legal/epl-v10.html
   <reference id="rpcRegistry"
      interface="org.opendaylight.controller.sal.binding.api.RpcProviderRegistry"/>
 
-  <reference id="shiftedGraph"
-     interface="org.opendaylight.flowguard.impl.ShiftedGraph"/>
-
   <bean id="provider"
     class="org.opendaylight.flowguard.impl.FlowguardProvider"
     init-method="init" destroy-method="close">
     <argument ref="dataBroker" />
     <argument ref="rpcRegistry" />
-    <argument ref="shiftedGraph" />
   </bean>
 
 </blueprint>
