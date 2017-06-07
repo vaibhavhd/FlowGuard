@@ -21,6 +21,7 @@ import org.opendaylight.controller.md.sal.common.api.data.AsyncDataBroker;
 import org.opendaylight.controller.md.sal.common.api.data.AsyncDataChangeEvent;
 import org.opendaylight.controller.md.sal.common.api.data.LogicalDatastoreType;
 import org.opendaylight.controller.md.sal.common.api.data.TransactionCommitFailedException;
+
 import org.opendaylight.flowguard.packet.Ethernet;
 import org.opendaylight.yang.gen.v1.urn.ietf.params.xml.ns.yang.ietf.inet.types.rev130715.Ipv4Prefix;
 import org.opendaylight.yang.gen.v1.urn.ietf.params.xml.ns.yang.ietf.inet.types.rev130715.PortNumber;
@@ -42,7 +43,11 @@ import org.opendaylight.yang.gen.v1.urn.opendaylight.params.xml.ns.yang.flowguar
 import org.opendaylight.yangtools.concepts.ListenerRegistration;
 import org.opendaylight.yangtools.yang.binding.DataObject;
 import org.opendaylight.yangtools.yang.binding.InstanceIdentifier;
-
+import org.opendaylight.yang.gen.v1.urn.tbd.params.xml.ns.yang.network.topology.rev131021.NetworkTopology;
+import org.opendaylight.yang.gen.v1.urn.tbd.params.xml.ns.yang.network.topology.rev131021.TopologyId;
+import org.opendaylight.yang.gen.v1.urn.tbd.params.xml.ns.yang.network.topology.rev131021.network.topology.Topology;
+import org.opendaylight.yang.gen.v1.urn.tbd.params.xml.ns.yang.network.topology.rev131021.network.topology.TopologyKey;
+import org.opendaylight.yang.gen.v1.urn.tbd.params.xml.ns.yang.network.topology.rev131021.network.topology.topology.Link;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -56,19 +61,22 @@ public class RuleRegistryDataChangeListenerFuture extends AbstractFuture<RuleReg
 
     DataBroker db;
     ShiftedGraph shiftedGraph;
+    ReadTransaction readTx;
       private static final Logger LOG = LoggerFactory.getLogger(RuleRegistryDataChangeListenerFuture.class);
       private ListenerRegistration<DataChangeListener> registration;
 
       public RuleRegistryDataChangeListenerFuture(DataBroker db, ShiftedGraph shiftedGraph) {
         this.db = db;
         this.shiftedGraph = shiftedGraph;
+        this.readTx  = db.newReadOnlyTransaction();
+
         InstanceIdentifier<RuleRegistry> ruleIID =
             InstanceIdentifier.builder(RuleRegistry.class).build();
         db.registerDataChangeListener(LogicalDatastoreType.OPERATIONAL, ruleIID, this,
             AsyncDataBroker.DataChangeScope.SUBTREE);
         LOG.info("DataChangeListener registered with MD-SAL for path {}", ruleIID);
 
-        /* Retrieve all the static flow enteried from the switches */
+        /* Retrieve all the static flow enteries from the switches */
 
       }
 
@@ -143,7 +151,6 @@ public class RuleRegistryDataChangeListenerFuture extends AbstractFuture<RuleReg
 
         LOG.info("Added security rule with ip {} and port {} into node {}", input.getDestinationIpAddress(), input.getDestinationPort(),input.getNode());
 
-
         importStaticFlows();
       }
       private FirewallRule createFirewallRule(String dpid, Integer port) {
@@ -168,17 +175,20 @@ public class RuleRegistryDataChangeListenerFuture extends AbstractFuture<RuleReg
           //this.firewall.addRule(rule);
           return rule;
       }
-
+// TODO - move the static flows to the init of flowguard.
       private void importStaticFlows() {
-          /* Nodes -> Node -> Table -> Flow -> build[flow]() */
-          ReadTransaction readTx = db.newReadOnlyTransaction();
+          /* Nodes(root) -> Node -> Table -> Flow */
+
           InstanceIdentifier<Nodes> nodesIdentifier = InstanceIdentifier.builder(Nodes.class).toInstance();
-          Optional<Nodes> optNodes= null;
-          Optional<Table> optTable = null;
-          List<Node> nodeList;
-          List<Flow> flowList;
 
           try {
+              Optional<Nodes> optNodes= null;
+              Optional<Table> optTable = null;
+              Optional<Flow> optFlow = null;
+
+              List<Node> nodeList;
+              List<Flow> flowList;
+
               /* Retrieve all the switches in the operational data tree */
               optNodes = readTx.read(LogicalDatastoreType.OPERATIONAL, nodesIdentifier).get();
               nodeList = optNodes.get().getNode();
@@ -186,22 +196,120 @@ public class RuleRegistryDataChangeListenerFuture extends AbstractFuture<RuleReg
 
               /* Iterate through the list of nodes(switches) for flow tables per node */
               for(Node node : nodeList){
+
                   InstanceIdentifier<Table> table = InstanceIdentifier.builder(Nodes.class).child(Node.class, new NodeKey(node.getId()))
                           .augmentation(FlowCapableNode.class)
-                          .child(Table.class, new TableKey((short)0)).toInstance();
+                          .child(Table.class, new TableKey((short)0)).toInstance();  // TODO Table ID is hardcaoded to 0. What about other tables?
                   optTable = readTx.read(LogicalDatastoreType.OPERATIONAL, table).get();
                   flowList = optTable.get().getFlow();
-                  LOG.info("No. of detected flows in table ID {}: {}",optTable.get().getId(), flowList.size());
 
-                  /* Iterate throught the list of flows */
-                  for(Flow flow : flowList) {
-                      LOG.info("Flow found with name: {}", flow.getFlowName());
+                  LOG.info("No. of flows in table ID {}: {}",optTable.get().getId(), flowList.size());
+
+                  /* Iterate through the list of flows */
+                  for(Flow flow : flowList){
+                      LOG.info("Flow found with ID: {}, outport: {}, Match: {}", flow.getId(), flow.getOutPort(), flow.getMatch().getLayer3Match());
                   }
               }
 
           } catch (InterruptedException | ExecutionException e) {
               e.printStackTrace();
           }
+
+          /* Collecting information */
+
+       // Get all nodes in MD-SAL
+          List<Node> nodeList = getAllNodes();
+          for (Node node : nodeList) {
+              LOG.debug("node : {}", node.toString());
+          }
+
+          // Get a particular node in MD-SAL
+          Node node2 = getNode("node_001");
+          LOG.debug("node2 : {}", node2.toString());
+
+          // Get all topologies in MD-SAL
+          List<Topology> topoList = getAllTopologies();
+          for (Topology topo : topoList) {
+              LOG.debug("topo : {}", topo.toString());
+          }
+
+          // Get a particular toplogy in MD-SAL
+          Topology flowTopo = getFlowTopology();
+          LOG.debug("flowTopo : {}", flowTopo.toString());
+
+          // Get all links in MD-SAL
+          List<Link> linkList = getAllLinks();
+          for (Link link : linkList) {
+              LOG.debug("link : {}", link.toString());
+          }
+      }
+
+   // Get all nodes in MD-SAL
+      private List<Node> getAllNodes() {
+          InstanceIdentifier<Nodes> nodesIdentifier = InstanceIdentifier.builder(Nodes.class).toInstance();
+          try {
+              Optional<Nodes> optNodes = readTx.read(LogicalDatastoreType.OPERATIONAL, nodesIdentifier).get();
+              Nodes nodes = optNodes.get();
+              return nodes.getNode();
+          }
+          catch(InterruptedException | ExecutionException e) {
+              LOG.warn("Exception during reading nodes from datastore: {}", e.getMessage());
+              return null;
+          }
+      }
+
+      // Get a particular node in MD-SAL
+      private Node getNode(String nodeName) {
+          NodeId nodeId = new NodeId(nodeName);
+          InstanceIdentifier<Node> instanceIdentifier = InstanceIdentifier.builder(Nodes.class).child(Node.class, new NodeKey(nodeId)).toInstance();
+          try {
+          Optional<Node> optNode = (Optional<Node>) readTx.read(LogicalDatastoreType.OPERATIONAL, instanceIdentifier).get();
+          Node node = optNode.get();
+          return node;
+          }
+          catch(InterruptedException | ExecutionException e) {
+              LOG.warn("Exception during reading node from datastore: {}", e.getMessage());
+              return null;
+          }
+      }
+
+      // Get all topologies in MD-SAL
+      private List<Topology> getAllTopologies() {
+           InstanceIdentifier<NetworkTopology> topoIdentifier =
+                   InstanceIdentifier.builder(NetworkTopology.class).toInstance();
+           System.out.println("topoIdentifier " + topoIdentifier);
+           try {
+               Optional<NetworkTopology> optTopos = (Optional<NetworkTopology>) readTx.read(LogicalDatastoreType.OPERATIONAL, topoIdentifier).get();
+               List<Topology> topos = optTopos.get().getTopology();
+               return topos;
+           }
+           catch(InterruptedException | ExecutionException e) {
+               LOG.warn("Exception during reading node from datastore: {}", e.getMessage());
+               return null;
+           }
+      }
+
+      // Get a particular toplogy in MD-SAL
+      private Topology getFlowTopology() {
+          TopologyId topoId = new TopologyId("flow:1");
+          InstanceIdentifier<Topology> topoIdentifier = InstanceIdentifier.builder(NetworkTopology.class).child(Topology.class, new TopologyKey(topoId)).toInstance();
+          System.out.println("topoIdentifier " + topoIdentifier);
+          try {
+              //Topology topology = (Topology) dataProviderService.readOperationalData(topoIdentifier);
+              Optional<Topology> optTopo = (Optional<Topology>)readTx.read(LogicalDatastoreType.OPERATIONAL, topoIdentifier).get();
+              Topology topology = optTopo.get();
+              return topology;
+          }
+          catch(InterruptedException | ExecutionException e) {
+              LOG.warn("Exception during reading node from datastore: {}", e.getMessage());
+              return null;
+          }
+      }
+
+      // Get all links in MD-SAL
+      private List<Link> getAllLinks() {
+          Topology flowTopology = getFlowTopology();
+          return flowTopology.getLink();
       }
 
     @Override
