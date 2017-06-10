@@ -1,0 +1,14 @@
+OpenFlow:1
+
+getNode=[Node{getNodeId=Uri [_value=openflow:1], getTerminationPoint=
+
+[TerminationPoint{getTpId=Uri [_value=openflow:1:LOCAL], 
+augmentations={interface org.opendaylight.yang.gen.v1.urn.opendaylight.model.topology.inventory.rev131030.InventoryNodeConnector=InventoryNodeConnector{getInventoryNodeConnectorRef=NodeConnectorRef [_value=KeyedInstanceIdentifier{targetType=interface org.opendaylight.yang.gen.v1.urn.opendaylight.inventory.rev130819.node.NodeConnector, path=[org.opendaylight.yang.gen.v1.urn.opendaylight.inventory.rev130819.Nodes, org.opendaylight.yang.gen.v1.urn.opendaylight.inventory.rev130819.nodes.Node[key=NodeKey [_id=Uri [_value=openflow:1]]], org.opendaylight.yang.gen.v1.urn.opendaylight.inventory.rev130819.node.NodeConnector[key=NodeConnectorKey [_id=Uri [_value=openflow:1:LOCAL]]]]}]}}}, 
+
+TerminationPoint{getTpId=Uri [_value=openflow:1:2],
+augmentations={interface org.opendaylight.yang.gen.v1.urn.opendaylight.model.topology.inventory.rev131030.InventoryNodeConnector=InventoryNodeConnector{getInventoryNodeConnectorRef=NodeConnectorRef [_value=KeyedInstanceIdentifier{targetType=interface org.opendaylight.yang.gen.v1.urn.opendaylight.inventory.rev130819.node.NodeConnector, path=org.opendaylight.yang.gen.v1.urn.opendaylight.inventory.rev130819.Nodes, org.opendaylight.yang.gen.v1.urn.opendaylight.inventory.rev130819.nodes.Node[key=NodeKey [_id=Uri [_value=openflow:1]]], org.opendaylight.yang.gen.v1.urn.opendaylight.inventory.rev130819.node.NodeConnector[key=NodeConnectorKey [_id=Uri [_value=openflow:1:2]]]]}]}}}, 
+
+TerminationPoint{getTpId=Uri [_value=openflow:1:1],
+augmentations={interface.org.opendaylight.yang.gen.v1.urn.opendaylight.model.topology.inventory.rev131030.InventoryNodeConnector=InventoryNodeConnector{getInventoryNodeConnectorRef=NodeConnectorRef [_value=KeyedInstanceIdentifier{targetType=interface org.opendaylight.yang.gen.v1.urn.opendaylight.inventory.rev130819.node.NodeConnector, path=[org.opendaylight.yang.gen.v1.urn.opendaylight.inventory.rev130819.Nodes, org.opendaylight.yang.gen.v1.urn.opendaylight.inventory.rev130819.nodes.Node[key=NodeKey [_id=Uri [_value=openflow:1]]], org.opendaylight.yang.gen.v1.urn.opendaylight.inventory.rev130819.node.NodeConnector[key=NodeConnectorKey [_id=Uri [_value=openflow:1:1]]]]}]}}}],
+
+augmentations={interface org.opendaylight.yang.gen.v1.urn.opendaylight.model.topology.inventory.rev131030.InventoryNode=InventoryNode{getInventoryNodeRef=NodeRef [_value=KeyedInstanceIdentifier{targetType=interface org.opendaylight.yang.gen.v1.urn.opendaylight.inventory.rev130819.nodes.Node, path=[org.opendaylight.yang.gen.v1.urn.opendaylight.inventory.rev130819.Nodes, org.opendaylight.yang.gen.v1.urn.opendaylight.inventory.rev130819.nodes.Node[key=NodeKey [_id=Uri [_value=openflow:1]]]]}]}}}, 
