@@ -119,6 +119,48 @@ module flowguard {
     		}
     	}
     }
+    container controls {
+        leaf action {
+            type enumeration {
+              enum "Enable" {
+                value 1;
+              }
+              enum "Disable" {
+                value 2;
+                description
+                  "TCP protocol.";
+              }
+            }
+            config true;
+            mandatory false;
+          }
+        leaf greeting {
+            type string;
+        }
+    }
+    rpc flowguard-control {
+        input {
+            leaf action {
+                type enumeration {
+                  enum "Enable" {
+                    value 1;
+                  }
+                  enum "Disable" {
+                    value 2;
+                    description
+                      "TCP protocol.";
+                  }
+                }
+                config true;
+                mandatory false;
+              }
+        }
+        output {
+            leaf greeting {
+                type string;
+            }
+        }
+    }
 
 }
 

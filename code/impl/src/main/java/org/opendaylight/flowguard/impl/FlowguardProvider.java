@@ -57,25 +57,10 @@ public class FlowguardProvider {
      */
     public void init() {
         serviceRegistration = rpcProviderRegistry.addRpcImplementation(FlowguardService.class, new FlowguardImpl(dataBroker));
+
         RuleRegistryDataChangeListenerFuture future = new RuleRegistryDataChangeListenerFuture(this.dataBroker, this.shiftedGraph);
         LOG.info("FlowguardProvider Session Initiated");
-        /*
-         * Initialize the config data store
-         */
-        initIntentsConfiguration();
-        /*
-         * Initialize the operational data store
-         */
-        initIntentsOperational();
 
-        /* Create the network topology using static flows.
-         * Pull the flows from the nodes.
-         */
-        /*this.importTopology();
-        sg.buildTopology(this.TopologyStorage);
-        this.importStaticFlow();
-        sg.buildRuleNode(this.entriesFromStorage);
-        sg.buildSourceProbeNode(this.rules);*/
     }
 
     /**
@@ -84,21 +69,5 @@ public class FlowguardProvider {
     public void close() {
         LOG.info("FlowguardProvider Closed");
         serviceRegistration.close();
-    }
-
-   /**
-     * Populates Intents' initial operational data into the MD-SAL operational
-     * data store.
-     */
-    protected void initIntentsOperational() {
-        // Build the initial intents operational data
-    }
-
-    /**
-     * Populates Intents' default config data into the MD-SAL configuration data
-     * store. Note the database write to the tree are done in a synchronous
-     * fashion
-     */
-    protected void initIntentsConfiguration() {
     }
 }
