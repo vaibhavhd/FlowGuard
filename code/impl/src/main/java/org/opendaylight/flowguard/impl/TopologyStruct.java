@@ -9,6 +9,15 @@
 package org.opendaylight.flowguard.impl;
 
 public class TopologyStruct {
-    String dpid;
-    String port;
+	public String dpid;
+    public String port;
+    
+    public TopologyStruct() {
+		// TODO Auto-generated constructor stub
+	}
+    
+	public TopologyStruct(String destId, String destPort) {
+		this.dpid = destId;
+		this.port = destPort;
+	}
 }

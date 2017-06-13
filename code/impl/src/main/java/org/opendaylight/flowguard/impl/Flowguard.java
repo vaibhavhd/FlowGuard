@@ -9,6 +9,7 @@ package org.opendaylight.flowguard.impl;
 
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutionException;
 
 import org.opendaylight.controller.md.sal.binding.api.DataBroker;
@@ -18,11 +19,13 @@ import org.opendaylight.yang.gen.v1.urn.opendaylight.flow.inventory.rev130819.Fl
 import org.opendaylight.yang.gen.v1.urn.opendaylight.flow.inventory.rev130819.tables.Table;
 import org.opendaylight.yang.gen.v1.urn.opendaylight.flow.inventory.rev130819.tables.TableKey;
 import org.opendaylight.yang.gen.v1.urn.opendaylight.flow.inventory.rev130819.tables.table.Flow;
+import org.opendaylight.yang.gen.v1.urn.opendaylight.flow.inventory.rev130819.tables.table.FlowBuilder;
 import org.opendaylight.yang.gen.v1.urn.opendaylight.inventory.rev130819.NodeId;
 import org.opendaylight.yang.gen.v1.urn.opendaylight.inventory.rev130819.Nodes;
 import org.opendaylight.yang.gen.v1.urn.opendaylight.inventory.rev130819.nodes.Node;
 import org.opendaylight.yang.gen.v1.urn.opendaylight.inventory.rev130819.nodes.NodeKey;
 import org.opendaylight.yang.gen.v1.urn.tbd.params.xml.ns.yang.network.topology.rev131021.NetworkTopology;
+//import org.opendaylight.yang.gen.v1.urn.tbd.params.xml.ns.yang.network.topology.rev131021.NodeId;
 import org.opendaylight.yang.gen.v1.urn.tbd.params.xml.ns.yang.network.topology.rev131021.TopologyId;
 import org.opendaylight.yang.gen.v1.urn.tbd.params.xml.ns.yang.network.topology.rev131021.network.topology.Topology;
 import org.opendaylight.yang.gen.v1.urn.tbd.params.xml.ns.yang.network.topology.rev131021.network.topology.TopologyKey;
@@ -37,38 +40,41 @@ public class Flowguard {
     private static final Logger LOG = LoggerFactory.getLogger(Flowguard.class);
     private ReadTransaction readTx;
     private DataBroker db;
-
-    public Map<TopologyStruct, TopologyStruct> TopologyStorage;
+    public Map<TopologyStruct, TopologyStruct> topologyStorage;
+    public Map<NodeId, List<Flow>> flowStorage;
+    
     Flowguard(DataBroker db){
         this.db = db;
         this.readTx  = db.newReadOnlyTransaction();
+        this.topologyStorage = new ConcurrentHashMap<TopologyStruct, TopologyStruct>();
+        this.flowStorage = new ConcurrentHashMap<NodeId, List<Flow>>();
     }
 
     public void start() {
         // Create the snapshot of existing network topology */
-        this.importTopology();
-        this.createTopology();
-        this.importStaticFlows();
-
         this.buildTopology();
+        this.importStaticFlows();
         //sg.buildRuleNode(this.entriesFromStorage);
         //sg.buildSourceProbeNode(this.rules);*/
 
     }
 
     private void buildTopology() {
-        // TODO Auto-generated method stub
-
-    }
-
-    private void importTopology() {
-        // TODO Auto-generated method stub
-
-    }
-
-    public void createTopology() {
-        // TODO Auto-generated method stub
-
+        List<Link> linkList = getAllLinks();
+        for (Link link : linkList) {
+        	String destId = link.getDestination().getDestNode().getValue();
+        	String srcId = link.getSource().getSourceNode().getValue();
+        	
+        	if(srcId.contains("openflow:") && destId.contains("openflow:")) {
+        		String destPort = link.getDestination().getDestTp().getValue();
+        		String srcPort = link.getSource().getSourceTp().getValue();
+        		TopologyStruct srcNode = new TopologyStruct(srcId, srcPort);
+        		TopologyStruct destNode = new TopologyStruct(destId, destPort);
+        		this.topologyStorage.put(srcNode, destNode);
+        		LOG.info("Link stored : Source DPID: {} Port: {}", srcNode.dpid, srcNode.port);
+        		LOG.info("\tDestination DPID: {} Port: {}", destNode.dpid, destNode.port);
+        	}
+        }
     }
 
     private void importStaticFlows() {
@@ -99,11 +105,13 @@ public class Flowguard {
                 flowList = optTable.get().getFlow();
 
                 LOG.info("No. of flows in table ID {}: {}",optTable.get().getId(), flowList.size());
-
+                
                 /* Iterate through the list of flows */
                 for(Flow flow : flowList){
                     LOG.info("Flow found with ID: {}, outport: {}, Match: {}", flow.getId(), flow.getOutPort(), flow.getMatch().getLayer3Match());
                 }
+                RuleNode.computedependency(flowList);
+                flowStorage.put(node.getId(), flowList);
             }
 
         } catch (InterruptedException | ExecutionException e) {
@@ -119,7 +127,7 @@ public class Flowguard {
         }
 
         // Get a particular node in MD-SAL
-        Node node2 = getNode("openflow:1");
+        //Node node2 = getNode("openflow:1");
         //LOG.info("node2 : {}", node2.toString());
 
         // Get all topologies in MD-SAL
@@ -132,14 +140,10 @@ public class Flowguard {
         Topology flowTopo = getFlowTopology();
         //LOG.info("flowTopo : {}", flowTopo.toString());
 
-        // Get all links in MD-SAL
-        List<Link> linkList = getAllLinks();
-        for (Link link : linkList) {
-           // LOG.info("link : {}", link.toString());
-        }
+
     }
 
- // Get all nodes in MD-SAL
+// Get all nodes in MD-SAL
     private List<Node> getAllNodes() {
         InstanceIdentifier<Nodes> nodesIdentifier = InstanceIdentifier.builder(Nodes.class).toInstance();
         try {
@@ -154,7 +158,7 @@ public class Flowguard {
     }
 
     // Get a particular node in MD-SAL
-    private Node getNode(String nodeName) {
+    /*private Node getNode(String nodeName) {
         NodeId nodeId = new NodeId(nodeName);
         InstanceIdentifier<Node> instanceIdentifier = InstanceIdentifier.builder(Nodes.class).child(Node.class, new NodeKey(nodeId)).toInstance();
         try {
@@ -166,7 +170,7 @@ public class Flowguard {
             LOG.warn("Exception during reading node from datastore: {}", e.getMessage());
             return null;
         }
-    }
+    }*/
 
     // Get all topologies in MD-SAL
     private List<Topology> getAllTopologies() {

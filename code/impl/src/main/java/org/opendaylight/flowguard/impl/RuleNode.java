@@ -8,12 +8,19 @@
 
 package org.opendaylight.flowguard.impl;
 
+import java.net.InetAddress;
+import java.net.UnknownHostException;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import org.opendaylight.yang.gen.v1.urn.ietf.params.xml.ns.yang.ietf.inet.types.rev130715.Ipv4Address;
+import org.opendaylight.yang.gen.v1.urn.ietf.params.xml.ns.yang.ietf.inet.types.rev130715.Ipv4Prefix;
+import org.opendaylight.yang.gen.v1.urn.ietf.params.xml.ns.yang.ietf.inet.types.rev130715.PortNumber;
+import org.opendaylight.yang.gen.v1.urn.ietf.params.xml.ns.yang.ietf.yang.types.rev130715.DottedQuad;
+import org.opendaylight.yang.gen.v1.urn.opendaylight.flow.inventory.rev130819.tables.table.Flow;
 // TODO import net.floodlightcontroller.staticflowentry.StaticFlowEntries;
 /*import org.openflow.protocol.action.OFActionDataLayerDestination;
 import org.openflow.protocol.action.OFActionDataLayerSource;
@@ -24,25 +31,37 @@ import org.openflow.protocol.action.OFActionVirtualLanIdentifier;
 import org.opendaylight.yang.gen.v1.urn.opendaylight.flow.inventory.rev130819.tables.table.FlowBuilder;
 
 import org.opendaylight.yang.gen.v1.urn.opendaylight.inventory.rev130819.NodeConnectorId;
+import org.opendaylight.yang.gen.v1.urn.opendaylight.model.match.types.rev131026.ethernet.match.fields.EthernetDestination;
+import org.opendaylight.yang.gen.v1.urn.opendaylight.model.match.types.rev131026.ethernet.match.fields.EthernetSource;
+import org.opendaylight.yang.gen.v1.urn.opendaylight.model.match.types.rev131026.ethernet.match.fields.EthernetType;
+import org.opendaylight.yang.gen.v1.urn.opendaylight.model.match.types.rev131026.match.Layer3Match;
+import org.opendaylight.yang.gen.v1.urn.opendaylight.model.match.types.rev131026.match.Layer4Match;
+import org.opendaylight.yang.gen.v1.urn.opendaylight.model.match.types.rev131026.match.layer._3.match.Ipv4Match;
+import org.opendaylight.yang.gen.v1.urn.opendaylight.model.match.types.rev131026.match.layer._3.match.Ipv4MatchArbitraryBitMask;
+import org.opendaylight.yang.gen.v1.urn.opendaylight.model.match.types.rev131026.match.layer._4.match.TcpMatch;
+import org.opendaylight.yang.gen.v1.urn.opendaylight.model.match.types.rev131026.vlan.match.fields.VlanId;
+
+import com.google.common.primitives.UnsignedBytes;
 /*import org.openflow.protocol.OFFlowMod;
 import org.openflow.protocol.action.*;
 */
 public class RuleNode {
+	// TODO Rename fields to that of openflow 1.3
     String switch_name;
     String rule_name;
-    public short vlan = -1;
+    public VlanId vlan;
     public short length = 0;
     public NodeConnectorId in_port;
     public byte[] dl_src;
     public byte[] dl_dst;
     public short dl_type = 0;
-    public int nw_src_prefix = 0;
+    public Ipv4Prefix nw_src_prefix;
     public int nw_src_maskbits = 0;
-    public int nw_dst_prefix = 0;
+    public Ipv4Prefix nw_dst_prefix;
     public int nw_dst_maskbits = 0;
     public short nw_proto = 0;
-    public short tp_src = 0;
-    public short tp_dst = 0;
+    public PortNumber tp_src;
+    public PortNumber tp_dst;
     public int priority = 0;
     public int wildcards = 0;
 
@@ -58,28 +77,48 @@ public class RuleNode {
     public List<HeaderObject> diff;
 
     public FlowInfo flow_info;
+	private EthernetSource eth_src;
+	private EthernetDestination eth_dst;
+	private EthernetType eth_type;
+	
+	private static final String PREFIX_SEPARATOR = "/";
+	private static final int IPV4_ADDRESS_LENGTH = 32;
+	private static final String DEFAULT_ARBITRARY_BIT_MASK = "255.255.255.255";
 
-
-
-    public List<RuleNode> addruletable(Map<String, FlowBuilder> row){
+    /*
+     * Spec:
+     * A  zero-length  OpenFlow  match  (one  with  no  OXM  TLVs)  matches  every  packet.
+     * Match  fields  that should be wildcarded are omitted from the OpenFlow match.
+     */
+    public List<RuleNode> addruletable(List<Flow> flowList){
 
         List<RuleNode> ruletable = new ArrayList<RuleNode>();
-        Set<String> keys = row.keySet();
-        Iterator<String> itr = keys.iterator();
-        /*while(itr.hasNext()){
-            Object key = itr.next();
-            FlowBuilder value = row.get(key.toString());
+        //Set<String> keys = row.keySet();
+        Iterator<Flow> itr = flowList.listIterator();//keys.iterator();
+        
+        while(itr.hasNext()){
+            Flow flow = itr.next();//row.get(key.toString());
             RuleNode instance = new RuleNode();
             //instance.switch_name = ;
-            instance.rule_name = key.toString();
-            instance.length = value.getLength();
-            instance.in_port = value.getMatch().getInPort();//.getInputPort();
-            instance.vlan = value.getMatch().getDataLayerVirtualLan();
-            instance.dl_src = value.getMatch().getDataLayerSource();
-            instance.dl_dst = value.getMatch().getDataLayerDestination();
-            instance.dl_type = value.getMatch().getDataLayerType();
-            instance.nw_src_prefix = value.getMatch().getNetworkSource();;
-            if(value.getMatch().getNetworkSourceMaskLen() == 0)
+            
+            
+            instance.rule_name = flow.getFlowName();//key.toString();
+            //instance.length = value.getLength();
+            
+            //instance.in_port = value.getMatch().getInPort();//.getInputPort();
+            instance.in_port = flow.getMatch().getInPort();
+            //instance.vlan = value.getMatch().getDataLayerVirtualLan();
+            instance.vlan = flow.getMatch().getVlanMatch().getVlanId();
+            //instance.dl_src = value.getMatch().getDataLayerSource();
+            instance.eth_src = flow.getMatch().getEthernetMatch().getEthernetSource(); 
+            //instance.dl_dst = value.getMatch().getDataLayerDestination();
+            instance.eth_dst = flow.getMatch().getEthernetMatch().getEthernetDestination(); 
+            
+            //instance.dl_type = value.getMatch().getDataLayerType();
+            instance.eth_type = flow.getMatch().getEthernetMatch().getEthernetType();
+            //instance.nw_src_prefix = value.getMatch().getNetworkSource();
+            
+            /*if(value.getMatch().getNetworkSourceMaskLen() == 0)
                 instance.nw_src_maskbits = 32;
             else
                 instance.nw_src_maskbits = value.getMatch().getNetworkSourceMaskLen();
@@ -88,17 +127,46 @@ public class RuleNode {
                 instance.nw_dst_maskbits = 32;
             else
                 instance.nw_dst_maskbits = value.getMatch().getNetworkDestinationMaskLen();
-            instance.nw_proto = value.getMatch().getNetworkProtocol();
-            instance.tp_src = value.getMatch().getTransportDestination();
-            instance.tp_dst = value.getMatch().getTransportSource();
-            instance.priority = value.getPriority();
-            instance.wildcards = value.getMatch().getWildcards();
-
+            */
+            
+            Layer3Match l3Match = flow.getMatch().getLayer3Match();
+            // TODO Handle other L3Match cases: ARP, Ipv6
+            if(l3Match instanceof Ipv4Match){
+            	instance.nw_src_prefix = ((Ipv4Match)flow.getMatch().getLayer3Match()).getIpv4Source();
+            	instance.nw_dst_prefix = ((Ipv4Match)flow.getMatch().getLayer3Match()).getIpv4Destination();
+            	
+            	//instance.nw_src_maskbits = 0;
+            }
+            else if (l3Match instanceof Ipv4MatchArbitraryBitMask){
+            	Ipv4Address addr = ((Ipv4MatchArbitraryBitMask)flow.getMatch().getLayer3Match()).getIpv4SourceAddressNoMask();
+            	DottedQuad mask = ((Ipv4MatchArbitraryBitMask)flow.getMatch().getLayer3Match()).getIpv4SourceArbitraryBitmask();
+            	instance.nw_src_prefix = createPrefix(addr, convertArbitraryMaskToByteArray(mask));
+            	
+            	addr = ((Ipv4MatchArbitraryBitMask)flow.getMatch().getLayer3Match()).getIpv4DestinationAddressNoMask();
+            	mask = ((Ipv4MatchArbitraryBitMask)flow.getMatch().getLayer3Match()).getIpv4DestinationArbitraryBitmask();
+            	instance.nw_dst_prefix = createPrefix(addr, convertArbitraryMaskToByteArray(mask));
+            }
+            
+            //instance.nw_proto = value.getMatch().getNetworkProtocol();
+            instance.nw_proto = flow.getMatch().getIpMatch().getIpProtocol();
+            //instance.tp_src = value.getMatch().getTransportDestination();
+            // TODO Previois implementation worng? src is taken from dest!!
+            Layer4Match l4Match = flow.getMatch().getLayer4Match();
+            if(l4Match instanceof TcpMatch) {
+            	instance.tp_src = ((TcpMatch)l4Match).getTcpSourcePort();
+            	instance.tp_dst = ((TcpMatch)l4Match).getTcpDestinationPort();
+            }
+            //instance.tp_dst = value.getMatch().getTransportSource();
+            //instance.priority = value.getPriority();
+            instance.priority = flow.getPriority();
+            //instance.wildcards = value.getMatch().getWildcards();
+            // TODO instance.wildcards = flow.
 
             instance.flow_info = new FlowInfo();
             instance.flow_info.flow_history = new ArrayList<FlowInfo>();
 
-            List<OFAction> action = value.getActions();
+            //List<OFAction> action = value.getActions();
+            flow.getInstructions().getInstruction();
             // TODO System.out.println(StaticFlowEntries.flowModActionsToString(action));
 
             for (OFAction a : action){
@@ -138,7 +206,7 @@ public class RuleNode {
             } else {
                 ruletable.add(instance);
             }
-        } */
+        }
         ruletable = RuleNode.computedependency(ruletable);
         return ruletable;
     }
@@ -666,5 +734,49 @@ public class RuleNode {
 
         return rulenode;
     }
+    
+    static int countBits(final byte[] mask) {
+        int netmask = 0;
+        for (byte b : mask) {
+            netmask += Integer.bitCount(UnsignedBytes.toInt(b));
+        }
+        return netmask;
+    }
+    
+    static Ipv4Prefix createPrefix(final Ipv4Address ipv4Address, final byte [] bytemask){
+        return createPrefix(ipv4Address, String.valueOf(countBits(bytemask)));
+    }
+    
+    static Ipv4Prefix createPrefix(final Ipv4Address ipv4Address, final String mask){
+        /*
+         * Ipv4Address has already validated the address part of the prefix,
+         * It is mandated to comply to the same regexp as the address
+         * There is absolutely no point rerunning additional checks vs this
+         * Note - there is no canonical form check here!!!
+         */
+        if (null != mask && !mask.isEmpty()) {
+            return new Ipv4Prefix(ipv4Address.getValue() + PREFIX_SEPARATOR + mask);
+        } else {
+            return new Ipv4Prefix(ipv4Address.getValue() + PREFIX_SEPARATOR + IPV4_ADDRESS_LENGTH);
+        }
+    }
+    
+    static final byte[] convertArbitraryMaskToByteArray(DottedQuad mask) {
+        String maskValue;
+        if (mask.getValue() != null) {
+            maskValue  = mask.getValue();
+        } else {
+            maskValue = DEFAULT_ARBITRARY_BIT_MASK;
+        }
+        InetAddress maskInIpFormat = null;
+        try {
+            maskInIpFormat = InetAddress.getByName(maskValue);
+        } catch (UnknownHostException e) {
+            //LOG.error("Failed to recognize the host while converting mask ", e);
+        }
+        byte[] bytes = maskInIpFormat.getAddress();
+        return bytes;
+    }
+
 
 }

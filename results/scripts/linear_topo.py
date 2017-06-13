@@ -7,7 +7,7 @@ from mininet.log import setLogLevel
 
 class LinearTopo (Topo):
     "Linear topology of k switches, with one host per switch."
-    def __init__(self, k=2, **opts):
+    def __init__(self, k=3, **opts):
         """Init.
             k: number of switches (and hosts)
             hconf: host configuration options
@@ -25,7 +25,7 @@ class LinearTopo (Topo):
 
 def simpleTest():
     "Create and test a simple network"
-    topo = LinearTopo(k=4)
+    topo = LinearTopo(k=3)
     net = Mininet(topo)
     net.addController( 'c0', controller=RemoteController, ip='127.0.0.1', port=6633 )
     net.start()
@@ -33,7 +33,7 @@ def simpleTest():
     dumpNodeConnections(net.hosts)
     print "Testing network connectivity"
     net.pingAll()
-    net.stop()
+    #net.stop()
 
 if __name__ == '__main__':
     # Tell mininet to print useful information
