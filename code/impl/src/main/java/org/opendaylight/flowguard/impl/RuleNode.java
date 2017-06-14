@@ -19,7 +19,13 @@ import java.util.Set;
 import org.opendaylight.yang.gen.v1.urn.ietf.params.xml.ns.yang.ietf.inet.types.rev130715.Ipv4Address;
 import org.opendaylight.yang.gen.v1.urn.ietf.params.xml.ns.yang.ietf.inet.types.rev130715.Ipv4Prefix;
 import org.opendaylight.yang.gen.v1.urn.ietf.params.xml.ns.yang.ietf.inet.types.rev130715.PortNumber;
+import org.opendaylight.yang.gen.v1.urn.ietf.params.xml.ns.yang.ietf.inet.types.rev130715.Uri;
 import org.opendaylight.yang.gen.v1.urn.ietf.params.xml.ns.yang.ietf.yang.types.rev130715.DottedQuad;
+import org.opendaylight.yang.gen.v1.urn.opendaylight.action.types.rev131112.action.action.push.mpls.action._case.PushMplsAction;
+import org.opendaylight.yang.gen.v1.urn.opendaylight.action.types.rev131112.action.action.set.field._case.SetField;
+import org.opendaylight.yang.gen.v1.urn.opendaylight.action.types.rev131112.action.action.output.action._case.OutputAction;
+import org.opendaylight.yang.gen.v1.urn.opendaylight.action.types.rev131112.action.action.set.vlan.id.action._case.SetVlanIdAction;
+import org.opendaylight.yang.gen.v1.urn.opendaylight.action.types.rev131112.action.list.Action;
 import org.opendaylight.yang.gen.v1.urn.opendaylight.flow.inventory.rev130819.tables.table.Flow;
 // TODO import net.floodlightcontroller.staticflowentry.StaticFlowEntries;
 /*import org.openflow.protocol.action.OFActionDataLayerDestination;
@@ -29,7 +35,14 @@ import org.openflow.protocol.action.OFActionNetworkLayerSource;
 import org.openflow.protocol.action.OFActionVirtualLanIdentifier;
 */
 import org.opendaylight.yang.gen.v1.urn.opendaylight.flow.inventory.rev130819.tables.table.FlowBuilder;
+import org.opendaylight.yang.gen.v1.urn.opendaylight.flow.types.rev131026.flow.Instructions;
+import org.opendaylight.yang.gen.v1.urn.opendaylight.flow.types.rev131026.instruction.instruction.clear.actions._case.ClearActions;
+import org.opendaylight.yang.gen.v1.urn.opendaylight.flow.types.rev131026.instruction.instruction.write.actions._case.WriteActions;
+import org.opendaylight.yang.gen.v1.urn.opendaylight.flow.types.rev131026.instruction.instruction.apply.actions._case.ApplyActions;
+import org.opendaylight.yang.gen.v1.urn.opendaylight.flow.types.rev131026.instruction.instruction.go.to.table._case.GoToTable;
+import org.opendaylight.yang.gen.v1.urn.opendaylight.flow.types.rev131026.instruction.instruction.meter._case.Meter;
 
+import org.opendaylight.yang.gen.v1.urn.opendaylight.flow.types.rev131026.instruction.list.Instruction;
 import org.opendaylight.yang.gen.v1.urn.opendaylight.inventory.rev130819.NodeConnectorId;
 import org.opendaylight.yang.gen.v1.urn.opendaylight.model.match.types.rev131026.ethernet.match.fields.EthernetDestination;
 import org.opendaylight.yang.gen.v1.urn.opendaylight.model.match.types.rev131026.ethernet.match.fields.EthernetSource;
@@ -52,9 +65,9 @@ public class RuleNode {
     public VlanId vlan;
     public short length = 0;
     public NodeConnectorId in_port;
-    public byte[] dl_src;
-    public byte[] dl_dst;
-    public short dl_type = 0;
+    public EthernetSource dl_src;
+    public EthernetDestination dl_dst;
+    public EthernetType dl_type;
     public Ipv4Prefix nw_src_prefix;
     public int nw_src_maskbits = 0;
     public Ipv4Prefix nw_dst_prefix;
@@ -65,12 +78,12 @@ public class RuleNode {
     public int priority = 0;
     public int wildcards = 0;
 
-    public short action_out_port = 0;
-    public byte[] action_dl_src;
-    public byte[] action_dl_dst;
-    public int action_nw_src_prefix = 0;
+    public Uri action_out_port;
+    public EthernetSource action_dl_src;
+    public EthernetDestination action_dl_dst;
+    public Ipv4Prefix action_nw_src_prefix;
     public int action_nw_src_maskbits = 32;
-    public int action_nw_dst_prefix = 0;
+    public Ipv4Prefix action_nw_dst_prefix;
     public int action_nw_dst_maskbits = 32;
     public short action_vlan = -1;
     public boolean active = true;
@@ -110,12 +123,12 @@ public class RuleNode {
             //instance.vlan = value.getMatch().getDataLayerVirtualLan();
             instance.vlan = flow.getMatch().getVlanMatch().getVlanId();
             //instance.dl_src = value.getMatch().getDataLayerSource();
-            instance.eth_src = flow.getMatch().getEthernetMatch().getEthernetSource(); 
+            instance.dl_src = flow.getMatch().getEthernetMatch().getEthernetSource(); 
             //instance.dl_dst = value.getMatch().getDataLayerDestination();
-            instance.eth_dst = flow.getMatch().getEthernetMatch().getEthernetDestination(); 
+            instance.dl_dst = flow.getMatch().getEthernetMatch().getEthernetDestination(); 
             
             //instance.dl_type = value.getMatch().getDataLayerType();
-            instance.eth_type = flow.getMatch().getEthernetMatch().getEthernetType();
+            instance.dl_type = flow.getMatch().getEthernetMatch().getEthernetType();
             //instance.nw_src_prefix = value.getMatch().getNetworkSource();
             
             /*if(value.getMatch().getNetworkSourceMaskLen() == 0)
@@ -166,10 +179,65 @@ public class RuleNode {
             instance.flow_info.flow_history = new ArrayList<FlowInfo>();
 
             //List<OFAction> action = value.getActions();
-            flow.getInstructions().getInstruction();
+            List<Instruction> instList = flow.getInstructions().getInstruction();
             // TODO System.out.println(StaticFlowEntries.flowModActionsToString(action));
-
-            for (OFAction a : action){
+            
+            //TODO Many more instructions and actions to be checked and implemeted :Openflow 1.3
+            for(Instruction i : instList) {
+            	org.opendaylight.yang.gen.v1.urn.opendaylight.flow.types.rev131026.instruction.Instruction instruction = i.getInstruction();
+            	 
+            	if(instruction instanceof Meter){
+            		// Optional
+            	}
+            	else if(instruction instanceof ApplyActions) {
+            		// Optional
+            	}
+            	else if(instruction instanceof ClearActions) {
+            		// Optional
+            	}
+            	else if(instruction instanceof WriteActions) {
+            		// Required
+            		List<Action> action = ((WriteActions)i.getInstruction()).getAction();
+            		for(Action a : action) {
+            			if(a.getAction() instanceof OutputAction) {
+            				instance.action_out_port = ((OutputAction)(a.getAction())).getOutputNodeConnector();
+            			}
+            			else if(a.getAction() instanceof SetField){
+            				instance.action_dl_src = ((SetField)(a.getAction())).getEthernetMatch().getEthernetSource();
+            				instance.action_dl_dst = ((SetField)(a.getAction())).getEthernetMatch().getEthernetDestination();
+            				
+            				l3Match = ((SetField)(a.getAction())).getLayer3Match();
+            	            // TODO Handle other L3Match cases: ARP, Ipv6
+            	            if(l3Match instanceof Ipv4Match){
+            	            	instance.action_nw_src_prefix = ((Ipv4Match)flow.getMatch().getLayer3Match()).getIpv4Source();
+            	            	instance.action_nw_dst_prefix = ((Ipv4Match)flow.getMatch().getLayer3Match()).getIpv4Destination();
+            	            	
+            	            	//instance.nw_src_maskbits = 0;
+            	            }
+            	            else if (l3Match instanceof Ipv4MatchArbitraryBitMask){
+            	            	Ipv4Address addr = ((Ipv4MatchArbitraryBitMask)flow.getMatch().getLayer3Match()).getIpv4SourceAddressNoMask();
+            	            	DottedQuad mask = ((Ipv4MatchArbitraryBitMask)flow.getMatch().getLayer3Match()).getIpv4SourceArbitraryBitmask();
+            	            	instance.action_nw_src_prefix = createPrefix(addr, convertArbitraryMaskToByteArray(mask));
+            	            	
+            	            	addr = ((Ipv4MatchArbitraryBitMask)flow.getMatch().getLayer3Match()).getIpv4DestinationAddressNoMask();
+            	            	mask = ((Ipv4MatchArbitraryBitMask)flow.getMatch().getLayer3Match()).getIpv4DestinationArbitraryBitmask();
+            	            	instance.action_nw_dst_prefix = createPrefix(addr, convertArbitraryMaskToByteArray(mask));
+            	            }
+            			}
+            			else if(a.getAction() instanceof SetVlanIdAction){
+            				instance.vlan = ((SetField)(a.getAction())).getVlanMatch().getVlanId();
+            			}
+            		}
+            	}
+            	else if(instruction instanceof GoToTable) {
+            		// Required
+            		
+            	}
+            	else {
+            		// Error when a flow contains a packet with invalid instruction.
+            	}
+            }
+            /*for (OFAction a : action){
                 switch(a.getType()) {
                 case OUTPUT:
                     instance.action_out_port = ((OFActionOutput)a).getPort();
@@ -195,7 +263,8 @@ public class RuleNode {
                     System.out.println("Could not decode action: {}");
                     break;
                 }
-            }
+            }*/
+            
             int i = 0;
             for(i = 0; i < ruletable.size(); i++){
                 if (ruletable.get(i) != null && ruletable.get(i).priority <= instance.priority)
