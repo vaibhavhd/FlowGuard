@@ -10,6 +10,9 @@ package org.opendaylight.flowguard.impl;
 
 import java.util.List;
 
+import org.opendaylight.yang.gen.v1.urn.ietf.params.xml.ns.yang.ietf.inet.types.rev130715.Ipv4Prefix;
+import org.opendaylight.yang.gen.v1.urn.opendaylight.model.match.types.rev131026.vlan.match.fields.VlanId;
+
 import com.google.common.net.InetAddresses;
 
 
@@ -17,11 +20,11 @@ public class HeaderObject {
     public long dl_src = 0;
     public long dl_dst = 0;
     public short dl_type = 0;
-    public int nw_src_prefix = 0;
+    public Ipv4Prefix nw_src_prefix = 0;
     public int nw_src_maskbits = 0;
-    public int nw_dst_prefix = 0;
+    public Ipv4Prefix nw_dst_prefix = 0;
     public int nw_dst_maskbits = 0;
-    public short vlan = -1;
+    public VlanId vlan = -1;
 	public List<HeaderObject> diff;
 
 	public HeaderObject get_ho(){

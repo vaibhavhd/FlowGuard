@@ -55,6 +55,11 @@ and is available at http://www.eclipse.org/legal/epl-v10.html
       <scope>import</scope>
     </dependency>
 
+    <dependency>
+      <groupId>org.opendaylight.controller</groupId>
+      <artifactId>liblldp</artifactId>
+      <version>0.11.2-Boron-SR2</version>
+    </dependency>
 
      <dependency>
             <groupId>org.opendaylight.mdsal.model</groupId>

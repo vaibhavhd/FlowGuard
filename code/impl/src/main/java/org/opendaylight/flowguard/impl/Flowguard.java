@@ -41,13 +41,13 @@ public class Flowguard {
     private ReadTransaction readTx;
     private DataBroker db;
     public Map<TopologyStruct, TopologyStruct> topologyStorage;
-    public Map<NodeId, List<Flow>> flowStorage;
-    
+    public Map<NodeId, List<RuleNode>> flowStorage;
+
     Flowguard(DataBroker db){
         this.db = db;
         this.readTx  = db.newReadOnlyTransaction();
         this.topologyStorage = new ConcurrentHashMap<TopologyStruct, TopologyStruct>();
-        this.flowStorage = new ConcurrentHashMap<NodeId, List<Flow>>();
+        this.flowStorage = new ConcurrentHashMap<NodeId, List<RuleNode>>();
     }
 
     public void start() {
@@ -64,7 +64,7 @@ public class Flowguard {
         for (Link link : linkList) {
         	String destId = link.getDestination().getDestNode().getValue();
         	String srcId = link.getSource().getSourceNode().getValue();
-        	
+
         	if(srcId.contains("openflow:") && destId.contains("openflow:")) {
         		String destPort = link.getDestination().getDestTp().getValue();
         		String srcPort = link.getSource().getSourceTp().getValue();
@@ -105,13 +105,14 @@ public class Flowguard {
                 flowList = optTable.get().getFlow();
 
                 LOG.info("No. of flows in table ID {}: {}",optTable.get().getId(), flowList.size());
-                
+
                 /* Iterate through the list of flows */
                 for(Flow flow : flowList){
                     LOG.info("Flow found with ID: {}, outport: {}, Match: {}", flow.getId(), flow.getOutPort(), flow.getMatch().getLayer3Match());
                 }
-                RuleNode.computedependency(flowList);
-                flowStorage.put(node.getId(), flowList);
+                RuleNode rn = new RuleNode();
+
+                flowStorage.put(node.getId(), rn.addruletable(flowList));
             }
 
         } catch (InterruptedException | ExecutionException e) {
