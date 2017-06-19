@@ -597,10 +597,10 @@ public class Firewall {
         	}
         }
         // add rule to database
-        Map<String, Object> entry = new HashMap<String, Object>();
+       /* Map<String, Object> entry = new HashMap<String, Object>();
         entry.put(COLUMN_RULEID, Integer.toString(rule.ruleid));
         entry.put(COLUMN_DPID, rule.dpid);
-        entry.put(COLUMN_IN_PORT, Short.toString(rule.in_port));
+        entry.put(COLUMN_IN_PORT, rule.in_port.getValue().toString();
         entry.put(COLUMN_DL_SRC, Long.toString(rule.dl_src));
         entry.put(COLUMN_DL_DST, Long.toString(rule.dl_dst));
         entry.put(COLUMN_DL_TYPE, Short.toString(rule.dl_type));
@@ -634,7 +634,7 @@ public class Firewall {
         entry.put(COLUMN_PRIORITY, Integer.toString(rule.priority));
         entry.put(COLUMN_ACTION, Integer.toString(rule.action.ordinal()));
         // TODO add rule storageSource.insertRow(TABLE_NAME, entry);
-
+*/
     	long end = System.nanoTime();
         try {
             File f = new File(RESULT_PATH);

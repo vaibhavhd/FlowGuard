@@ -75,12 +75,12 @@ public class RuleNode {
     public int nw_dst_prefix =0;
     public int nw_dst_maskbits = 0;
     public short nw_proto = 0;
-    public PortNumber tp_src;
-    public PortNumber tp_dst;
+    public int tp_src;
+    public int tp_dst;
     public int priority = 0;
     public int wildcards = 0;
 
-    public Uri action_out_port;
+    public NodeConnectorId action_out_port;
     public EthernetSource action_dl_src;
     public EthernetDestination action_dl_dst;
     public int action_nw_src_prefix;
@@ -121,7 +121,7 @@ public class RuleNode {
             //instance.length = value.getLength();
 
             //instance.in_port = value.getMatch().getInPort();//.getInputPort();
-            instance.in_port = flow.getMatch().getInPort();
+            instance.in_port = flow.getMatch().getInPort(); // It should ne inport or physical input port??
             //instance.vlan = value.getMatch().getDataLayerVirtualLan();
             instance.vlan = flow.getMatch().getVlanMatch().getVlanId().getVlanId().getValue();
             //instance.dl_src = value.getMatch().getDataLayerSource();
@@ -160,7 +160,7 @@ public class RuleNode {
             	Ipv4Prefix src = createPrefix(addr, convertArbitraryMaskToByteArray(mask));
             	instance.nw_src_prefix = calculateIpfromPrefix(src);
                 instance.nw_src_maskbits = calculateMaskfromPrefix(src);
-                
+
             	addr = ((Ipv4MatchArbitraryBitMask)flow.getMatch().getLayer3Match()).getIpv4DestinationAddressNoMask();
             	mask = ((Ipv4MatchArbitraryBitMask)flow.getMatch().getLayer3Match()).getIpv4DestinationArbitraryBitmask();
             	Ipv4Prefix dst = createPrefix(addr, convertArbitraryMaskToByteArray(mask));
@@ -174,8 +174,8 @@ public class RuleNode {
             // TODO Previois implementation worng? src is taken from dest!!
             Layer4Match l4Match = flow.getMatch().getLayer4Match();
             if(l4Match instanceof TcpMatch) {
-            	instance.tp_src = ((TcpMatch)l4Match).getTcpSourcePort();
-            	instance.tp_dst = ((TcpMatch)l4Match).getTcpDestinationPort();
+            	instance.tp_src = ((TcpMatch)l4Match).getTcpSourcePort().getValue();
+            	instance.tp_dst = ((TcpMatch)l4Match).getTcpDestinationPort().getValue();
             }
             //instance.tp_dst = value.getMatch().getTransportSource();
             //instance.priority = value.getPriority();
@@ -208,7 +208,7 @@ public class RuleNode {
             		List<Action> action = ((WriteActions)i.getInstruction()).getAction();
             		for(Action a : action) {
             			if(a.getAction() instanceof OutputAction) {
-            				instance.action_out_port = ((OutputAction)(a.getAction())).getOutputNodeConnector();
+            				instance.action_out_port = new NodeConnectorId(((OutputAction)(a.getAction())).getOutputNodeConnector());
             			}
             			else if(a.getAction() instanceof SetField){
             				instance.action_dl_src = ((SetField)(a.getAction())).getEthernetMatch().getEthernetSource();
@@ -406,9 +406,9 @@ public class RuleNode {
          * Dependency is decided if following matches between two rules
          * in_port, dl_type, vlan, source IP, destination IP.
          * In case of full overlap of the rules, mark one of the rules as inactive.
-         * Check dependency: 
+         * Check dependency:
          * First IF: Same inport && Both IPv4 protocol && Both active && Same vlan ID
-         * Second IF: The effective address ranges of IP should overlap for dest and src  
+         * Second IF: The effective address ranges of IP should overlap for dest and src
          */
         for(int i = 0; i < ruletable.size() - 1; i++){
             for(int j = i + 1; j < ruletable.size(); j++){
@@ -418,9 +418,9 @@ public class RuleNode {
                         && ruletable.get(i).active == true //TODO The rule will always be active as above!
                         && ruletable.get(i).vlan == ruletable.get(j).vlan) {
                     //check if ip range is overlapped
-                    if(matchIPAddress(ruletable.get(i).nw_dst_prefix, ruletable.get(i).nw_dst_maskbits, 
+                    if(matchIPAddress(ruletable.get(i).nw_dst_prefix, ruletable.get(i).nw_dst_maskbits,
                     		ruletable.get(j).nw_dst_prefix, ruletable.get(j).nw_dst_maskbits))
-                    	if(matchIPAddress(ruletable.get(i).nw_src_prefix, ruletable.get(i).nw_src_maskbits, 
+                    	if(matchIPAddress(ruletable.get(i).nw_src_prefix, ruletable.get(i).nw_src_maskbits,
                         		ruletable.get(j).nw_src_prefix, ruletable.get(j).nw_src_maskbits)){
 
                             if(ruletable.get(j).diff == null){
@@ -436,13 +436,13 @@ public class RuleNode {
                             else{
                                 //handle for partial overlap case
                                 HeaderObject ho = new HeaderObject();
-                                
+
                                 // Take the larger maskbits of the two rules for both dest and source.
                                 ho.nw_dst_prefix = ruletable.get(i).nw_dst_prefix;
                                 ho.nw_src_prefix = ruletable.get(i).nw_src_prefix;
                                 ho.nw_dst_maskbits = ruletable.get(i).nw_dst_maskbits;
                                 ho.nw_src_maskbits = ruletable.get(i).nw_src_maskbits;
-                                
+
                                 boolean donothing = false;
 
                                 for(int k = 0; k < ruletable.get(j).diff.size(); k++){
@@ -775,25 +775,25 @@ public class RuleNode {
 
         return rulenode;
     }
-    
+
     public int calculateIpfromPrefix(Ipv4Prefix prefix) {
     	String[] parts;
-    	
+
     	parts = prefix.getValue().split("/");
-    	
-    	return InetAddresses.coerceToInteger(InetAddresses.forString(parts[0]));    	
+
+    	return InetAddresses.coerceToInteger(InetAddresses.forString(parts[0]));
     }
-    
+
     public int calculateMaskfromPrefix(Ipv4Prefix prefix) {
     	String[] parts;
     	parts = prefix.getValue().split("/");
     	if (parts.length < 2)
             return 0;
-    	else 
+    	else
     		return Integer.parseInt(parts[1]);
-    	
+
     }
-    
+
     public static boolean matchIPAddress(int ip1, int prefix1, int ip2, int prefix2) {
         boolean matched = true;
         int maskbits = 0;

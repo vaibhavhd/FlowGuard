@@ -7,15 +7,20 @@
  */
 package org.opendaylight.flowguard.impl;
 
+import org.opendaylight.controller.liblldp.EtherTypes;
+
 //import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 //import org.openflow.protocol.OFMatch;
 
+import org.opendaylight.controller.liblldp.EtherTypes;
 import org.opendaylight.flowguard.packet.Ethernet;
 import org.opendaylight.flowguard.packet.IPacket;
 import org.opendaylight.flowguard.packet.IPv4;
 import org.opendaylight.flowguard.packet.TCP;
 import org.opendaylight.flowguard.packet.UDP;
 import org.opendaylight.yang.gen.v1.urn.ietf.params.xml.ns.yang.ietf.inet.types.rev130715.Uri;
+import org.opendaylight.yang.gen.v1.urn.opendaylight.inventory.rev130819.NodeConnectorId;
+import org.opendaylight.yang.gen.v1.urn.opendaylight.model.match.types.rev131026.ethernet.match.fields.EthernetType;
 
 
 
@@ -24,10 +29,10 @@ public class FirewallRule implements Comparable<FirewallRule> {
     public int ruleid;
 
     public String dpid;
-    public Uri in_port;
+    public NodeConnectorId in_port;
     public long dl_src;
     public long dl_dst;
-    public short dl_type;
+    public EthernetType dl_type;
     public int nw_src_prefix;
     public int nw_src_maskbits;
     public int nw_dst_prefix;
@@ -60,7 +65,7 @@ public class FirewallRule implements Comparable<FirewallRule> {
     }
 
     public FirewallRule() {
-        this.in_port = 0;
+        this.in_port = null;
         this.dl_src = 0;
         this.nw_src_prefix = 0;
         this.nw_src_maskbits = 0;
@@ -164,7 +169,7 @@ public class FirewallRule implements Comparable<FirewallRule> {
      *            method to derive wildcards for the decision to be taken
      * @return true if the rule matches the given packet-in, false otherwise
      */
-    public boolean matchesFlow(long switchDpid, short inPort, Ethernet packet,
+    public boolean matchesFlow(long switchDpid, NodeConnectorId inPort, Ethernet packet,
             WildcardsPair wildcards) {
         IPacket pkt = packet.getPayload();
 
@@ -184,7 +189,7 @@ public class FirewallRule implements Comparable<FirewallRule> {
             return false;
 
         // in_port matches?
-        if (wildcard_in_port == false && in_port != inPort)
+        if (wildcard_in_port == false && in_port.equals(inPort))
             return false;
         if (action == FirewallRule.FirewallAction.DENY) {
             wildcards.drop &= ~Firewall.OFPFW_IN_PORT;
@@ -216,7 +221,7 @@ public class FirewallRule implements Comparable<FirewallRule> {
         // if this is not an ARP rule but the pkt is ARP,
         // return false match - no need to continue protocol specific check
         if (wildcard_dl_type == false) {
-            if (dl_type == Ethernet.TYPE_ARP) {
+            if (dl_type == (long)(EtherTypes.) {//Ethernet.TYPE_ARP) {
                 if (packet.getEtherType() != Ethernet.TYPE_ARP)
                     return false;
                 else {
@@ -376,7 +381,7 @@ public class FirewallRule implements Comparable<FirewallRule> {
         final int prime = 2521;
         int result = super.hashCode();
         //TODOresult = prime * result + (int) dpid;
-        result = prime * result + in_port;
+        result = prime * result + in_port.getValue().hashCode();
         result = prime * result + (int) dl_src;
         result = prime * result + (int) dl_dst;
         result = prime * result + dl_type;

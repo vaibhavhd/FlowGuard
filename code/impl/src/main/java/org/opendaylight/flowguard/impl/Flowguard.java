@@ -42,6 +42,7 @@ public class Flowguard {
     private DataBroker db;
     public Map<TopologyStruct, TopologyStruct> topologyStorage;
     public Map<NodeId, List<RuleNode>> flowStorage;
+    public ShiftedGraph sg;
 
     Flowguard(DataBroker db){
         this.db = db;
@@ -54,8 +55,9 @@ public class Flowguard {
         // Create the snapshot of existing network topology */
         this.buildTopology();
         this.importStaticFlows();
-        //sg.buildRuleNode(this.entriesFromStorage);
-        //sg.buildSourceProbeNode(this.rules);*/
+
+        this.sg = new ShiftedGraph();
+        sg.buildSourceProbeNode(this.rules);*/
 
     }
 
@@ -119,32 +121,9 @@ public class Flowguard {
             e.printStackTrace();
         }
 
-        /* Collecting information */
-
-     // Get all nodes in MD-SAL
-        List<Node> nodeList = getAllNodes();
-        for (Node node : nodeList) {
-            //LOG.info("node : {}", node.toString());
-        }
-
-        // Get a particular node in MD-SAL
-        //Node node2 = getNode("openflow:1");
-        //LOG.info("node2 : {}", node2.toString());
-
-        // Get all topologies in MD-SAL
-        List<Topology> topoList = getAllTopologies();
-        for (Topology topo : topoList) {
-            //LOG.info("topo : {}", topo.toString());
-        }
-
-        // Get a particular toplogy in MD-SAL
-        Topology flowTopo = getFlowTopology();
-        //LOG.info("flowTopo : {}", flowTopo.toString());
-
-
     }
 
-// Get all nodes in MD-SAL
+    // Get all nodes in MD-SAL
     private List<Node> getAllNodes() {
         InstanceIdentifier<Nodes> nodesIdentifier = InstanceIdentifier.builder(Nodes.class).toInstance();
         try {
@@ -157,21 +136,6 @@ public class Flowguard {
             return null;
         }
     }
-
-    // Get a particular node in MD-SAL
-    /*private Node getNode(String nodeName) {
-        NodeId nodeId = new NodeId(nodeName);
-        InstanceIdentifier<Node> instanceIdentifier = InstanceIdentifier.builder(Nodes.class).child(Node.class, new NodeKey(nodeId)).toInstance();
-        try {
-        Optional<Node> optNode = (Optional<Node>) readTx.read(LogicalDatastoreType.OPERATIONAL, instanceIdentifier).get();
-        Node node = optNode.get();
-        return node;
-        }
-        catch(InterruptedException | ExecutionException e) {
-            LOG.warn("Exception during reading node from datastore: {}", e.getMessage());
-            return null;
-        }
-    }*/
 
     // Get all topologies in MD-SAL
     private List<Topology> getAllTopologies() {

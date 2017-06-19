@@ -149,28 +149,6 @@ public class RuleRegistryDataChangeListenerFuture extends AbstractFuture<RuleReg
         LOG.info("Added security rule with ip {} and port {} into node {}", input.getDestinationIpAddress(), input.getDestinationPort(),input.getNode());
 
       }
-      private FirewallRule createFirewallRule(String dpid, Integer port) {
-          FirewallRule rule = new FirewallRule();
-          rule.ruleid = rule.genID();
-          rule.priority = 32768;
-          rule.dpid = dpid;
-          rule.wildcard_dpid = false;
-          rule.in_port = port.shortValue();
-          rule.wildcard_in_port = false;
-          rule.wildcard_nw_src = false;
-          rule.wildcard_dl_type = false;
-          rule.dl_type = Ethernet.TYPE_IPv4;
-          rule.nw_src_prefix = 167772160; //TODO This is an IP addr. Why default? This is a default value which was used in paper. ho.nw_src_prefix;
-          rule.nw_src_maskbits = 8; // TODO ho.nw_src_maskbits;
-          rule.wildcard_nw_dst = false;
-          rule.wildcard_dl_type = false;
-          rule.dl_type = Ethernet.TYPE_IPv4;
-          rule.nw_dst_prefix = 167772160; // TODO ho.nw_dst_prefix;
-          rule.nw_dst_maskbits = 8; //ho.nw_dst_maskbits;
-          rule.action = FirewallRule.FirewallAction.DENY;
-          //this.firewall.addRule(rule);
-          return rule;
-      }
 
     @Override
       public boolean cancel(boolean mayInterruptIfRunning) {
