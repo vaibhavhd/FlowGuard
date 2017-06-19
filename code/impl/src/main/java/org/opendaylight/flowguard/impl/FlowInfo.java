@@ -12,6 +12,7 @@ package org.opendaylight.flowguard.impl;
 import java.util.ArrayList;
 
 import org.opendaylight.yang.gen.v1.urn.ietf.params.xml.ns.yang.ietf.inet.types.rev130715.Uri;
+import org.opendaylight.yang.gen.v1.urn.opendaylight.inventory.rev130819.NodeConnectorId;
 
 
 public class FlowInfo {
@@ -21,9 +22,9 @@ public class FlowInfo {
 	public HeaderObject current_ho; //input header objects
 	public HeaderObject next_ho; //output header objects
 	public String next_switch_dpid; //next switch id to propagate
-	public Uri next_ingress_port;
+	public NodeConnectorId next_ingress_port;
 	public String current_switch_dpid; //next switch id to propagate
-	public Uri current_ingress_port;
+	public NodeConnectorId current_ingress_port;
 	public String rule_node_name;
 	public TopologyStruct target;
 	public String candidate_rule;

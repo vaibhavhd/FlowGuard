@@ -69,7 +69,7 @@ public class RuleNode {
     public NodeConnectorId in_port;
     public EthernetSource dl_src;
     public EthernetDestination dl_dst;
-    public EthernetType dl_type;
+    public Long dl_type;
     public int nw_src_prefix = 0;
     public int nw_src_maskbits = 0;
     public int nw_dst_prefix =0;
@@ -130,7 +130,7 @@ public class RuleNode {
             instance.dl_dst = flow.getMatch().getEthernetMatch().getEthernetDestination();
 
             //instance.dl_type = value.getMatch().getDataLayerType();
-            instance.dl_type = flow.getMatch().getEthernetMatch().getEthernetType();
+            instance.dl_type = flow.getMatch().getEthernetMatch().getEthernetType().getType().getValue();
             //instance.nw_src_prefix = value.getMatch().getNetworkSource();
 
             /*if(value.getMatch().getNetworkSourceMaskLen() == 0)
@@ -413,8 +413,8 @@ public class RuleNode {
         for(int i = 0; i < ruletable.size() - 1; i++){
             for(int j = i + 1; j < ruletable.size(); j++){
                 if(ruletable.get(i).in_port.equals(ruletable.get(j).in_port)
-                        && ruletable.get(i).dl_type.getType().getValue() == (long)(EtherTypes.IPv4.intValue())
-                        && ruletable.get(j).dl_type.getType().getValue() == (long)(EtherTypes.IPv4.intValue())
+                        && ruletable.get(i).dl_type == (long)(EtherTypes.IPv4.intValue())
+                        && ruletable.get(j).dl_type == (long)(EtherTypes.IPv4.intValue())
                         && ruletable.get(i).active == true //TODO The rule will always be active as above!
                         && ruletable.get(i).vlan == ruletable.get(j).vlan) {
                     //check if ip range is overlapped

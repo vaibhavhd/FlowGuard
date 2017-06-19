@@ -32,7 +32,7 @@ public class FirewallRule implements Comparable<FirewallRule> {
     public NodeConnectorId in_port;
     public long dl_src;
     public long dl_dst;
-    public EthernetType dl_type;
+    public long dl_type;
     public int nw_src_prefix;
     public int nw_src_maskbits;
     public int nw_dst_prefix;
@@ -221,7 +221,7 @@ public class FirewallRule implements Comparable<FirewallRule> {
         // if this is not an ARP rule but the pkt is ARP,
         // return false match - no need to continue protocol specific check
         if (wildcard_dl_type == false) {
-            if (dl_type == (long)(EtherTypes.) {//Ethernet.TYPE_ARP) {
+            if (dl_type == (long)(EtherTypes.ARP.intValue())) {
                 if (packet.getEtherType() != Ethernet.TYPE_ARP)
                     return false;
                 else {
@@ -231,7 +231,7 @@ public class FirewallRule implements Comparable<FirewallRule> {
                         wildcards.allow &= ~Firewall.OFPFW_DL_TYPE;
                     }
                 }
-            } else if (dl_type == Ethernet.TYPE_IPv4) {
+            } else if (dl_type == (long)(EtherTypes.IPv4.intValue())) {
                 if (packet.getEtherType() != Ethernet.TYPE_IPv4)
                     return false;
                 else {
@@ -384,7 +384,7 @@ public class FirewallRule implements Comparable<FirewallRule> {
         result = prime * result + in_port.getValue().hashCode();
         result = prime * result + (int) dl_src;
         result = prime * result + (int) dl_dst;
-        result = prime * result + dl_type;
+        result = (int) (prime * result + dl_type);
         result = prime * result + nw_src_prefix;
         result = prime * result + nw_src_maskbits;
         result = prime * result + nw_dst_prefix;

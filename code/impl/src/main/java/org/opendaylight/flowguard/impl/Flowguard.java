@@ -57,7 +57,7 @@ public class Flowguard {
         this.importStaticFlows();
 
         this.sg = new ShiftedGraph();
-        sg.buildSourceProbeNode(this.rules);*/
+        //sg.buildSourceProbeNode(this.ruleStorage);
 
     }
 
