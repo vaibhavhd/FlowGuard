@@ -37,6 +37,7 @@ import org.slf4j.Logger;
 import org.restlet.resource.Post;
 import org.restlet.resource.Resource;
 import org.restlet.resource.ServerResource;
+import org.opendaylight.controller.liblldp.EtherTypes;
 
 /*
 import net.floodlightcontroller.core.IFloodlightProviderService;
@@ -55,7 +56,10 @@ import net.floodlightcontroller.staticflowentry.*;
 import org.opendaylight.flowguard.impl.FirewallRule.FirewallAction;
 import org.opendaylight.flowguard.packet.Ethernet;
 import org.opendaylight.flowguard.packet.IPv4;
+import org.opendaylight.yang.gen.v1.urn.ietf.params.xml.ns.yang.ietf.inet.types.rev130715.Uri;
 import org.opendaylight.yang.gen.v1.urn.opendaylight.flow.inventory.rev130819.tables.table.FlowBuilder;
+import org.opendaylight.yang.gen.v1.urn.opendaylight.model.match.types.rev131026.vlan.match.fields.VlanId;
+
 
 
 public class ShiftedGraph {
@@ -216,7 +220,7 @@ public class ShiftedGraph {
 
     }
 
-    public void buildRuleNode(Map<String, Map<String, FlowBuilder>> entries){
+   /* public void buildRuleNode(Map<String, Map<String, FlowBuilder>> entries){
         // TODO EnteriesFromStorage is not used or referenced. Remove it.
         if(this.entriesFromStorage != null){
             this.entriesFromStorage.clear();
@@ -256,7 +260,7 @@ public class ShiftedGraph {
         }
 
 
-    }
+    }*/
     public HeaderObject computeInverseFlow(FlowInfo flowinfo){
         HeaderObject ho = new HeaderObject();
         ho.nw_dst_maskbits = flowinfo.next_ho.nw_dst_maskbits;
@@ -435,7 +439,8 @@ public class ShiftedGraph {
                 List<RuleNode> ruletable = this.rulenodes.get(key.toString());
                 int size = ruletable.size();
                 for(int j = 0; j < size; j++){
-                    if(keyword.equals(ruletable.get(j).rule_name.substring(0,5))&&ruletable.get(j).dl_type==Ethernet.TYPE_IPv4){
+                    if(keyword.equals(ruletable.get(j).rule_name.substring(0,5))&&
+                    		ruletable.get(j).dl_type.getType().getValue() == (long)(EtherTypes.IPv4.intValue())){
                         String rulename = ruletable.get(j).rule_name;
                         if(ruletable.get(j).rule_name.length()>=13 && keyword3.equals(ruletable.get(j).rule_name.substring(6,13))){
                             this.setVlan(entries, key.toString(),rulename, 1);
@@ -518,7 +523,7 @@ public class ShiftedGraph {
     }
 
 
-    public void addFirewallRule(HeaderObject ho, String dpid, short port){
+    public void addFirewallRule(HeaderObject ho, String dpid, Uri port){
         FirewallRule rule = new FirewallRule();
         rule.ruleid = rule.genID();
         rule.priority = 32768;
@@ -540,7 +545,7 @@ public class ShiftedGraph {
         this.firewall.addRule(rule);
     }
 
-    public void addFlowEntry(HeaderObject ho, String dpid, short port){
+    public void addFlowEntry(HeaderObject ho, String dpid, Uri port){
         Map<String, Object> entry = new HashMap<String, Object>();
         String rulename = "resolution"+Integer.toString(this.resolution_index);
         this.resolution_index++;
@@ -737,10 +742,11 @@ public class ShiftedGraph {
         while (iter.hasNext())
         {
             TopologyStruct t = iter.next();
-            if(t.dpid.equals(flowinfo.next_switch_dpid) && t.port.equals(Short.toString(flowinfo.next_ingress_port))){
+            // TODO Check port equivalence and URI type
+            if(t.dpid.equals(flowinfo.next_switch_dpid) && t.port.equals(flowinfo.next_ingress_port.getValue())){
                 TopologyStruct t2 = this.TopologyStorage.get(t);
                 flowinfo.next_switch_dpid = t2.dpid;
-                flowinfo.next_ingress_port = Short.parseShort(t2.port);
+                flowinfo.next_ingress_port = Uri.getDefaultInstance(t2.port);
                 //System.out.println(t.dpid + " / " + t.port + " <--> " +t2.dpid + "/ " + t2.port);
                 break;
             }
@@ -781,9 +787,9 @@ public class ShiftedGraph {
                 sample.current_ho.nw_src_prefix = 167772160;
                 sample.current_ho.nw_src_maskbits = 8;
                 sample.current_switch_dpid = source.dpid;
-                sample.current_ingress_port = Short.parseShort(source.port);
+                sample.current_ingress_port = Uri.getDefaultInstance(source.port);
                 sample.next_switch_dpid = source.dpid;
-                sample.next_ingress_port = Short.parseShort(source.port);
+                sample.next_ingress_port = Uri.getDefaultInstance(source.port);
                 sample.next_ho = new HeaderObject();
                 sample.next_ho.nw_dst_prefix = 167772160;
                 sample.next_ho.nw_dst_maskbits = 8;
@@ -842,9 +848,10 @@ public class ShiftedGraph {
             sample.current_ho.vlan = -1;
             sample.current_ho.nw_src_maskbits = 8;
             sample.current_switch_dpid = source.dpid;
-            sample.current_ingress_port = Short.parseShort(source.port);
+            sample.current_ingress_port = Uri.getDefaultInstance(source.port);
             sample.next_switch_dpid = source.dpid;
-            sample.next_ingress_port = Short.parseShort(source.port);
+            // TODO Current and next ingress ports are same!!
+            sample.next_ingress_port = Uri.getDefaultInstance(source.port);
             sample.next_ho = new HeaderObject();
             sample.next_ho.nw_dst_prefix = 167772160;
             sample.next_ho.nw_dst_maskbits = 8;

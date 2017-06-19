@@ -15,6 +15,7 @@ import org.opendaylight.flowguard.packet.IPacket;
 import org.opendaylight.flowguard.packet.IPv4;
 import org.opendaylight.flowguard.packet.TCP;
 import org.opendaylight.flowguard.packet.UDP;
+import org.opendaylight.yang.gen.v1.urn.ietf.params.xml.ns.yang.ietf.inet.types.rev130715.Uri;
 
 
 
@@ -23,7 +24,7 @@ public class FirewallRule implements Comparable<FirewallRule> {
     public int ruleid;
 
     public String dpid;
-    public short in_port;
+    public Uri in_port;
     public long dl_src;
     public long dl_dst;
     public short dl_type;

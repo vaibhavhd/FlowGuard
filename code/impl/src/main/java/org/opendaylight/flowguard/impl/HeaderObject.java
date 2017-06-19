@@ -20,11 +20,11 @@ public class HeaderObject {
     public long dl_src = 0;
     public long dl_dst = 0;
     public short dl_type = 0;
-    public Ipv4Prefix nw_src_prefix = 0;
+    public int nw_src_prefix = 0;
     public int nw_src_maskbits = 0;
-    public Ipv4Prefix nw_dst_prefix = 0;
+    public int nw_dst_prefix = 0;
     public int nw_dst_maskbits = 0;
-    public VlanId vlan = -1;
+    public int vlan;
 	public List<HeaderObject> diff;
 
 	public HeaderObject get_ho(){
@@ -48,7 +48,7 @@ public class HeaderObject {
 				", src_IP_mask="+Integer.toString(ho.nw_src_maskbits)+", dst_IP="+IPv4.fromIPv4Address(ho.nw_dst_prefix)+
 				", dst_IP_mask="+Integer.toString(ho.nw_dst_maskbits)+"}");
 		*/
-		System.out.println("{ vlan = "+Short.toString(ho.vlan)+", src_IP = "+ InetAddresses.fromInteger(ho.nw_src_prefix)+"/"+Integer.toString(ho.nw_src_maskbits)+
+		System.out.println("{ vlan = "+ho.vlan+", src_IP = "+ InetAddresses.fromInteger(ho.nw_src_prefix)+"/"+Integer.toString(ho.nw_src_maskbits)+
 				", dst_IP = "+InetAddresses.fromInteger(ho.nw_dst_prefix)+"/"+Integer.toString(ho.nw_dst_maskbits)+" }");
 		if(ho.diff != null){
 			for(int i = 0; i < ho.diff.size(); i++){

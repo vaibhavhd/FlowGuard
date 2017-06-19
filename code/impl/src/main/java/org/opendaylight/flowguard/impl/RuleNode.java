@@ -55,6 +55,7 @@ import org.opendaylight.yang.gen.v1.urn.opendaylight.model.match.types.rev131026
 import org.opendaylight.yang.gen.v1.urn.opendaylight.model.match.types.rev131026.match.layer._4.match.TcpMatch;
 import org.opendaylight.yang.gen.v1.urn.opendaylight.model.match.types.rev131026.vlan.match.fields.VlanId;
 
+import com.google.common.net.InetAddresses;
 import com.google.common.primitives.UnsignedBytes;
 /*import org.openflow.protocol.OFFlowMod;
 import org.openflow.protocol.action.*;
@@ -63,15 +64,15 @@ public class RuleNode {
 	// TODO Rename fields to that of openflow 1.3
     String switch_name;
     String rule_name;
-    public VlanId vlan;
+    public int vlan;
     public short length = 0;
     public NodeConnectorId in_port;
     public EthernetSource dl_src;
     public EthernetDestination dl_dst;
     public EthernetType dl_type;
-    public Ipv4Prefix nw_src_prefix;
+    public int nw_src_prefix = 0;
     public int nw_src_maskbits = 0;
-    public Ipv4Prefix nw_dst_prefix;
+    public int nw_dst_prefix =0;
     public int nw_dst_maskbits = 0;
     public short nw_proto = 0;
     public PortNumber tp_src;
@@ -82,11 +83,11 @@ public class RuleNode {
     public Uri action_out_port;
     public EthernetSource action_dl_src;
     public EthernetDestination action_dl_dst;
-    public Ipv4Prefix action_nw_src_prefix;
+    public int action_nw_src_prefix;
     public int action_nw_src_maskbits = 32;
-    public Ipv4Prefix action_nw_dst_prefix;
+    public int action_nw_dst_prefix;
     public int action_nw_dst_maskbits = 32;
-    public VlanId action_vlan;
+    public int action_vlan;
     public boolean active = true;
     public List<HeaderObject> diff;
 
@@ -122,7 +123,7 @@ public class RuleNode {
             //instance.in_port = value.getMatch().getInPort();//.getInputPort();
             instance.in_port = flow.getMatch().getInPort();
             //instance.vlan = value.getMatch().getDataLayerVirtualLan();
-            instance.vlan = flow.getMatch().getVlanMatch().getVlanId();
+            instance.vlan = flow.getMatch().getVlanMatch().getVlanId().getVlanId().getValue();
             //instance.dl_src = value.getMatch().getDataLayerSource();
             instance.dl_src = flow.getMatch().getEthernetMatch().getEthernetSource();
             //instance.dl_dst = value.getMatch().getDataLayerDestination();
@@ -146,19 +147,25 @@ public class RuleNode {
             Layer3Match l3Match = flow.getMatch().getLayer3Match();
             // TODO Handle other L3Match cases: ARP, Ipv6
             if(l3Match instanceof Ipv4Match){
-            	instance.nw_src_prefix = ((Ipv4Match)flow.getMatch().getLayer3Match()).getIpv4Source();
-            	instance.nw_dst_prefix = ((Ipv4Match)flow.getMatch().getLayer3Match()).getIpv4Destination();
-
-            	//instance.nw_src_maskbits = 0;
+            	Ipv4Prefix src = ((Ipv4Match)flow.getMatch().getLayer3Match()).getIpv4Source();
+            	Ipv4Prefix dst = ((Ipv4Match)flow.getMatch().getLayer3Match()).getIpv4Destination();
+            	instance.nw_src_prefix = calculateIpfromPrefix(src);
+                instance.nw_src_maskbits = calculateMaskfromPrefix(src);
+                instance.nw_dst_prefix = calculateIpfromPrefix(dst);
+                instance.nw_dst_maskbits = calculateMaskfromPrefix(dst);
             }
             else if (l3Match instanceof Ipv4MatchArbitraryBitMask){
             	Ipv4Address addr = ((Ipv4MatchArbitraryBitMask)flow.getMatch().getLayer3Match()).getIpv4SourceAddressNoMask();
             	DottedQuad mask = ((Ipv4MatchArbitraryBitMask)flow.getMatch().getLayer3Match()).getIpv4SourceArbitraryBitmask();
-            	instance.nw_src_prefix = createPrefix(addr, convertArbitraryMaskToByteArray(mask));
-
+            	Ipv4Prefix src = createPrefix(addr, convertArbitraryMaskToByteArray(mask));
+            	instance.nw_src_prefix = calculateIpfromPrefix(src);
+                instance.nw_src_maskbits = calculateMaskfromPrefix(src);
+                
             	addr = ((Ipv4MatchArbitraryBitMask)flow.getMatch().getLayer3Match()).getIpv4DestinationAddressNoMask();
             	mask = ((Ipv4MatchArbitraryBitMask)flow.getMatch().getLayer3Match()).getIpv4DestinationArbitraryBitmask();
-            	instance.nw_dst_prefix = createPrefix(addr, convertArbitraryMaskToByteArray(mask));
+            	Ipv4Prefix dst = createPrefix(addr, convertArbitraryMaskToByteArray(mask));
+                instance.nw_dst_prefix = calculateIpfromPrefix(dst);
+                instance.nw_dst_maskbits = calculateMaskfromPrefix(dst);
             }
 
             //instance.nw_proto = value.getMatch().getNetworkProtocol();
@@ -210,23 +217,30 @@ public class RuleNode {
             				l3Match = ((SetField)(a.getAction())).getLayer3Match();
             	            // TODO Handle other L3Match cases: ARP, Ipv6
             	            if(l3Match instanceof Ipv4Match){
-            	            	instance.action_nw_src_prefix = ((Ipv4Match)flow.getMatch().getLayer3Match()).getIpv4Source();
-            	            	instance.action_nw_dst_prefix = ((Ipv4Match)flow.getMatch().getLayer3Match()).getIpv4Destination();
-
-            	            	//instance.nw_src_maskbits = 0;
+            	            	Ipv4Prefix src  = ((Ipv4Match)flow.getMatch().getLayer3Match()).getIpv4Source();
+            	            	Ipv4Prefix dst = ((Ipv4Match)flow.getMatch().getLayer3Match()).getIpv4Destination();
+            	            	instance.action_nw_src_prefix = calculateIpfromPrefix(src);
+            	                instance.action_nw_src_maskbits = calculateMaskfromPrefix(src);
+            	                instance.action_nw_dst_prefix = calculateIpfromPrefix(dst);
+            	                instance.action_nw_dst_maskbits = calculateMaskfromPrefix(dst);
             	            }
             	            else if (l3Match instanceof Ipv4MatchArbitraryBitMask){
             	            	Ipv4Address addr = ((Ipv4MatchArbitraryBitMask)flow.getMatch().getLayer3Match()).getIpv4SourceAddressNoMask();
             	            	DottedQuad mask = ((Ipv4MatchArbitraryBitMask)flow.getMatch().getLayer3Match()).getIpv4SourceArbitraryBitmask();
-            	            	instance.action_nw_src_prefix = createPrefix(addr, convertArbitraryMaskToByteArray(mask));
+            	            	Ipv4Prefix src = createPrefix(addr, convertArbitraryMaskToByteArray(mask));
 
             	            	addr = ((Ipv4MatchArbitraryBitMask)flow.getMatch().getLayer3Match()).getIpv4DestinationAddressNoMask();
             	            	mask = ((Ipv4MatchArbitraryBitMask)flow.getMatch().getLayer3Match()).getIpv4DestinationArbitraryBitmask();
-            	            	instance.action_nw_dst_prefix = createPrefix(addr, convertArbitraryMaskToByteArray(mask));
+            	            	Ipv4Prefix dst = createPrefix(addr, convertArbitraryMaskToByteArray(mask));
+            	            	instance.action_nw_src_prefix = calculateIpfromPrefix(src);
+            	                instance.action_nw_src_maskbits = calculateMaskfromPrefix(src);
+            	                instance.action_nw_dst_prefix = calculateIpfromPrefix(dst);
+            	                instance.action_nw_dst_maskbits = calculateMaskfromPrefix(dst);
             	            }
             			}
             			else if(a.getAction() instanceof SetVlanIdAction){
-            				instance.vlan = ((SetField)(a.getAction())).getVlanMatch().getVlanId();
+            			// TODO Check what is assigned
+            				instance.action_vlan = ((SetField)(a.getAction())).getVlanMatch().getVlanId().getVlanId().getValue();
             			}
             		}
             	}
@@ -278,98 +292,6 @@ public class RuleNode {
             }
         }
         ruletable = RuleNode.computedependency(ruletable);
-        return ruletable;
-    }
-
-    public static List<RuleNode> computedependency(List<RuleNode> ruletable){
-        //compute intra table dependency
-        //compare i th rule and j th rule such that i th rule is prior to j th rule.
-        for(int i = 0; i < ruletable.size(); i++){
-            ruletable.get(i).active = true;
-            if(ruletable.get(i).diff != null)
-                ruletable.get(i).diff.clear();
-        }
-        /*
-         * Compare all the rules in the rule table with each other.
-         * Dependency is decided if following matches between two rules
-         * in_port, dl_type, vlan, source IP, destination IP.
-         * In case of full overlap of the rules, mark one of the rules as inactive.
-         *
-         * Type = IPv4 Type
-         */
-        for(int i = 0; i < ruletable.size() - 1; i++){
-            for(int j = i + 1; j < ruletable.size(); j++){
-                if(ruletable.get(i).in_port.equals(ruletable.get(j).in_port)
-                        && ruletable.get(i).dl_type.getType().getValue() == (long)(EtherTypes.IPv4.intValue())
-                        && ruletable.get(j).dl_type.getType().getValue() == (long)(EtherTypes.IPv4.intValue())
-                        && ruletable.get(i).active == true //TODO The rule will always be active as above!
-                        && ruletable.get(i).vlan.equals(ruletable.get(j).vlan)) {
-                    //check if ip range is overlapped
-                    if(matchIPAddress(ruletable.get(i).nw_dst_prefix, ruletable.get(i).nw_dst_maskbits,
-                            ruletable.get(j).nw_dst_prefix, ruletable.get(j).nw_dst_maskbits))
-                        if(matchIPAddress(ruletable.get(i).nw_src_prefix, ruletable.get(i).nw_src_maskbits,
-                            ruletable.get(j).nw_src_prefix, ruletable.get(j).nw_src_maskbits)){
-
-                            if(ruletable.get(j).diff == null){
-                                ruletable.get(j).diff = new ArrayList<HeaderObject>();
-                            }
-                            if(ruletable.get(i).nw_dst_maskbits <= ruletable.get(j).nw_dst_maskbits &&
-                                    ruletable.get(i).nw_src_maskbits <= ruletable.get(j).nw_src_maskbits){
-                                //handle for full overlap case
-                                ruletable.get(j).active = false;
-                            }
-                            else{
-                                //handle for partial overlap case
-                                HeaderObject ho = new HeaderObject();
-
-                                // Take the larger maskbits of the two rules for both dest and source.
-                                if(ruletable.get(i).nw_dst_maskbits < ruletable.get(j).nw_dst_maskbits){
-                                    ho.nw_dst_prefix = ruletable.get(j).nw_dst_prefix;
-                                    ho.nw_dst_maskbits = ruletable.get(j).nw_dst_maskbits;
-                                }else{
-                                    ho.nw_dst_prefix = ruletable.get(i).nw_dst_prefix;
-                                    ho.nw_dst_maskbits = ruletable.get(i).nw_dst_maskbits;
-                                }
-
-                                if(ruletable.get(i).nw_src_maskbits < ruletable.get(j).nw_src_maskbits){
-                                    ho.nw_src_prefix = ruletable.get(j).nw_src_prefix;
-                                    ho.nw_src_maskbits = ruletable.get(j).nw_src_maskbits;
-                                }else{
-                                    ho.nw_src_prefix = ruletable.get(i).nw_src_prefix;
-                                    ho.nw_src_maskbits = ruletable.get(i).nw_src_maskbits;
-                                }
-                                boolean donothing = false;
-
-                                for(int k = 0; k < ruletable.get(j).diff.size(); k++){
-                                    if(matchIPAddress(ho.nw_dst_prefix, ho.nw_dst_maskbits,
-                                            ruletable.get(j).diff.get(k).nw_dst_prefix, ruletable.get(j).diff.get(k).nw_dst_maskbits))
-                                        if(matchIPAddress(ho.nw_src_prefix, ho.nw_src_maskbits,
-                                                ruletable.get(j).diff.get(k).nw_src_prefix, ruletable.get(j).diff.get(k).nw_src_maskbits))
-                                            if(ho.nw_dst_maskbits <= ruletable.get(j).diff.get(k).nw_dst_maskbits &&
-                                                    ho.nw_src_maskbits <= ruletable.get(j).diff.get(k).nw_src_maskbits){
-                                                //handle for full overlap case 1 : ho range contains diff
-                                                ruletable.get(j).diff.remove(k);
-                                            }else if(ho.nw_dst_maskbits >= ruletable.get(j).diff.get(k).nw_dst_maskbits &&
-                                                    ho.nw_src_maskbits >= ruletable.get(j).diff.get(k).nw_src_maskbits){
-                                                //handle for full overlap case 1 : diff range contains ho
-                                                //do nothing
-                                                donothing = true;
-                                                break;
-                                            }else{
-                                                //handle for partial overlap case
-                                            }
-                                }
-                                if(donothing == true){
-                                    //do nothing
-                                }
-                                else {
-                                    ruletable.get(j).diff.add(ho);
-                                }
-                            }
-                        }
-                }
-            }
-        }
         return ruletable;
     }
 
@@ -471,43 +393,90 @@ public class RuleNode {
         return ruletable;
     }
 
-    public static boolean matchIPAddress(Ipv4Prefix nw_dst_prefix2, int rule1_Bits, Ipv4Prefix nw_dst_prefix3, int rule2_Bits) {
-        boolean matched = true;
-        int maskbits = 0;
-        //set maskbits as a lower integer to check overlaps
-        if(rule1_Bits > rule2_Bits){
-            maskbits = rule2_Bits;
-        }else{
-            maskbits = rule1_Bits;
+    public static List<RuleNode> computedependency(List<RuleNode> ruletable){
+        //compute intra table dependency
+        //compare i th rule and j th rule such that i th rule is prior to j th rule.
+        for(int i = 0; i < ruletable.size(); i++){
+            ruletable.get(i).active = true;
+            if(ruletable.get(i).diff != null)
+                ruletable.get(i).diff.clear();
         }
-        int rule1_iprng = 32 - maskbits;
-        Ipv4Prefix rule1_ipint = nw_dst_prefix2;
-        int rule2_iprng = 32 - maskbits;
-        Ipv4Prefix rule2_ipint = nw_dst_prefix3;
-        // if there's a subnet range (bits to be wildcarded > 0)
-        if (rule1_iprng > 0 || rule2_iprng > 0) {
-            // right shift bits to remove rule_iprng of LSB that are to be
-            // wildcarded
-            rule1_ipint = rule1_ipint >> rule1_iprng;
-            rule2_ipint = rule2_ipint >> rule2_iprng;
-            // now left shift to return to normal range, except that the
-            // rule_iprng number of LSB
-            // are now zeroed
-            rule1_ipint = rule1_ipint << rule1_iprng;
-            rule2_ipint = rule2_ipint << rule2_iprng;
-        }else{
-            if(rule1_ipint == rule2_ipint)
-                return true;
-            else
-                return false;
-        }
-        // check if we have a match
-        if (rule1_ipint != rule2_ipint)
-            matched = false;
+        /*
+         * Compare all the rules in the rule table with each other.
+         * Dependency is decided if following matches between two rules
+         * in_port, dl_type, vlan, source IP, destination IP.
+         * In case of full overlap of the rules, mark one of the rules as inactive.
+         * Check dependency: 
+         * First IF: Same inport && Both IPv4 protocol && Both active && Same vlan ID
+         * Second IF: The effective address ranges of IP should overlap for dest and src  
+         */
+        for(int i = 0; i < ruletable.size() - 1; i++){
+            for(int j = i + 1; j < ruletable.size(); j++){
+                if(ruletable.get(i).in_port.equals(ruletable.get(j).in_port)
+                        && ruletable.get(i).dl_type.getType().getValue() == (long)(EtherTypes.IPv4.intValue())
+                        && ruletable.get(j).dl_type.getType().getValue() == (long)(EtherTypes.IPv4.intValue())
+                        && ruletable.get(i).active == true //TODO The rule will always be active as above!
+                        && ruletable.get(i).vlan == ruletable.get(j).vlan) {
+                    //check if ip range is overlapped
+                    if(matchIPAddress(ruletable.get(i).nw_dst_prefix, ruletable.get(i).nw_dst_maskbits, 
+                    		ruletable.get(j).nw_dst_prefix, ruletable.get(j).nw_dst_maskbits))
+                    	if(matchIPAddress(ruletable.get(i).nw_src_prefix, ruletable.get(i).nw_src_maskbits, 
+                        		ruletable.get(j).nw_src_prefix, ruletable.get(j).nw_src_maskbits)){
 
-        return matched;
+                            if(ruletable.get(j).diff == null){
+                                ruletable.get(j).diff = new ArrayList<HeaderObject>();
+                            }
+                            /* If two rules have same IP range and higher priority rule has more(>=)0 IP range
+                            than the lower priority rule, mark the lower priority rule as disabled. */
+                            if(ruletable.get(i).nw_dst_maskbits <= ruletable.get(j).nw_dst_maskbits &&
+                                    ruletable.get(i).nw_src_maskbits <= ruletable.get(j).nw_src_maskbits){
+                                //handle for full overlap case
+                                ruletable.get(j).active = false;
+                            }
+                            else{
+                                //handle for partial overlap case
+                                HeaderObject ho = new HeaderObject();
+                                
+                                // Take the larger maskbits of the two rules for both dest and source.
+                                ho.nw_dst_prefix = ruletable.get(i).nw_dst_prefix;
+                                ho.nw_src_prefix = ruletable.get(i).nw_src_prefix;
+                                ho.nw_dst_maskbits = ruletable.get(i).nw_dst_maskbits;
+                                ho.nw_src_maskbits = ruletable.get(i).nw_src_maskbits;
+                                
+                                boolean donothing = false;
+
+                                for(int k = 0; k < ruletable.get(j).diff.size(); k++){
+                                    if(matchIPAddress(ho.nw_dst_prefix, ho.nw_dst_maskbits,
+                                            ruletable.get(j).diff.get(k).nw_dst_prefix, ruletable.get(j).diff.get(k).nw_dst_maskbits))
+                                        if(matchIPAddress(ho.nw_src_prefix, ho.nw_src_maskbits,
+                                                ruletable.get(j).diff.get(k).nw_src_prefix, ruletable.get(j).diff.get(k).nw_src_maskbits))
+                                            if(ho.nw_dst_maskbits <= ruletable.get(j).diff.get(k).nw_dst_maskbits &&
+                                                    ho.nw_src_maskbits <= ruletable.get(j).diff.get(k).nw_src_maskbits){
+                                                //handle for full overlap case 1 : ho range contains diff
+                                                ruletable.get(j).diff.remove(k);
+                                            }else if(ho.nw_dst_maskbits >= ruletable.get(j).diff.get(k).nw_dst_maskbits &&
+                                                    ho.nw_src_maskbits >= ruletable.get(j).diff.get(k).nw_src_maskbits){
+                                                //handle for full overlap case 1 : diff range contains ho
+                                                //do nothing
+                                                donothing = true;
+                                                break;
+                                            }else{
+                                                //handle for partial overlap case
+                                            }
+                                }
+                                if(donothing == true){
+                                    //do nothing
+                                }
+                                else {
+                                    ruletable.get(j).diff.add(ho);
+                                }
+                            }
+                        }
+                }
+            }
+        }
+        return ruletable;
     }
-
 
     public static RuleNode computeFlow(RuleNode rulenode, FlowInfo inputflow){
         FlowInfo processingflow = new FlowInfo();
@@ -805,6 +774,45 @@ public class RuleNode {
             }
 
         return rulenode;
+    }
+    
+    public int calculateIpfromPrefix(Ipv4Prefix prefix) {
+    	String[] parts;
+    	
+    	parts = prefix.getValue().split("/");
+    	
+    	return InetAddresses.coerceToInteger(InetAddresses.forString(parts[0]));    	
+    }
+    
+    public int calculateMaskfromPrefix(Ipv4Prefix prefix) {
+    	String[] parts;
+    	parts = prefix.getValue().split("/");
+    	if (parts.length < 2)
+            return 0;
+    	else 
+    		return Integer.parseInt(parts[1]);
+    	
+    }
+    
+    public static boolean matchIPAddress(int ip1, int prefix1, int ip2, int prefix2) {
+        boolean matched = true;
+        int maskbits = 0;
+        int range;
+        //set maskbits as a lower integer to check overlaps
+        maskbits = (prefix1 > prefix2) ? prefix2 : prefix1;
+        range = 32 - maskbits;
+
+        if(range == 0){
+            // The prefix length for both IPs is 32.
+            return (ip1 == ip2);
+        }
+        else {
+            // Right shift the IP bits to remove the wildcarded range set by prefix
+            ip1 = ip1 >> maskbits;
+            ip2 = ip2 >> maskbits;
+            // TODO Leftshit to return back to normal is required???
+            return (ip1 == ip2);
+        }
     }
 
     static int countBits(final byte[] mask) {

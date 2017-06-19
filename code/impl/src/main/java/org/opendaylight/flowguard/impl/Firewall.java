@@ -489,7 +489,7 @@ public class Firewall {
         return Command.CONTINUE;
     }
 */
-
+/*
     public void enableFirewall(boolean enabled){
     	long start = System.nanoTime();
 
@@ -518,7 +518,7 @@ public class Firewall {
             e.printStackTrace();
         }
     }
-
+*/
     public ShiftedGraph getShiftedGraph(){
     	return this.sg;
     }
