@@ -22,6 +22,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ExecutionException;
 
 //import org.openflow.protocol.OFFlowMod;
 /*import org.openflow.protocol.OFMatch;
@@ -34,10 +35,17 @@ import org.openflow.protocol.action.OFActionVirtualLanIdentifier;
 import org.openflow.util.HexString;
 */
 import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import com.google.common.base.Optional;
+import com.google.common.net.InetAddresses;
+
 import org.restlet.resource.Post;
 import org.restlet.resource.Resource;
 import org.restlet.resource.ServerResource;
 import org.opendaylight.controller.liblldp.EtherTypes;
+import org.opendaylight.controller.md.sal.binding.api.ReadTransaction;
+import org.opendaylight.controller.md.sal.common.api.data.LogicalDatastoreType;
 
 /*
 import net.floodlightcontroller.core.IFloodlightProviderService;
@@ -56,14 +64,26 @@ import net.floodlightcontroller.staticflowentry.*;
 import org.opendaylight.flowguard.impl.FirewallRule.FirewallAction;
 import org.opendaylight.flowguard.packet.Ethernet;
 import org.opendaylight.flowguard.packet.IPv4;
+import org.opendaylight.yang.gen.v1.urn.ietf.params.xml.ns.yang.ietf.inet.types.rev130715.IpAddress;
+import org.opendaylight.yang.gen.v1.urn.ietf.params.xml.ns.yang.ietf.inet.types.rev130715.Ipv4Address;
 import org.opendaylight.yang.gen.v1.urn.ietf.params.xml.ns.yang.ietf.inet.types.rev130715.Uri;
+import org.opendaylight.yang.gen.v1.urn.opendaylight.address.tracker.rev140617.AddressCapableNodeConnector;
+import org.opendaylight.yang.gen.v1.urn.opendaylight.address.tracker.rev140617.address.node.connector.Addresses;
+import org.opendaylight.yang.gen.v1.urn.opendaylight.flow.inventory.rev130819.tables.Table;
+import org.opendaylight.yang.gen.v1.urn.opendaylight.flow.inventory.rev130819.tables.table.Flow;
 import org.opendaylight.yang.gen.v1.urn.opendaylight.flow.inventory.rev130819.tables.table.FlowBuilder;
 import org.opendaylight.yang.gen.v1.urn.opendaylight.inventory.rev130819.NodeConnectorId;
+import org.opendaylight.yang.gen.v1.urn.opendaylight.inventory.rev130819.Nodes;
+import org.opendaylight.yang.gen.v1.urn.opendaylight.inventory.rev130819.node.NodeConnector;
+import org.opendaylight.yang.gen.v1.urn.opendaylight.inventory.rev130819.nodes.Node;
 import org.opendaylight.yang.gen.v1.urn.opendaylight.model.match.types.rev131026.vlan.match.fields.VlanId;
+import org.opendaylight.yangtools.yang.binding.InstanceIdentifier;
 
 
 
 public class ShiftedGraph {
+    private static final Logger LOG = LoggerFactory.getLogger(Flowguard.class);
+    private ReadTransaction readTx;
     // Map<DPID, Map<Name, FlowMod>>; FlowMod can be null to indicate non-active
     public Map<String, Map<String, FlowBuilder>> entriesFromStorage;
     public Map<String, List<RuleNode>> rulenodes;
@@ -627,7 +647,7 @@ public class ShiftedGraph {
 
         FlowInfo sample = flowinfo;
         String targetdpid = target.dpid;
-        short targetport = Short.parseShort(target.port);
+        NodeConnectorId targetport = new NodeConnectorId(target.port);
 
         while(true){
             String SWITCHDPID = sample.next_switch_dpid;
@@ -660,7 +680,7 @@ public class ShiftedGraph {
                     return;
                 }
                 int counter = 0;
-                /*
+
                 if(index == 0){
                     for(i = index; i < table_size; i++){
                         if(sample.next_switch_dpid.equals(SWITCHDPID.toString()) && sample.next_ingress_port == ruletable.get(i).in_port
@@ -730,7 +750,7 @@ public class ShiftedGraph {
                         continue;
                     }
                 }
-*/
+
             }
             index = 0;
             //end of while
@@ -758,9 +778,14 @@ public class ShiftedGraph {
     public Map<String, Map<String, RuleNode>> updateRuleNode(Map<String, Map<String, RuleNode>> rulenodes, RuleNode rulenode){
         return rulenodes;
     }
-
-/* TODO This is done for "Partitioning FIREWALL Authorization space
- * This is mentioned in the Algorithm1 on paper.
+/*
+ *  Flaw: The dpid of the FW rule is not taken into account/ignored.
+ *  Result: The network is search for reachability and issues by taking dpid
+ *  forcefully as wildcarded. If src= X and dest = Y: For the deny case,
+ *  if packet is still reached from X to Y, it is said to be a problem.
+ *  But, it may not be a problem actually as the packet might have taken
+ *  a different path to reach from X to Y without even going through the
+ *  switch in which the rule is to be enforced.
  */
     public void buildSourceProbeNode(List<FirewallRule> rules){
 
@@ -834,16 +859,25 @@ public class ShiftedGraph {
         if(rule.action == FirewallAction.DENY) { // && rule.dpid == -1){
             /* Get a source switch node */
             TopologyStruct source = this.findDpidPort(rule.nw_src_prefix);
+            if(source == null) {
+            	LOG.info("The source device in firewall rule is not found"
+            			+ "This situation has not been handlled yet!!");
+            	return;
+            }
             /* Get destination switch node */
             TopologyStruct probe = this.findDpidPort(rule.nw_dst_prefix);
-
+            if(probe == null) {
+            	LOG.info("The destination device in firewall rule is not found"
+            			+ "This situation has not been handlled yet!!");
+            	return;
+            }
             FlowInfo sample = new FlowInfo();
             sample.firewall_ruldid = Integer.toString(rule.ruleid);
             this.current_flow_index++;
             sample.flow_index = this.current_flow_index;
             sample.rule_node_name = "SourceNode";
             sample.current_ho = new HeaderObject();
-            sample.current_ho.nw_dst_prefix = 167772160;
+            sample.current_ho.nw_dst_prefix = 167772160; // IP = 10.0.0.0
             sample.current_ho.nw_dst_maskbits = 8;
             sample.current_ho.nw_src_prefix = 167772160;
             sample.current_ho.vlan = -1;
@@ -873,20 +907,61 @@ public class ShiftedGraph {
         }
     }
 
+    /* Find switch based on the IP from firewall rule */
+    /* How will this work ideally for both masked and non masked addresses */
+    /* Devices are learned on the network by device manager.
+     * When a packet-in is received by a switch, an attachment point is created for the device.
+     * Devices are updated as they are learned.
+     * A device can have at max one "att point" per OF island.
+     */
     public TopologyStruct findDpidPort(int IP_address){
         TopologyStruct dpid_port = new TopologyStruct();
 
-        // TODO Find a way to retrieve the switch details.
-        /*Iterator<? extends IDevice> itr = this.deviceSource.queryDevices(null, null, IP_address, null, null);
-        if(itr.hasNext()){
-            IDevice idevice = itr.next();
-            //System.out.println(idevice.getAttachmentPoints().toString());
-            SwitchPort[] sp = idevice.getAttachmentPoints();
-            dpid_port.dpid = HexString.toHexString((long) sp[0].getSwitchDPID());
-            dpid_port.port = Integer.toString(sp[0].getPort());
-        }*/
-        return dpid_port;
-    }
+        InstanceIdentifier<Nodes> nodesIdentifier = InstanceIdentifier.builder(Nodes.class).toInstance();
+
+        try {
+            Optional<Nodes> optNodes= null;
+            Optional<Table> optTable = null;
+            Optional<Flow> optFlow = null;
+
+            List<Node> nodeList;
+            List<Flow> flowList;
+
+            /* Retrieve all the switches in the operational data tree */
+            optNodes = readTx.read(LogicalDatastoreType.OPERATIONAL, nodesIdentifier).get();
+            nodeList = optNodes.get().getNode();
+            LOG.info("No. of detected nodes: {}", nodeList.size());
+
+            /* Iterate through the list of nodes(switches) for flow tables per node */
+            for(Node node : nodeList){
+            	List<NodeConnector> connectorList = node.getNodeConnector();
+            	for (NodeConnector connector : connectorList) {
+            		AddressCapableNodeConnector acnc = connector.getAugmentation(AddressCapableNodeConnector.class);
+            		if(acnc != null && acnc.getAddresses() != null) {
+            	        // get address list from augmentation.
+            	        List<Addresses>  addresses = acnc.getAddresses();
+            	        for(Addresses address:addresses) {
+            	          //address.getMac();// to get MAC address observed on this port
+            	        	Ipv4Address ip = address.getIp().getIpv4Address();// to get IP address observed on this port
+            	        	int ipnum = InetAddresses.coerceToInteger(InetAddresses.forString(ip.getValue()));
+            	        	if(ipnum == IP_address) {
+            	        		dpid_port.dpid = node.getId().getValue();
+            	        		dpid_port.port = connector.getId().getValue();
+            	        		return dpid_port;
+            	        	}
+            	          //address.getFirstSeen(); // first time the tuple was observed on this port
+            	          //address.getLastSeen(); // latest time the tuple was observed on this port
+            	        }
+            	      }
+            	}
+            }
+        }
+	    catch (InterruptedException | ExecutionException e) {
+	        e.printStackTrace();
+	    }
+        /* Reaching here would mean that the matching device has not been found */
+        return null;
+        }
 
     public String getName() {
         return "ShiftedGraph";

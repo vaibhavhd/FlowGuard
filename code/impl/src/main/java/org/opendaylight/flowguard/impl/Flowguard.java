@@ -42,6 +42,7 @@ public class Flowguard {
     private DataBroker db;
     public Map<TopologyStruct, TopologyStruct> topologyStorage;
     public Map<NodeId, List<RuleNode>> flowStorage;
+    public List<FirewallRule> ruleStorage;
     public ShiftedGraph sg;
 
     Flowguard(DataBroker db){
@@ -57,6 +58,7 @@ public class Flowguard {
         this.importStaticFlows();
 
         this.sg = new ShiftedGraph();
+        // Pull the FW Rules from a file.
         //sg.buildSourceProbeNode(this.ruleStorage);
 
     }
@@ -99,7 +101,6 @@ public class Flowguard {
 
             /* Iterate through the list of nodes(switches) for flow tables per node */
             for(Node node : nodeList){
-
                 InstanceIdentifier<Table> table = InstanceIdentifier.builder(Nodes.class).child(Node.class, new NodeKey(node.getId()))
                         .augmentation(FlowCapableNode.class)
                         .child(Table.class, new TableKey((short)0)).toInstance();  // TODO Table ID is hardcaoded to 0. What about other tables?

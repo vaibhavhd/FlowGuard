@@ -69,7 +69,7 @@ public class RuleNode {
     public NodeConnectorId in_port;
     public EthernetSource dl_src;
     public EthernetDestination dl_dst;
-    public Long dl_type;
+    public long dl_type;
     public int nw_src_prefix = 0;
     public int nw_src_maskbits = 0;
     public int nw_dst_prefix =0;
