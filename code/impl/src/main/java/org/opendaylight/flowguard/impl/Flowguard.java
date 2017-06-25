@@ -41,7 +41,7 @@ public class Flowguard {
     private ReadTransaction readTx;
     private DataBroker db;
     public Map<TopologyStruct, TopologyStruct> topologyStorage;
-    public Map<NodeId, List<RuleNode>> flowStorage;
+    public Map<String, List<FlowRuleNode>> flowStorage;
     public List<FirewallRule> ruleStorage;
     public ShiftedGraph sg;
 
@@ -49,7 +49,7 @@ public class Flowguard {
         this.db = db;
         this.readTx  = db.newReadOnlyTransaction();
         this.topologyStorage = new ConcurrentHashMap<TopologyStruct, TopologyStruct>();
-        this.flowStorage = new ConcurrentHashMap<NodeId, List<RuleNode>>();
+        this.flowStorage = new ConcurrentHashMap<String, List<FlowRuleNode>>();
     }
 
     public void start() {
@@ -57,7 +57,7 @@ public class Flowguard {
         this.buildTopology();
         this.importStaticFlows();
 
-        this.sg = new ShiftedGraph();
+        this.sg = new ShiftedGraph(this.flowStorage, this.topologyStorage);
         // Pull the FW Rules from a file.
         //sg.buildSourceProbeNode(this.ruleStorage);
 
@@ -113,9 +113,9 @@ public class Flowguard {
                 for(Flow flow : flowList){
                     LOG.info("Flow found with ID: {}, outport: {}, Match: {}", flow.getId(), flow.getOutPort(), flow.getMatch().getLayer3Match());
                 }
-                RuleNode rn = new RuleNode();
+                FlowRuleNode rn = new FlowRuleNode();
 
-                flowStorage.put(node.getId(), rn.addruletable(flowList));
+                flowStorage.put(node.getId().getValue(), rn.addruletable(flowList));
             }
 
         } catch (InterruptedException | ExecutionException e) {

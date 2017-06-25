@@ -86,8 +86,8 @@ public class ShiftedGraph {
     private ReadTransaction readTx;
     // Map<DPID, Map<Name, FlowMod>>; FlowMod can be null to indicate non-active
     public Map<String, Map<String, FlowBuilder>> entriesFromStorage;
-    public Map<String, List<RuleNode>> rulenodes;
-    public Map<TopologyStruct, TopologyStruct> TopologyStorage;
+    public Map<String, List<FlowRuleNode>> FlowRuleNodes;
+    public Map<TopologyStruct, TopologyStruct> topologyStorage;
     public Map<String, Map<FlowInfo, TopologyStruct>> SourceProbeNodeStorage;
     public List<FlowInfo> flowstorage;
     public int current_flow_index = 0;
@@ -101,187 +101,17 @@ public class ShiftedGraph {
     public int resolution_index = 0;
     public int resolution_method = 0;
 
-    // service modules needed
-    //protected IFloodlightProviderService floodlightProvider;
-    //protected IStorageSourceService storageSource;
-    //protected IDeviceService deviceSource;
-    //protected IRestApiService restApi;
     protected static Logger logger;
 
     protected List<FirewallRule> rules; // protected by synchronized
     protected boolean enabled;
     protected int subnet_mask = IPv4.toIPv4Address("255.255.255.0");
 
-    // constant strings for storage/parsing
-
-    public static final String TOPOLOGY_TABLE_NAME = "controller_topologyconfig";
-    public static final String TOPOLOGY_ID = "id";
-    public static final String TOPOLOGY_AUTOPORTFAST = "autoportfast";
-
-    public static final String LINK_TABLE_NAME = "controller_link";
-    public static final String LINK_ID = "id";
-    public static final String LINK_SRC_SWITCH = "src_switch_id";
-    public static final String LINK_SRC_PORT = "src_port";
-    public static final String LINK_SRC_PORT_STATE = "src_port_state";
-    public static final String LINK_DST_SWITCH = "dst_switch_id";
-    public static final String LINK_DST_PORT = "dst_port";
-    public static final String LINK_DST_PORT_STATE = "dst_port_state";
-    public static final String LINK_VALID_TIME = "valid_time";
-    public static final String LINK_TYPE = "link_type";
-    public static final String SWITCH_CONFIG_TABLE_NAME = "controller_switchconfig";
-    public static final String SWITCH_CONFIG_CORE_SWITCH = "core_switch";
-    public static String[] Topology_Columns = {
-        TOPOLOGY_ID, TOPOLOGY_AUTOPORTFAST, LINK_TABLE_NAME, LINK_ID, LINK_SRC_SWITCH,
-        LINK_SRC_PORT, LINK_SRC_PORT_STATE, LINK_DST_SWITCH, LINK_DST_PORT,
-        LINK_DST_PORT_STATE, LINK_VALID_TIME, LINK_TYPE, SWITCH_CONFIG_TABLE_NAME,
-        SWITCH_CONFIG_CORE_SWITCH
-    };
-
-    public static final String TABLE_NAME = "controller_firewallrules";
-    public static final String COLUMN_RULEID = "ruleid";
-    public static final String COLUMN_DPID = "dpid";
-    public static final String COLUMN_IN_PORT = "in_port";
-    public static final String COLUMN_DL_SRC = "dl_src";
-    public static final String COLUMN_DL_DST = "dl_dst";
-    public static final String COLUMN_DL_TYPE = "dl_type";
-    public static final String COLUMN_NW_SRC_PREFIX = "nw_src_prefix";
-    public static final String COLUMN_NW_SRC_MASKBITS = "nw_src_maskbits";
-    public static final String COLUMN_NW_DST_PREFIX = "nw_dst_prefix";
-    public static final String COLUMN_NW_DST_MASKBITS = "nw_dst_maskbits";
-    public static final String COLUMN_NW_PROTO = "nw_proto";
-    public static final String COLUMN_TP_SRC = "tp_src";
-    public static final String COLUMN_TP_DST = "tp_dst";
-    public static final String COLUMN_WILDCARD_DPID = "wildcard_dpid";
-    public static final String COLUMN_WILDCARD_IN_PORT = "wildcard_in_port";
-    public static final String COLUMN_WILDCARD_DL_SRC = "wildcard_dl_src";
-    public static final String COLUMN_WILDCARD_DL_DST = "wildcard_dl_dst";
-    public static final String COLUMN_WILDCARD_DL_TYPE = "wildcard_dl_type";
-    public static final String COLUMN_WILDCARD_NW_SRC = "wildcard_nw_src";
-    public static final String COLUMN_WILDCARD_NW_DST = "wildcard_nw_dst";
-    public static final String COLUMN_WILDCARD_NW_PROTO = "wildcard_nw_proto";
-    public static final String COLUMN_WILDCARD_TP_SRC = "wildcard_tp_src";
-    public static final String COLUMN_WILDCARD_TP_DST = "wildcard_tp_dst";
-    public static final String COLUMN_PRIORITY = "priority";
-    public static final String COLUMN_ACTION = "action";
-    public static String[] ColumnNames = { COLUMN_RULEID, COLUMN_DPID,
-            COLUMN_IN_PORT, COLUMN_DL_SRC, COLUMN_DL_DST, COLUMN_DL_TYPE,
-            COLUMN_NW_SRC_PREFIX, COLUMN_NW_SRC_MASKBITS, COLUMN_NW_DST_PREFIX,
-            COLUMN_NW_DST_MASKBITS, COLUMN_NW_PROTO, COLUMN_TP_SRC,
-            COLUMN_TP_DST, COLUMN_WILDCARD_DPID, COLUMN_WILDCARD_IN_PORT,
-            COLUMN_WILDCARD_DL_SRC, COLUMN_WILDCARD_DL_DST,
-            COLUMN_WILDCARD_DL_TYPE, COLUMN_WILDCARD_NW_SRC,
-            COLUMN_WILDCARD_NW_DST, COLUMN_WILDCARD_NW_PROTO, COLUMN_PRIORITY,
-            COLUMN_ACTION };
-
-    public static final String STATICENTRY_TABLE_NAME = "controller_staticflowtableentry";
-    public static final String STATICENTRY_COLUMN_NAME = "name";
-    public static final String STATICENTRY_COLUMN_SWITCH = "switch_id";
-    public static final String STATICENTRY_COLUMN_ACTIVE = "active";
-    public static final String STATICENTRY_COLUMN_IDLE_TIMEOUT = "idle_timeout";
-    public static final String STATICENTRY_COLUMN_HARD_TIMEOUT = "hard_timeout";
-    public static final String STATICENTRY_COLUMN_PRIORITY = "priority";
-    public static final String STATICENTRY_COLUMN_COOKIE = "cookie";
-    public static final String STATICENTRY_COLUMN_WILDCARD = "wildcards";
-    public static final String STATICENTRY_COLUMN_IN_PORT = "in_port";
-    public static final String STATICENTRY_COLUMN_DL_SRC = "dl_src";
-    public static final String STATICENTRY_COLUMN_DL_DST = "dl_dst";
-    public static final String STATICENTRY_COLUMN_DL_VLAN = "dl_vlan";
-    public static final String STATICENTRY_COLUMN_DL_VLAN_PCP = "dl_vlan_pcp";
-    public static final String STATICENTRY_COLUMN_DL_TYPE = "dl_type";
-    public static final String STATICENTRY_COLUMN_NW_TOS = "nw_tos";
-    public static final String STATICENTRY_COLUMN_NW_PROTO = "nw_proto";
-    public static final String STATICENTRY_COLUMN_NW_SRC = "nw_src"; // includes CIDR-style
-                                                        // netmask, e.g.
-                                                        // "128.8.128.0/24"
-    public static final String STATICENTRY_COLUMN_NW_DST = "nw_dst";
-    public static final String STATICENTRY_COLUMN_TP_DST = "tp_dst";
-    public static final String STATICENTRY_COLUMN_TP_SRC = "tp_src";
-    public static final String STATICENTRY_COLUMN_ACTIONS = "actions";
-    public static String[] STATICENTRY_ColumnNames = { STATICENTRY_COLUMN_NAME, STATICENTRY_COLUMN_SWITCH,
-        STATICENTRY_COLUMN_ACTIVE, STATICENTRY_COLUMN_IDLE_TIMEOUT, STATICENTRY_COLUMN_HARD_TIMEOUT,
-        STATICENTRY_COLUMN_PRIORITY, STATICENTRY_COLUMN_COOKIE, STATICENTRY_COLUMN_WILDCARD, STATICENTRY_COLUMN_IN_PORT,
-        STATICENTRY_COLUMN_DL_SRC, STATICENTRY_COLUMN_DL_DST, STATICENTRY_COLUMN_DL_VLAN, STATICENTRY_COLUMN_DL_VLAN_PCP,
-        STATICENTRY_COLUMN_DL_TYPE, STATICENTRY_COLUMN_NW_TOS, STATICENTRY_COLUMN_NW_PROTO, STATICENTRY_COLUMN_NW_SRC,
-        STATICENTRY_COLUMN_NW_DST, STATICENTRY_COLUMN_TP_DST, STATICENTRY_COLUMN_TP_SRC, STATICENTRY_COLUMN_ACTIONS };
-
-
-
-    /*public void initialize(IFloodlightProviderService floodlightProvider,IStorageSourceService storageSource,
-            IDeviceService deviceSource, Firewall firewall){
-        this.floodlightProvider = floodlightProvider;
-        this.storageSource = storageSource;
-        //this.storageSource.deleteRowAsync(STATICENTRY_TABLE_NAME, "flow1");
-        this.deviceSource = deviceSource;
-        this.firewall = firewall;
-    }*/
-
-    /**
-     * Used for replicating the topology of switches.
-     * The topology is a map of src-dest (key-val) pair.
-     * @param topo
-     */
-    public void buildTopology(Map<TopologyStruct, TopologyStruct> topo){
-        /* Clear the local topology before building one */
-        if(this.TopologyStorage != null){
-            this.TopologyStorage.clear();
-        } else {
-            this.TopologyStorage = new ConcurrentHashMap<TopologyStruct, TopologyStruct>();
-        }
-
-        for(TopologyStruct key : topo.keySet()){
-            if(key==null || topo.get(key) == null) {
-                break;
-            }
-            TopologyStruct dst = new TopologyStruct();
-            dst.dpid = topo.get(key).dpid;
-            dst.port = topo.get(key).port;
-            this.TopologyStorage.put(key, dst);
-            topo.remove(key);
-        }
-
+    public ShiftedGraph(Map<String, List<FlowRuleNode>> flowStorage, Map<TopologyStruct, TopologyStruct> topologyStorage) {
+        this.FlowRuleNodes = flowStorage;
+        this.topologyStorage = topologyStorage;
     }
 
-   /* public void buildRuleNode(Map<String, Map<String, FlowBuilder>> entries){
-        // TODO EnteriesFromStorage is not used or referenced. Remove it.
-        if(this.entriesFromStorage != null){
-            this.entriesFromStorage.clear();
-        } else {
-            this.entriesFromStorage = new ConcurrentHashMap<String, Map<String, FlowBuilder>>();
-        }
-        if(this.rulenodes != null){
-            this.rulenodes.clear();
-        } else {
-            this.rulenodes = new ConcurrentHashMap<String, List<RuleNode>>();
-        }
-
-        long start = System.nanoTime();
-        for(String key : entries.keySet()){
-            Map<String, FlowBuilder> row;
-            if(entries.get(key) == null) {
-                break;
-            }
-            row = entries.get(key);
-            this.entriesFromStorage.put(key, row);
-            RuleNode rn = new RuleNode();
-            this.rulenodes.put(key, rn.addruletable(row));
-            entries.remove(key);
-        }
-
-        long end = System.nanoTime();
-        try {
-            File f = new File(RESULT_PATH);
-            FileWriter fw = new FileWriter(f, true);
-            BufferedWriter bw = new BufferedWriter(fw);
-
-            bw.write("buildRuleNode time(micro seconds) : " + ( end - start )/1000 +"\n");
-            bw.flush();
-            fw.close();
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-
-
-    }*/
     public HeaderObject computeInverseFlow(FlowInfo flowinfo){
         HeaderObject ho = new HeaderObject();
         ho.nw_dst_maskbits = flowinfo.next_ho.nw_dst_maskbits;
@@ -291,13 +121,15 @@ public class ShiftedGraph {
         for(int i = flowinfo.flow_history.size()-1; i > 0; i--){
             String rulename = flowinfo.flow_history.get(i).rule_node_name;
             String dpid = flowinfo.flow_history.get(i).current_switch_dpid;
-            RuleNode rn = new RuleNode();
-            Set<String> set = this.rulenodes.keySet();
+            FlowRuleNode rn = new FlowRuleNode();
+
+            /* Get the set of all the switches in the network */
+            Set<String> set = this.FlowRuleNodes.keySet();
             Iterator<String> itr = set.iterator();
             while(itr.hasNext()){
                 Object key = itr.next();
                 if(dpid.equals((String) key)){
-                    List<RuleNode> ruletable = this.rulenodes.get((String) key);
+                    List<FlowRuleNode> ruletable = this.FlowRuleNodes.get((String) key);
                     for(int j = 0; j < ruletable.size(); j++){
                         if(rulename.equals(ruletable.get(j).rule_name)){
                             rn = ruletable.get(j);
@@ -340,20 +172,20 @@ public class ShiftedGraph {
             if(flowinfo.candidate_rule != null && false){
                 System.out.println("S2-Update Rejecting applied!!");
                 this.resolution_method = 2;
-                Set<String> set2 = this.rulenodes.keySet();
+                Set<String> set2 = this.FlowRuleNodes.keySet();
                 Iterator<String> itr2 = set2.iterator();
                 while(itr2.hasNext()){
                     Object key = itr2.next();
-                    List<RuleNode> ruletable = this.rulenodes.get(key.toString());
+                    List<FlowRuleNode> ruletable = this.FlowRuleNodes.get(key.toString());
                     int size = ruletable.size();
                     for(int j = 0; j < size; j++){
                         if(flowinfo.candidate_rule.equals(ruletable.get(j).rule_name)){
                             if(ho.nw_src_maskbits == 32 && ho.nw_dst_maskbits == 32){
-                                this.rulenodes.get(key.toString()).remove(j);
+                                this.FlowRuleNodes.get(key.toString()).remove(j);
                                 // TODO this.storageSource.deleteRowAsync(STATICENTRY_TABLE_NAME, flowinfo.candidate_rule);
                                 return ho;
                             }else if(ho.nw_src_maskbits == ruletable.get(j).nw_src_maskbits && ho.nw_dst_maskbits == ruletable.get(j).nw_dst_maskbits){
-                                this.rulenodes.get(key.toString()).remove(j);
+                                this.FlowRuleNodes.get(key.toString()).remove(j);
                                 //TODO this.storageSource.deleteRowAsync(STATICENTRY_TABLE_NAME, flowinfo.candidate_rule);
                                 return ho;
                             }
@@ -390,8 +222,8 @@ public class ShiftedGraph {
             }
         }
 
-        if(RuleNode.matchIPAddress(frule.nw_dst_prefix, frule.nw_dst_maskbits, flowinfo.next_ho.nw_dst_prefix, flowinfo.next_ho.nw_dst_maskbits)){
-            //for example : substring of rulenode looks like 'flow1', 'flow2' and so on
+        if(FlowRuleNode.matchIPAddress(frule.nw_dst_prefix, frule.nw_dst_maskbits, flowinfo.next_ho.nw_dst_prefix, flowinfo.next_ho.nw_dst_maskbits)){
+            //for example : substring of FlowRuleNode looks like 'flow1', 'flow2' and so on
             String keyword = flowinfo.rule_node_name.substring(0, 5);
             for(int i=1;i < flowinfo.flow_history.size();i++){
                 if(keyword.equals(flowinfo.flow_history.get(i).rule_node_name.substring(0,5))){
@@ -403,11 +235,11 @@ public class ShiftedGraph {
             //flow removing should be considered
             System.out.println("S3-Flow Removing applied!!");
             this.resolution_method = 3;
-            Set<String> set = this.rulenodes.keySet();
+            Set<String> set = this.FlowRuleNodes.keySet();
             Iterator<String> itr = set.iterator();
             while(itr.hasNext()){
                 Object key = itr.next();
-                List<RuleNode> ruletable = this.rulenodes.get(key.toString());
+                List<FlowRuleNode> ruletable = this.FlowRuleNodes.get(key.toString());
                 int size = ruletable.size();
                 for(int i = size-1; i >= 0; i--){
                     if(keyword.equals(ruletable.get(i).rule_name.substring(0,5))){
@@ -442,8 +274,8 @@ public class ShiftedGraph {
 
         boolean set_vlan = false;
         for(int i=0; i < flowinfo.flow_history.size();i++){
-            String rulenode = flowinfo.flow_history.get(i).rule_node_name.substring(0, 5);
-            if(keyword.equals(rulenode)){
+            String FlowRuleNode = flowinfo.flow_history.get(i).rule_node_name.substring(0, 5);
+            if(keyword.equals(FlowRuleNode)){
                 set_vlan = true;
                 break;
             }
@@ -453,11 +285,11 @@ public class ShiftedGraph {
             //in this case, set_vlan_id actions which contain 'flow1' keyword
             String keyword2 = "egress";
             String keyword3 = "ingress";
-            Set<String> set = this.rulenodes.keySet();
+            Set<String> set = this.FlowRuleNodes.keySet();
             Iterator<String> itr = set.iterator();
             while(itr.hasNext()){
                 Object key = itr.next();
-                List<RuleNode> ruletable = this.rulenodes.get(key.toString());
+                List<FlowRuleNode> ruletable = this.FlowRuleNodes.get(key.toString());
                 int size = ruletable.size();
                 for(int j = 0; j < size; j++){
                     if(keyword.equals(ruletable.get(j).rule_name.substring(0,5))&&
@@ -470,7 +302,7 @@ public class ShiftedGraph {
                         }else{
                             this.setVlan(entries, key.toString(),rulename, 3);
                         }
-                        this.rulenodes.get(key.toString()).remove(j+1);
+                        this.FlowRuleNodes.get(key.toString()).remove(j+1);
                     }
                 }
             }
@@ -606,7 +438,7 @@ public class ShiftedGraph {
             FlowInfo fi = itr.next();
             System.out.println("-----------------------------------------------------------------------------------");
             System.out.println("(((flow_history : this is "+Integer.toString(i)+" th visits.)))");
-            System.out.println("Applied RuleNode Name : "+fi.rule_node_name);
+            System.out.println("Applied FlowRuleNode Name : "+fi.rule_node_name);
             FlowInfo.printFlowInfo(fi);
             System.out.println("-----------------------------------------------------------------------------------");
             i++;
@@ -651,9 +483,10 @@ public class ShiftedGraph {
 
         while(true){
             String SWITCHDPID = sample.next_switch_dpid;
+            // TODO the if check will always pass
             if(sample.next_switch_dpid.equals(SWITCHDPID.toString())){
                 /* Get all the flow rules present in the next switch */
-                List<RuleNode> ruletable = this.rulenodes.get(SWITCHDPID);
+                List<FlowRuleNode> ruletable = this.FlowRuleNodes.get(SWITCHDPID);
                 int i = 0;
                 int table_size = 0;
                 if(ruletable != null){
@@ -679,51 +512,67 @@ public class ShiftedGraph {
                     this.printFlowInfo(sample, false);
                     return;
                 }
+                /* Flows have not reached the destination switch */
+                /* Loop through all the flows in the table from SWITCHDPID
+                 * Index: index of the flow rule in a table.
+                 * Counter:
+                 */
                 int counter = 0;
-
                 if(index == 0){
                     for(i = index; i < table_size; i++){
-                        if(sample.next_switch_dpid.equals(SWITCHDPID.toString()) && sample.next_ingress_port == ruletable.get(i).in_port
-                                && ruletable.get(i).dl_type==2048 && ruletable.get(i).active == true) {
+                        // TODO Flaw in old code: sample.next_switch_dpid.equals(SWITCHDPID.toString()) already been checked
+                        // Check if the switch and port of the new flow rule are the same
+                        /* check for flow rule matching IP packet */
+                        if(sample.next_switch_dpid.equals(ruletable.get(i).switch_name)
+                                && sample.next_ingress_port.toString().equals(ruletable.get(i).in_port.toString())
+                                && ruletable.get(i).dl_type == EtherTypes.IPv4.intValue() && ruletable.get(i).active == true) {
                             counter++;
                         }
+                        /* The rule has matched more than one flow per switch */
                         if(counter >= 2
                                 && sample.next_ho.vlan == ruletable.get(i).vlan
-                                && RuleNode.matchIPAddress(sample.next_ho.nw_dst_prefix, sample.next_ho.nw_dst_maskbits, ruletable.get(i).nw_dst_prefix, ruletable.get(i).nw_dst_maskbits)
-                                && RuleNode.matchIPAddress(sample.next_ho.nw_src_prefix, sample.next_ho.nw_src_maskbits, ruletable.get(i).nw_src_prefix, ruletable.get(i).nw_src_maskbits)){
+                                && FlowRuleNode.matchIPAddress(sample.next_ho.nw_dst_prefix, sample.next_ho.nw_dst_maskbits, ruletable.get(i).nw_dst_prefix, ruletable.get(i).nw_dst_maskbits)
+                                && FlowRuleNode.matchIPAddress(sample.next_ho.nw_src_prefix, sample.next_ho.nw_src_maskbits, ruletable.get(i).nw_src_prefix, ruletable.get(i).nw_src_maskbits)){
                                 FlowInfo sample_clone = new FlowInfo();
                                 sample_clone = FlowInfo.valueCopy(sample);
                                 this.current_flow_index++;
                                 sample_clone.flow_index = this.current_flow_index;
+                                /* Propagate with non zero index */
                                 this.propagateFlow(sample_clone, target, i);
                         }
                     }
                 }
 
+                /* Reached here when ((index==0) && (Rule matches just one flow)) || index != 0 */
+
                 int unmatch_count = 0;
-                for(i = index; i < table_size;i++){
-                    if(sample.next_switch_dpid.equals(SWITCHDPID.toString()) && sample.next_ingress_port == ruletable.get(i).in_port ){
-                        RuleNode rulenode = ruletable.get(i);
-                        if(rulenode.dl_type==2054){
+                for(i = index; i < table_size; i++){
+                    if(sample.next_switch_dpid.equals(ruletable.get(i).switch_name) &&
+                            sample.next_ingress_port.toString().equals(ruletable.get(i).in_port.toString())){
+                        FlowRuleNode flowRule = ruletable.get(i);
+                        /* check for flow rule matching ARP packet, ignore the rule of ARP is found*/
+                        if(flowRule.dl_type == EtherTypes.ARP.intValue()){
                             unmatch_count++;
                             continue;
                         }
-                        else if(rulenode.dl_type==2048 && rulenode.active == true){
-                            rulenode = RuleNode.computeFlow(rulenode, sample);
-                            if(rulenode.flow_info.flow_history == null) {
+                        /* check for flow rule matching IP packet */
+                        else if(flowRule.dl_type == EtherTypes.IPv4.intValue() && flowRule.active == true){
+                            flowRule = FlowRuleNode.computeFlow(flowRule, sample);
+                            if(flowRule.flow_info.flow_history == null) {
                                 return;
                             }
                         } else {
-                            System.out.println("THIS DATA LINK TYPE IS NOT SUPPORTED!!!");
+                            System.out.println("Unrecognized Ethernet Type.");
+                            continue;
                         }
 
-                        this.rulenodes.get(SWITCHDPID).remove(i);
+                        this.FlowRuleNodes.get(SWITCHDPID).remove(i);
                         if(i == 0){
-                            this.rulenodes.get(SWITCHDPID).add(rulenode);
+                            this.FlowRuleNodes.get(SWITCHDPID).add(flowRule);
                         }else{
-                            this.rulenodes.get(SWITCHDPID).add(i, rulenode);
+                            this.FlowRuleNodes.get(SWITCHDPID).add(i, flowRule);
                         }
-                        sample = rulenode.flow_info;
+                        sample = flowRule.flow_info;
 
                         if(sample.next_switch_dpid.equals(targetdpid) && sample.next_ingress_port==targetport){
                             //normal execution
@@ -752,20 +601,21 @@ public class ShiftedGraph {
                 }
 
             }
+            /* Reset the index for the new table */
             index = 0;
             //end of while
         }
     }
 
     public FlowInfo findNextConnection(FlowInfo flowinfo){
-        Set<TopologyStruct> st = this.TopologyStorage.keySet();
+        Set<TopologyStruct> st = this.topologyStorage.keySet();
         Iterator<TopologyStruct> iter = st.iterator();
         while (iter.hasNext())
         {
             TopologyStruct t = iter.next();
             // TODO Check port equivalence and URI type
             if(t.dpid.equals(flowinfo.next_switch_dpid) && t.port.equals(flowinfo.next_ingress_port.getValue())){
-                TopologyStruct t2 = this.TopologyStorage.get(t);
+                TopologyStruct t2 = this.topologyStorage.get(t);
                 flowinfo.next_switch_dpid = t2.dpid;
                 flowinfo.next_ingress_port = new NodeConnectorId(t2.port);
                 //System.out.println(t.dpid + " / " + t.port + " <--> " +t2.dpid + "/ " + t2.port);
@@ -775,8 +625,8 @@ public class ShiftedGraph {
         return flowinfo;
     }
 
-    public Map<String, Map<String, RuleNode>> updateRuleNode(Map<String, Map<String, RuleNode>> rulenodes, RuleNode rulenode){
-        return rulenodes;
+    public Map<String, Map<String, FlowRuleNode>> updateFlowRuleNode(Map<String, Map<String, FlowRuleNode>> FlowRuleNodes, FlowRuleNode FlowRuleNode){
+        return FlowRuleNodes;
     }
 /*
  *  Flaw: The dpid of the FW rule is not taken into account/ignored.
@@ -851,6 +701,7 @@ public class ShiftedGraph {
         }
 
     }
+
     public void buildSourceProbeNode(FirewallRule rule){
         if(this.SourceProbeNodeStorage == null){
             this.SourceProbeNodeStorage = new ConcurrentHashMap<String, Map<FlowInfo, TopologyStruct>>();
@@ -967,14 +818,14 @@ public class ShiftedGraph {
         return "ShiftedGraph";
     }
 
-    public boolean findRuleNode(String dpid, String rulename){
+    public boolean findFlowRuleNode(String dpid, String rulename){
         boolean result = false;
-        Set<String> set = this.rulenodes.keySet();
+        Set<String> set = this.FlowRuleNodes.keySet();
         Iterator<String> itr = set.iterator();
         while(itr.hasNext()){
             Object key = itr.next();
             if(dpid.equals((String) key)){
-                List<RuleNode> ruletable = this.rulenodes.get((String) key);
+                List<FlowRuleNode> ruletable = this.FlowRuleNodes.get((String) key);
                 for(int j = 0; j < ruletable.size(); j++){
                     if(rulename.equals(ruletable.get(j).rule_name)) {
                         result = true;
@@ -988,11 +839,11 @@ public class ShiftedGraph {
 
     public short getPriority(String rulename){
         short priority = -32767;
-        Set<String> set = this.rulenodes.keySet();
+        Set<String> set = this.FlowRuleNodes.keySet();
         Iterator<String> itr = set.iterator();
         while(itr.hasNext()){
             Object key = itr.next();
-            List<RuleNode> ruletable = this.rulenodes.get((String) key);
+            List<FlowRuleNode> ruletable = this.FlowRuleNodes.get((String) key);
             for(int i = 0; i < ruletable.size(); i++){
                 if(rulename.equals(ruletable.get(i).rule_name)){
                     priority = (short)ruletable.get(i).priority;
@@ -1005,11 +856,11 @@ public class ShiftedGraph {
 
     public int getRuleIndex(String rulename){
         int k = 0;
-        Set<String> set = this.rulenodes.keySet();
+        Set<String> set = this.FlowRuleNodes.keySet();
         Iterator<String> itr = set.iterator();
         while(itr.hasNext()){
             Object key = itr.next();
-            List<RuleNode> ruletable = this.rulenodes.get(key.toString());
+            List<FlowRuleNode> ruletable = this.FlowRuleNodes.get(key.toString());
             for(int i = 0; i < ruletable.size(); i++){
                 if(rulename.equals(ruletable.get(i).rule_name)){
                     k = i;
@@ -1023,33 +874,33 @@ public class ShiftedGraph {
 
     public void staticEntryModified(String dpid, String rulename, FlowBuilder newFlowMod){
 
-        List<RuleNode> ruletable = new ArrayList<RuleNode>();
+        List<FlowRuleNode> ruletable = new ArrayList<FlowRuleNode>();
 
-        if(this.rulenodes == null){
-            this.rulenodes = new ConcurrentHashMap<String, List<RuleNode>>();
+        if(this.FlowRuleNodes == null){
+            this.FlowRuleNodes = new ConcurrentHashMap<String, List<FlowRuleNode>>();
         }
         boolean newrule = false;
-        if(this.findRuleNode(dpid, rulename) == false){
+        if(this.findFlowRuleNode(dpid, rulename) == false){
             newrule = true;
         }
-        ruletable = this.rulenodes.get(dpid);
+        ruletable = this.FlowRuleNodes.get(dpid);
         if(ruletable != null) {
-            this.rulenodes.remove(dpid);
+            this.FlowRuleNodes.remove(dpid);
         }
         long start = System.nanoTime();
-        ruletable = RuleNode.addrulenode(ruletable, rulename, newFlowMod);
+        ruletable = FlowRuleNode.addFlowRuleNode(ruletable, rulename, newFlowMod);
         long end = System.nanoTime();
         try {
             File f = new File(this.RESULT_PATH);
             FileWriter fw = new FileWriter(f, true);
             BufferedWriter bw = new BufferedWriter(fw);
-            bw.write("staticEntryModified addrulenode time(micro seconds) : " + ( end - start )/1000 +"\n");
+            bw.write("staticEntryModified addFlowRuleNode time(micro seconds) : " + ( end - start )/1000 +"\n");
             bw.flush();
             fw.close();
         } catch (IOException e) {
             e.printStackTrace();
         }
-        this.rulenodes.put(dpid, ruletable);
+        this.FlowRuleNodes.put(dpid, ruletable);
         int flowstorage_size = this.flowstorage.size();
         if(newrule){
             boolean onetimepass = true;
@@ -1072,7 +923,7 @@ public class ShiftedGraph {
                                 fi.candidate_rule = rulename;
                                 this.propagateFlow(fi, this.flowstorage.get(i).target, this.getRuleIndex(rule_name));
                                 this.flowstorage.get(i).candidate_rule = null;
-                                if(onetimepass && this.rulenodes.get(dpid).size()>=2){
+                                if(onetimepass && this.FlowRuleNodes.get(dpid).size()>=2){
                                     //new flow
                                     //this.current_flow_index++;
                                     fi.flow_index = this.current_flow_index;
@@ -1148,7 +999,7 @@ public class ShiftedGraph {
             File f = new File(this.RESULT_PATH);
             FileWriter fw = new FileWriter(f, true);
             BufferedWriter bw = new BufferedWriter(fw);
-            bw.write("staticEntryModified addrulenode time(micro seconds) : " + ( end - start )/1000 +"\n");
+            bw.write("staticEntryModified addFlowRuleNode time(micro seconds) : " + ( end - start )/1000 +"\n");
             bw.flush();
             fw.close();
         } catch (IOException e) {
@@ -1157,11 +1008,11 @@ public class ShiftedGraph {
     }
 
     public boolean findRulename(String rulename){
-        Set<String> set = this.rulenodes.keySet();
+        Set<String> set = this.FlowRuleNodes.keySet();
         Iterator<String> itr = set.iterator();
         while(itr.hasNext()){
             Object key = itr.next();
-            List<RuleNode> ruletable = this.rulenodes.get(key.toString());
+            List<FlowRuleNode> ruletable = this.FlowRuleNodes.get(key.toString());
             for(int i = 0; i < ruletable.size(); i++){
                 if(rulename.equals(ruletable.get(i).rule_name)){
                     return true;
@@ -1179,26 +1030,26 @@ public class ShiftedGraph {
             return;
         }
         String dpid = null;
-        Set<String> set = this.rulenodes.keySet();
+        Set<String> set = this.FlowRuleNodes.keySet();
         Iterator<String> itr = set.iterator();
         while(itr.hasNext()){
             Object key = itr.next();
-            List<RuleNode> ruletable = this.rulenodes.get(key.toString());
+            List<FlowRuleNode> ruletable = this.FlowRuleNodes.get(key.toString());
             for(int j = 0; j < ruletable.size(); j++){
                 if(rulename.equals(ruletable.get(j).rule_name)){
-                    this.rulenodes.get(key.toString()).remove(ruletable.get(j));
+                    this.FlowRuleNodes.get(key.toString()).remove(ruletable.get(j));
                     dpid = key.toString();
                     break;
                 }
             }
         }
-        List<RuleNode> ruletable = new ArrayList<RuleNode>();
-        ruletable = this.rulenodes.get(dpid);
+        List<FlowRuleNode> ruletable = new ArrayList<FlowRuleNode>();
+        ruletable = this.FlowRuleNodes.get(dpid);
         if(ruletable != null) {
-            this.rulenodes.remove(dpid);
+            this.FlowRuleNodes.remove(dpid);
         }
-        ruletable = RuleNode.deleterulenode(ruletable, rulename);
-        this.rulenodes.put(dpid, ruletable);
+        ruletable = FlowRuleNode.deleteFlowRuleNode(ruletable, rulename);
+        this.FlowRuleNodes.put(dpid, ruletable);
 
         int flowstorage_size = this.flowstorage.size();
         if(this.flowstorage != null && flowstorage_size > 0){

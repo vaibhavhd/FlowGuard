@@ -222,9 +222,9 @@ public class FirewallRule implements Comparable<FirewallRule> {
         // return false match - no need to continue protocol specific check
         if (wildcard_dl_type == false) {
             if (dl_type == (long)(EtherTypes.ARP.intValue())) {
-                if (packet.getEtherType() != Ethernet.TYPE_ARP)
+                if (packet.getEtherType() != Ethernet.TYPE_ARP) {
                     return false;
-                else {
+                } else {
                     if (action == FirewallRule.FirewallAction.DENY) {
                         wildcards.drop &= ~Firewall.OFPFW_DL_TYPE;
                     } else {
@@ -232,9 +232,9 @@ public class FirewallRule implements Comparable<FirewallRule> {
                     }
                 }
             } else if (dl_type == (long)(EtherTypes.IPv4.intValue())) {
-                if (packet.getEtherType() != Ethernet.TYPE_IPv4)
+                if (packet.getEtherType() != Ethernet.TYPE_IPv4) {
                     return false;
-                else {
+                } else {
                     if (action == FirewallRule.FirewallAction.DENY) {
                         wildcards.drop &= ~Firewall.OFPFW_NW_PROTO;
                     } else {
