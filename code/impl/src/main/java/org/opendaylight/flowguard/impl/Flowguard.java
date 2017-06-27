@@ -7,6 +7,7 @@
  */
 package org.opendaylight.flowguard.impl;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
@@ -15,15 +16,21 @@ import java.util.concurrent.ExecutionException;
 import org.opendaylight.controller.md.sal.binding.api.DataBroker;
 import org.opendaylight.controller.md.sal.binding.api.ReadTransaction;
 import org.opendaylight.controller.md.sal.common.api.data.LogicalDatastoreType;
+import org.opendaylight.yang.gen.v1.urn.ietf.params.xml.ns.yang.ietf.inet.types.rev130715.Ipv4Prefix;
 import org.opendaylight.yang.gen.v1.urn.opendaylight.flow.inventory.rev130819.FlowCapableNode;
 import org.opendaylight.yang.gen.v1.urn.opendaylight.flow.inventory.rev130819.tables.Table;
 import org.opendaylight.yang.gen.v1.urn.opendaylight.flow.inventory.rev130819.tables.TableKey;
 import org.opendaylight.yang.gen.v1.urn.opendaylight.flow.inventory.rev130819.tables.table.Flow;
 import org.opendaylight.yang.gen.v1.urn.opendaylight.flow.inventory.rev130819.tables.table.FlowBuilder;
+import org.opendaylight.yang.gen.v1.urn.opendaylight.inventory.rev130819.NodeConnectorId;
 import org.opendaylight.yang.gen.v1.urn.opendaylight.inventory.rev130819.NodeId;
 import org.opendaylight.yang.gen.v1.urn.opendaylight.inventory.rev130819.Nodes;
 import org.opendaylight.yang.gen.v1.urn.opendaylight.inventory.rev130819.nodes.Node;
 import org.opendaylight.yang.gen.v1.urn.opendaylight.inventory.rev130819.nodes.NodeKey;
+import org.opendaylight.yang.gen.v1.urn.opendaylight.params.xml.ns.yang.flowguard.rev170505.Fwrule.Action;
+import org.opendaylight.yang.gen.v1.urn.opendaylight.params.xml.ns.yang.flowguard.rev170505.FwruleRegistry;
+import org.opendaylight.yang.gen.v1.urn.opendaylight.params.xml.ns.yang.flowguard.rev170505.fwrule.registry.FwruleRegistryEntry;
+import org.opendaylight.yang.gen.v1.urn.opendaylight.params.xml.ns.yang.flowguard.rev170505.fwrule.registry.FwruleRegistryEntryKey;
 import org.opendaylight.yang.gen.v1.urn.tbd.params.xml.ns.yang.network.topology.rev131021.NetworkTopology;
 //import org.opendaylight.yang.gen.v1.urn.tbd.params.xml.ns.yang.network.topology.rev131021.NodeId;
 import org.opendaylight.yang.gen.v1.urn.tbd.params.xml.ns.yang.network.topology.rev131021.TopologyId;
@@ -50,17 +57,62 @@ public class Flowguard {
         this.readTx  = db.newReadOnlyTransaction();
         this.topologyStorage = new ConcurrentHashMap<TopologyStruct, TopologyStruct>();
         this.flowStorage = new ConcurrentHashMap<String, List<FlowRuleNode>>();
+        this.ruleStorage = new ArrayList<FirewallRule>();
     }
 
     public void start() {
         // Create the snapshot of existing network topology */
         this.buildTopology();
         this.importStaticFlows();
+        this.importStaticRules();
 
         this.sg = new ShiftedGraph(this.flowStorage, this.topologyStorage);
-        // Pull the FW Rules from a file.
+        //Pull the FW Rules from a file.
         //sg.buildSourceProbeNode(this.ruleStorage);
 
+    }
+
+    private void importStaticRules() {
+        //InstanceIdentifier<ABCD> ruleIdentifier  = InstanceIdentifier.builder(ABCD.class);
+        //InstanceIdentifier<FwruleRegistryEntry> iid = InstanceIdentifier.create(FwruleRegistry.class)
+          //      .child(FwruleRegistryEntry.class, new FwruleRegistryEntryKey(input.getName()));
+
+        InstanceIdentifier<FwruleRegistry> iid  = InstanceIdentifier.builder(FwruleRegistry.class).toInstance();
+        List<FwruleRegistryEntry> entries = null;
+        try {
+            Optional<FwruleRegistry> fwRules = (Optional<FwruleRegistry>) readTx.read(LogicalDatastoreType.CONFIGURATION, iid).get();
+            entries = fwRules.get().getFwruleRegistryEntry();
+        } catch (InterruptedException e) {
+            // TODO Auto-generated catch block
+            e.printStackTrace();
+        } catch (ExecutionException e) {
+            // TODO Auto-generated catch block
+            e.printStackTrace();
+        }
+
+        for(FwruleRegistryEntry entry : entries) {
+            FirewallRule rule = new FirewallRule();
+
+            rule.ruleid = entry.getRuleId();
+            parseIP(rule, entry.getSourceIpAddress());
+            parseIP(rule, entry.getDestinationIpAddress());
+            rule.tp_src = Short.parseShort(entry.getSourcePort());
+            rule.tp_dst = Short.parseShort(entry.getDestinationPort());
+            rule.action = (entry.getAction() == Action.Allow) ? FirewallRule.FirewallAction.ALLOW
+                    : FirewallRule.FirewallAction.DENY;
+            rule.in_port = new NodeConnectorId(entry.getInPort());
+            rule.dpid = entry.getNode();
+
+            ruleStorage.add(rule);
+        }
+    }
+
+    private void parseIP(FirewallRule rule, String address) {
+        Ipv4Prefix src_addr = new Ipv4Prefix(address);
+        int src_ip =  FlowRuleNode.calculateIpfromPrefix(src_addr);
+        int src_mask = FlowRuleNode.calculateMaskfromPrefix(src_addr);
+        rule.nw_src_prefix = src_ip;
+        rule.nw_src_maskbits = src_mask;
     }
 
     private void buildTopology() {

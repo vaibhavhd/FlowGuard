@@ -8,6 +8,70 @@ module flowguard {
         description "Initial revision of flowguard model";
     }
 
+    grouping fwrule {
+        leaf ruleId {
+           type uint16;
+           config true;
+           mandatory true;
+           description "Name of FW rule";
+        }
+        leaf node {
+           type string;
+        }
+        leaf inPort {
+           type string;
+        }
+
+        leaf sourceIpAddress {
+          type string;
+          config true;
+          mandatory false;
+          description
+            "The IP address source";
+        }
+
+        leaf destinationIpAddress {
+          type string;
+          config true;
+          mandatory false;
+          description
+            "The IP address destination";
+        }
+
+        leaf sourcePort {
+            type string;
+            config true;
+            mandatory false;
+            description
+              "The source port";
+        }
+
+        leaf destinationPort {
+            type string;
+            config true;
+            mandatory false;
+            description
+              "The destination port";
+        }
+
+        leaf action {
+            type enumeration {
+              enum "block" {
+                value 1;
+                description
+                    "Block = 1";
+              }
+              enum "allow" {
+                value 2;
+                description
+                  "Allow = 2";
+              }
+            }
+            config true;
+            mandatory true;
+          }
+  }
+
     grouping rule {
 
     	leaf name {
@@ -19,32 +83,7 @@ module flowguard {
     	leaf node {
         	type string;
         }
-    	leaf sourceMacAddress {
-            type string;
-            config true;
-            mandatory false;
-            description
-              "The MAC address source";
-          }
-
-          leaf destinationMacAddress {
-            type string;
-            config true;
-            mandatory false;
-            description
-              "The MAC address destination";
-          }
-
-
-          leaf sourceIpAddress {
-            type string;
-            config true;
-            mandatory false;
-            description
-              "The IP address source";
-          }
-
-          leaf destinationIpAddress {
+    	leaf destinationIpAddress {
             type string;
             config true;
             mandatory false;
@@ -52,13 +91,6 @@ module flowguard {
               "The IP address destination";
           }
 
-          leaf sourcePort {
-              type uint16;
-              config true;
-              mandatory false;
-              description
-                "The source port";
-          }
 
           leaf destinationPort {
               type uint16;
@@ -68,38 +100,7 @@ module flowguard {
                 "The destination port";
           }
 
-          leaf protocol {
-            type enumeration {
-              enum "udp" {
-                value 1;
-                description
-                  "UDP protocol.";
-              }
-              enum "tcp" {
-                value 2;
-                description
-                  "TCP protocol.";
-              }
-            }
-            config true;
-            mandatory false;
-          }
-
-          leaf action {
-              type enumeration {
-                enum "block" {
-                  value 1;
-                }
-                enum "allow" {
-                  value 2;
-                  description
-                    "TCP protocol.";
-                }
-              }
-              config true;
-              mandatory false;
-            }
-    }
+      }
     container rule-registry {
     	list rule-registry-entry {
     		key "name";
@@ -109,15 +110,11 @@ module flowguard {
     		}
     	}
     }
-    rpc add-rule {
-    	input {
-    		uses flowguard:rule;
-    	}
-    	output {
-    		leaf greeting {
-    			type string;
-    		}
-    	}
+    container fwrule-registry {
+        list fwrule-registry-entry {
+            key "ruleId";
+            uses flowguard:fwrule;
+        }
     }
     container controls {
         leaf action {
@@ -138,6 +135,18 @@ module flowguard {
             type string;
         }
     }
+
+    rpc add-rule {
+    	input {
+    		uses flowguard:rule;
+    	}
+    	output {
+    		leaf greeting {
+    			type string;
+    		}
+    	}
+    }
+
     rpc flowguard-control {
         input {
             leaf action {
@@ -154,6 +163,30 @@ module flowguard {
                 config true;
                 mandatory false;
               }
+        }
+        output {
+            leaf greeting {
+                type string;
+            }
+        }
+    }
+
+    rpc add-static-fwrule {
+        input {
+            leaf filePath {
+                type string;
+              }
+        }
+        output {
+            leaf greeting {
+                type string;
+            }
+        }
+    }
+
+    rpc add-dynamic-fwrule {
+        input {
+            uses flowguard:fwrule;
         }
         output {
             leaf greeting {

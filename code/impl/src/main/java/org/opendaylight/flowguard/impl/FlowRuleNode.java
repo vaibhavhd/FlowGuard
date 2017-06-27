@@ -517,16 +517,16 @@ public class FlowRuleNode {
                                processingflow.next_ho.nw_dst_maskbits = flowRuleNode.nw_dst_maskbits;
                                processingflow.next_ho.vlan = flowRuleNode.vlan;
                         }
-                    }else if(FlowRuleNode.action_nw_dst_maskbits == 32){
+                    }else if(flowRuleNode.action_nw_dst_maskbits == 32){
                         //rule matching condition and action set is N to 1
-                           processingflow.next_ho.nw_dst_prefix = FlowRuleNode.action_nw_dst_prefix;
-                           processingflow.next_ho.nw_dst_maskbits = FlowRuleNode.action_nw_src_maskbits;
-                           processingflow.next_ho.vlan = FlowRuleNode.action_vlan;
+                           processingflow.next_ho.nw_dst_prefix = flowRuleNode.action_nw_dst_prefix;
+                           processingflow.next_ho.nw_dst_maskbits = flowRuleNode.action_nw_src_maskbits;
+                           processingflow.next_ho.vlan = flowRuleNode.action_vlan;
                     }else{
                         //rule matching condition and action set is N to N case
-                        if(FlowRuleNode.nw_dst_maskbits <= processingflow.current_ho.nw_dst_maskbits){
-                               int rule_iprng = 32 - FlowRuleNode.nw_dst_maskbits;
-                               int rule_ipint = FlowRuleNode.action_nw_dst_prefix >> rule_iprng;
+                        if(flowRuleNode.nw_dst_maskbits <= processingflow.current_ho.nw_dst_maskbits){
+                               int rule_iprng = 32 - flowRuleNode.nw_dst_maskbits;
+                               int rule_ipint = flowRuleNode.action_nw_dst_prefix >> rule_iprng;
                                rule_ipint = rule_ipint << rule_iprng;
 
                                int flow_iprng = 32 - processingflow.current_ho.nw_dst_maskbits;
@@ -536,33 +536,33 @@ public class FlowRuleNode {
                                processingflow.next_ho.nw_dst_maskbits = processingflow.current_ho.nw_dst_maskbits;
                                processingflow.next_ho.vlan = processingflow.current_ho.vlan;
                         }else{
-                               processingflow.next_ho.nw_dst_prefix = FlowRuleNode.action_nw_dst_prefix;
-                               processingflow.next_ho.nw_dst_maskbits = FlowRuleNode.action_nw_src_maskbits;
-                               processingflow.next_ho.vlan = FlowRuleNode.action_vlan;
+                               processingflow.next_ho.nw_dst_prefix = flowRuleNode.action_nw_dst_prefix;
+                               processingflow.next_ho.nw_dst_maskbits = flowRuleNode.action_nw_src_maskbits;
+                               processingflow.next_ho.vlan = flowRuleNode.action_vlan;
                         }
                     }
 
-                    if(FlowRuleNode.action_nw_src_prefix==0){
+                    if(flowRuleNode.action_nw_src_prefix==0){
                         //all matching flow will be forwarded
-                        if(FlowRuleNode.nw_src_maskbits <= processingflow.current_ho.nw_src_maskbits){
+                        if(flowRuleNode.nw_src_maskbits <= processingflow.current_ho.nw_src_maskbits){
                                processingflow.next_ho.nw_src_prefix = processingflow.current_ho.nw_src_prefix;
                                processingflow.next_ho.nw_src_maskbits = processingflow.current_ho.nw_src_maskbits;
                                processingflow.next_ho.vlan = processingflow.current_ho.vlan;
                         }else{
-                            processingflow.next_ho.nw_src_prefix = FlowRuleNode.nw_src_prefix;
-                               processingflow.next_ho.nw_src_maskbits = FlowRuleNode.nw_src_maskbits;
-                               processingflow.next_ho.vlan = FlowRuleNode.vlan;
+                            processingflow.next_ho.nw_src_prefix = flowRuleNode.nw_src_prefix;
+                               processingflow.next_ho.nw_src_maskbits = flowRuleNode.nw_src_maskbits;
+                               processingflow.next_ho.vlan = flowRuleNode.vlan;
                         }
-                    }else if(FlowRuleNode.action_nw_src_maskbits == 32){
+                    }else if(flowRuleNode.action_nw_src_maskbits == 32){
                         //rule matching condition and action set is N to 1
-                           processingflow.next_ho.nw_src_prefix = FlowRuleNode.action_nw_src_prefix;
-                           processingflow.next_ho.nw_src_maskbits = FlowRuleNode.action_nw_src_maskbits;
-                           processingflow.next_ho.vlan = FlowRuleNode.action_vlan;
+                           processingflow.next_ho.nw_src_prefix = flowRuleNode.action_nw_src_prefix;
+                           processingflow.next_ho.nw_src_maskbits = flowRuleNode.action_nw_src_maskbits;
+                           processingflow.next_ho.vlan = flowRuleNode.action_vlan;
                     }else{
                         //rule matching condition and action set is N to N case
-                        if(FlowRuleNode.nw_src_maskbits <= processingflow.current_ho.nw_src_maskbits){
-                               int rule_iprng = 32 - FlowRuleNode.nw_src_maskbits;
-                               int rule_ipint = FlowRuleNode.action_nw_src_prefix >> rule_iprng;
+                        if(flowRuleNode.nw_src_maskbits <= processingflow.current_ho.nw_src_maskbits){
+                               int rule_iprng = 32 - flowRuleNode.nw_src_maskbits;
+                               int rule_ipint = flowRuleNode.action_nw_src_prefix >> rule_iprng;
                                rule_ipint = rule_ipint << rule_iprng;
 
                                int flow_iprng = 32 - processingflow.current_ho.nw_src_maskbits;
@@ -572,47 +572,47 @@ public class FlowRuleNode {
                                processingflow.next_ho.nw_src_maskbits = processingflow.current_ho.nw_src_maskbits;
                                processingflow.next_ho.vlan = processingflow.current_ho.vlan;
                         }else{
-                               processingflow.next_ho.nw_src_prefix = FlowRuleNode.action_nw_src_prefix;
-                               processingflow.next_ho.nw_src_maskbits = FlowRuleNode.action_nw_src_maskbits;
-                               processingflow.next_ho.vlan = FlowRuleNode.action_vlan;
+                               processingflow.next_ho.nw_src_prefix = flowRuleNode.action_nw_src_prefix;
+                               processingflow.next_ho.nw_src_maskbits = flowRuleNode.action_nw_src_maskbits;
+                               processingflow.next_ho.vlan = flowRuleNode.action_vlan;
                         }
                     }
 
                     //calculate diff part
-                    if(FlowRuleNode.action_nw_dst_maskbits == 32 && FlowRuleNode.action_nw_src_maskbits == 32){
+                    if(flowRuleNode.action_nw_dst_maskbits == 32 && flowRuleNode.action_nw_src_maskbits == 32){
                         //do nothing
                     }else{
                         //1. calculate flowinfo itself : add current_ho's diff to the next_ho's diff
                         if(processingflow.current_ho.diff != null){
                             for(int i = 0; i < processingflow.current_ho.diff.size(); i++){
                                 HeaderObject ho = new HeaderObject();
-                                if(matchIPAddress(FlowRuleNode.nw_dst_prefix, FlowRuleNode.nw_dst_maskbits,
+                                if(matchIPAddress(flowRuleNode.nw_dst_prefix, flowRuleNode.nw_dst_maskbits,
                                         processingflow.current_ho.diff.get(i).nw_dst_prefix, processingflow.current_ho.diff.get(i).nw_dst_maskbits)){
-                                    if(matchIPAddress(FlowRuleNode.nw_src_prefix, FlowRuleNode.nw_src_maskbits,
+                                    if(matchIPAddress(flowRuleNode.nw_src_prefix, flowRuleNode.nw_src_maskbits,
                                             processingflow.current_ho.diff.get(i).nw_src_prefix, processingflow.current_ho.diff.get(i).nw_src_maskbits)){
-                                        if(FlowRuleNode.nw_dst_maskbits >= processingflow.current_ho.diff.get(i).nw_dst_maskbits){
-                                            if(FlowRuleNode.nw_src_maskbits >= processingflow.current_ho.diff.get(i).nw_src_maskbits){
+                                        if(flowRuleNode.nw_dst_maskbits >= processingflow.current_ho.diff.get(i).nw_dst_maskbits){
+                                            if(flowRuleNode.nw_src_maskbits >= processingflow.current_ho.diff.get(i).nw_src_maskbits){
                                                 //full overlap : FlowRuleNode ip_range is in current_ho.diff.get(i)
                                                 processingflow.is_finished = true;
                                                 break;
                                             }
                                         }
                                         //three cases : action_nw_dst_maskbits is 0(forward), 32(one point), or any value(ip range).
-                                        if(FlowRuleNode.action_nw_dst_prefix==0){
+                                        if(flowRuleNode.action_nw_dst_prefix==0){
                                             //all matching flow will be forwarded
                                                ho.nw_dst_prefix = processingflow.current_ho.diff.get(i).nw_dst_prefix;
                                                ho.nw_dst_maskbits = processingflow.current_ho.diff.get(i).nw_dst_maskbits;
                                                ho.vlan = processingflow.current_ho.diff.get(i).vlan;
-                                        }else if(FlowRuleNode.action_nw_dst_maskbits == 32){
+                                        }else if(flowRuleNode.action_nw_dst_maskbits == 32){
                                             //rule matching condition and action set is N to 1
-                                               ho.nw_dst_prefix = FlowRuleNode.action_nw_dst_prefix;
-                                               ho.nw_dst_maskbits = FlowRuleNode.action_nw_src_maskbits;
-                                               ho.vlan = FlowRuleNode.action_vlan;
+                                               ho.nw_dst_prefix = flowRuleNode.action_nw_dst_prefix;
+                                               ho.nw_dst_maskbits = flowRuleNode.action_nw_src_maskbits;
+                                               ho.vlan = flowRuleNode.action_vlan;
                                         }else{
                                             //rule matching condition and action set is N to N case
-                                            if(FlowRuleNode.nw_dst_maskbits <= processingflow.current_ho.diff.get(i).nw_dst_maskbits){
-                                                   int rule_iprng = 32 - FlowRuleNode.nw_dst_maskbits;
-                                                   int rule_ipint = FlowRuleNode.action_nw_dst_prefix >> rule_iprng;
+                                            if(flowRuleNode.nw_dst_maskbits <= processingflow.current_ho.diff.get(i).nw_dst_maskbits){
+                                                   int rule_iprng = 32 - flowRuleNode.nw_dst_maskbits;
+                                                   int rule_ipint = flowRuleNode.action_nw_dst_prefix >> rule_iprng;
                                                    rule_ipint = rule_ipint << rule_iprng;
 
                                                    int flow_iprng = 32 - processingflow.current_ho.diff.get(i).nw_dst_maskbits;
@@ -623,21 +623,21 @@ public class FlowRuleNode {
                                                    ho.vlan = processingflow.current_ho.diff.get(i).vlan;
                                             }
                                         }
-                                        if(FlowRuleNode.action_nw_src_prefix==0){
+                                        if(flowRuleNode.action_nw_src_prefix==0){
                                             //all matching flow will be forwarded
                                                ho.nw_src_prefix = processingflow.current_ho.diff.get(i).nw_src_prefix;
                                                ho.nw_src_maskbits = processingflow.current_ho.diff.get(i).nw_src_maskbits;
                                                ho.vlan = processingflow.current_ho.diff.get(i).vlan;
-                                        }else if(FlowRuleNode.action_nw_src_maskbits == 32){
+                                        }else if(flowRuleNode.action_nw_src_maskbits == 32){
                                             //rule matching condition and action set is N to 1
-                                               ho.nw_src_prefix = FlowRuleNode.action_nw_src_prefix;
-                                               ho.nw_src_maskbits = FlowRuleNode.action_nw_src_maskbits;
-                                               ho.vlan = FlowRuleNode.action_vlan;
+                                               ho.nw_src_prefix = flowRuleNode.action_nw_src_prefix;
+                                               ho.nw_src_maskbits = flowRuleNode.action_nw_src_maskbits;
+                                               ho.vlan = flowRuleNode.action_vlan;
                                         }else{
                                             //rule matching condition and action set is N to N case
-                                            if(FlowRuleNode.nw_src_maskbits <= processingflow.current_ho.diff.get(i).nw_src_maskbits){
-                                                   int rule_iprng = 32 - FlowRuleNode.nw_src_maskbits;
-                                                   int rule_ipint = FlowRuleNode.action_nw_src_prefix >> rule_iprng;
+                                            if(flowRuleNode.nw_src_maskbits <= processingflow.current_ho.diff.get(i).nw_src_maskbits){
+                                                   int rule_iprng = 32 - flowRuleNode.nw_src_maskbits;
+                                                   int rule_ipint = flowRuleNode.action_nw_src_prefix >> rule_iprng;
                                                    rule_ipint = rule_ipint << rule_iprng;
 
                                                    int flow_iprng = 32 - processingflow.current_ho.diff.get(i).nw_src_maskbits;
@@ -658,69 +658,69 @@ public class FlowRuleNode {
                             }
                         }
                         //2. add FlowRuleNode's diff to the next_ho's diff
-                        if(FlowRuleNode.diff != null){
-                            for(int i = 0; i < FlowRuleNode.diff.size(); i++){
+                        if(flowRuleNode.diff != null){
+                            for(int i = 0; i < flowRuleNode.diff.size(); i++){
                                 HeaderObject ho = new HeaderObject();
                                 if(matchIPAddress(processingflow.current_ho.nw_dst_prefix, processingflow.current_ho.nw_dst_maskbits,
-                                        FlowRuleNode.diff.get(i).nw_dst_prefix, FlowRuleNode.diff.get(i).nw_dst_maskbits)){
+                                        flowRuleNode.diff.get(i).nw_dst_prefix, flowRuleNode.diff.get(i).nw_dst_maskbits)){
                                     if(matchIPAddress(processingflow.current_ho.nw_src_prefix, processingflow.current_ho.nw_src_maskbits,
-                                            FlowRuleNode.diff.get(i).nw_src_prefix, FlowRuleNode.diff.get(i).nw_src_maskbits)){
-                                        if(processingflow.current_ho.nw_dst_maskbits >= FlowRuleNode.diff.get(i).nw_dst_maskbits){
-                                            if(processingflow.current_ho.nw_src_maskbits >= FlowRuleNode.diff.get(i).nw_src_maskbits){
+                                            flowRuleNode.diff.get(i).nw_src_prefix, flowRuleNode.diff.get(i).nw_src_maskbits)){
+                                        if(processingflow.current_ho.nw_dst_maskbits >= flowRuleNode.diff.get(i).nw_dst_maskbits){
+                                            if(processingflow.current_ho.nw_src_maskbits >= flowRuleNode.diff.get(i).nw_src_maskbits){
                                                 //full overlap : current_ho ip_range is in FlowRuleNode.diff.get(i)
                                                 processingflow.is_finished = true;
                                                 break;
                                             }
                                         }
                                         //three cases : action_nw_dst_maskbits is 0(forward), 32(one point), or any value(ip range).
-                                        if(FlowRuleNode.action_nw_dst_prefix==0){
+                                        if(flowRuleNode.action_nw_dst_prefix==0){
                                             //all matching flow will be forwarded
-                                               ho.nw_dst_prefix = FlowRuleNode.diff.get(i).nw_dst_prefix;
-                                               ho.nw_dst_maskbits = FlowRuleNode.diff.get(i).nw_dst_maskbits;
-                                               ho.vlan = FlowRuleNode.diff.get(i).vlan;
-                                        }else if(FlowRuleNode.action_nw_dst_maskbits == 32){
+                                               ho.nw_dst_prefix = flowRuleNode.diff.get(i).nw_dst_prefix;
+                                               ho.nw_dst_maskbits = flowRuleNode.diff.get(i).nw_dst_maskbits;
+                                               ho.vlan = flowRuleNode.diff.get(i).vlan;
+                                        }else if(flowRuleNode.action_nw_dst_maskbits == 32){
                                             //rule matching condition and action set is N to 1
-                                               ho.nw_dst_prefix = FlowRuleNode.action_nw_dst_prefix;
-                                               ho.nw_dst_maskbits = FlowRuleNode.action_nw_src_maskbits;
-                                               ho.vlan = FlowRuleNode.action_vlan;
+                                               ho.nw_dst_prefix = flowRuleNode.action_nw_dst_prefix;
+                                               ho.nw_dst_maskbits = flowRuleNode.action_nw_src_maskbits;
+                                               ho.vlan = flowRuleNode.action_vlan;
                                         }else{
                                             //rule matching condition and action set is N to N case
-                                            if(processingflow.current_ho.nw_dst_maskbits <= FlowRuleNode.diff.get(i).nw_dst_maskbits){
+                                            if(processingflow.current_ho.nw_dst_maskbits <= flowRuleNode.diff.get(i).nw_dst_maskbits){
                                                    int rule_iprng = 32 - processingflow.current_ho.nw_dst_maskbits;
-                                                   int rule_ipint = FlowRuleNode.action_nw_dst_prefix >> rule_iprng;
+                                                   int rule_ipint = flowRuleNode.action_nw_dst_prefix >> rule_iprng;
                                                    rule_ipint = rule_ipint << rule_iprng;
 
-                                                   int flow_iprng = 32 - FlowRuleNode.diff.get(i).nw_dst_maskbits;
-                                                   int flow_ipint = FlowRuleNode.diff.get(i).nw_dst_prefix >> flow_iprng;
+                                                   int flow_iprng = 32 - flowRuleNode.diff.get(i).nw_dst_maskbits;
+                                                   int flow_ipint = flowRuleNode.diff.get(i).nw_dst_prefix >> flow_iprng;
                                                    flow_ipint = flow_ipint << flow_iprng;
-                                                   ho.nw_dst_prefix = rule_ipint + (FlowRuleNode.diff.get(i).nw_dst_prefix - flow_ipint);
-                                                   ho.nw_dst_maskbits = FlowRuleNode.diff.get(i).nw_dst_maskbits;
-                                                   ho.vlan = FlowRuleNode.diff.get(i).vlan;
+                                                   ho.nw_dst_prefix = rule_ipint + (flowRuleNode.diff.get(i).nw_dst_prefix - flow_ipint);
+                                                   ho.nw_dst_maskbits = flowRuleNode.diff.get(i).nw_dst_maskbits;
+                                                   ho.vlan = flowRuleNode.diff.get(i).vlan;
                                             }
                                         }
-                                        if(FlowRuleNode.action_nw_src_prefix==0){
+                                        if(flowRuleNode.action_nw_src_prefix==0){
                                             //all matching flow will be forwarded
-                                               ho.nw_src_prefix = FlowRuleNode.diff.get(i).nw_src_prefix;
-                                               ho.nw_src_maskbits = FlowRuleNode.diff.get(i).nw_src_maskbits;
-                                               ho.vlan = FlowRuleNode.diff.get(i).vlan;
-                                        }else if(FlowRuleNode.action_nw_src_maskbits == 32){
+                                               ho.nw_src_prefix = flowRuleNode.diff.get(i).nw_src_prefix;
+                                               ho.nw_src_maskbits = flowRuleNode.diff.get(i).nw_src_maskbits;
+                                               ho.vlan = flowRuleNode.diff.get(i).vlan;
+                                        }else if(flowRuleNode.action_nw_src_maskbits == 32){
                                             //rule matching condition and action set is N to 1
-                                               ho.nw_src_prefix = FlowRuleNode.action_nw_src_prefix;
-                                               ho.nw_src_maskbits = FlowRuleNode.action_nw_src_maskbits;
-                                               ho.vlan = FlowRuleNode.action_vlan;
+                                               ho.nw_src_prefix = flowRuleNode.action_nw_src_prefix;
+                                               ho.nw_src_maskbits = flowRuleNode.action_nw_src_maskbits;
+                                               ho.vlan = flowRuleNode.action_vlan;
                                         }else{
                                             //rule matching condition and action set is N to N case
-                                            if(processingflow.current_ho.nw_src_maskbits <= FlowRuleNode.diff.get(i).nw_src_maskbits){
+                                            if(processingflow.current_ho.nw_src_maskbits <= flowRuleNode.diff.get(i).nw_src_maskbits){
                                                    int rule_iprng = 32 - processingflow.current_ho.nw_src_maskbits;
-                                                   int rule_ipint = FlowRuleNode.action_nw_src_prefix >> rule_iprng;
+                                                   int rule_ipint = flowRuleNode.action_nw_src_prefix >> rule_iprng;
                                                    rule_ipint = rule_ipint << rule_iprng;
 
-                                                   int flow_iprng = 32 - FlowRuleNode.diff.get(i).nw_src_maskbits;
-                                                   int flow_ipint = FlowRuleNode.diff.get(i).nw_src_prefix >> flow_iprng;
+                                                   int flow_iprng = 32 - flowRuleNode.diff.get(i).nw_src_maskbits;
+                                                   int flow_ipint = flowRuleNode.diff.get(i).nw_src_prefix >> flow_iprng;
                                                    flow_ipint = flow_ipint << flow_iprng;
-                                                   ho.nw_src_prefix = rule_ipint + (FlowRuleNode.diff.get(i).nw_src_prefix - flow_ipint);
-                                                   ho.nw_src_maskbits = FlowRuleNode.diff.get(i).nw_src_maskbits;
-                                                   ho.vlan = FlowRuleNode.diff.get(i).vlan;
+                                                   ho.nw_src_prefix = rule_ipint + (flowRuleNode.diff.get(i).nw_src_prefix - flow_ipint);
+                                                   ho.nw_src_maskbits = flowRuleNode.diff.get(i).nw_src_maskbits;
+                                                   ho.vlan = flowRuleNode.diff.get(i).vlan;
                                             }
                                         }
                                         if(ho.nw_dst_maskbits != 0 && ho.nw_dst_prefix != 0 && ho.nw_src_maskbits != 0 && ho.nw_src_prefix != 0){
@@ -755,14 +755,14 @@ public class FlowRuleNode {
                     }
 
 
-                       processingflow.next_ingress_port = FlowRuleNode.action_out_port;
+                       processingflow.next_ingress_port = flowRuleNode.action_out_port;
                        processingflow.next_switch_dpid = processingflow.current_switch_dpid;
                        //processingflow.next_ho.dl_dst = FlowRuleNode.action_dl_dst;
                        //FlowRuleNode.action_dl_src.toString();
 
                        //add flow information in the flow history
                        processingflow.flow_history.add(processingflow);
-                       FlowRuleNode.flow_info = processingflow;
+                       flowRuleNode.flow_info = processingflow;
                 }
                 else{
                     //just return FlowRuleNode without any changes
@@ -772,10 +772,10 @@ public class FlowRuleNode {
                 //just return FlowRuleNode without any changes
             }
 
-        return FlowRuleNode;
+        return flowRuleNode;
     }
 
-    public int calculateIpfromPrefix(Ipv4Prefix prefix) {
+    public static int calculateIpfromPrefix(Ipv4Prefix prefix) {
     	String[] parts;
 
     	parts = prefix.getValue().split("/");
@@ -783,7 +783,7 @@ public class FlowRuleNode {
     	return InetAddresses.coerceToInteger(InetAddresses.forString(parts[0]));
     }
 
-    public int calculateMaskfromPrefix(Ipv4Prefix prefix) {
+    public static int calculateMaskfromPrefix(Ipv4Prefix prefix) {
     	String[] parts;
     	parts = prefix.getValue().split("/");
     	if (parts.length < 2)

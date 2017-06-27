@@ -43,13 +43,11 @@ public class FlowguardProvider {
 
     private final DataBroker dataBroker;
     private final RpcProviderRegistry rpcProviderRegistry;
-    private final ShiftedGraph shiftedGraph;
     private RpcRegistration<FlowguardService> serviceRegistration;
 
     public FlowguardProvider(final DataBroker dataBroker, RpcProviderRegistry rpcProviderRegistry) {
         this.dataBroker = dataBroker;
         this.rpcProviderRegistry = rpcProviderRegistry;
-        this.shiftedGraph = new ShiftedGraph();
     }
 
     /**
@@ -58,7 +56,8 @@ public class FlowguardProvider {
     public void init() {
         serviceRegistration = rpcProviderRegistry.addRpcImplementation(FlowguardService.class, new FlowguardImpl(dataBroker));
 
-        RuleRegistryDataChangeListenerFuture future = new RuleRegistryDataChangeListenerFuture(this.dataBroker, this.shiftedGraph);
+        RuleRegistryDataChangeListenerFuture future = new RuleRegistryDataChangeListenerFuture(this.dataBroker);
+
         LOG.info("FlowguardProvider Session Initiated");
 
     }
