@@ -10,6 +10,7 @@ package org.opendaylight.flowguard.impl;
 import java.io.BufferedReader;
 import java.io.FileReader;
 import java.io.IOException;
+import java.util.ArrayList;
 
 import org.opendaylight.controller.md.sal.binding.api.DataBroker;
 import org.opendaylight.controller.md.sal.binding.api.WriteTransaction;
@@ -47,15 +48,25 @@ public class FirewallRuleParser {
      * Once a line is retrieved the function will call parseLine()
      */
     public void ruleParser(){
+    	LOG.info("Entering rule parser");
+    	ArrayList<String> lines = new ArrayList<String>();
+    	
         try (BufferedReader reader = new BufferedReader(new FileReader(filePath))) {
             String line = null;
 
             reader.readLine(); // skip the first line because the first line is the Title ROW such rule id dpid src ip ...
             while ((line = reader.readLine()) != null) {
-                parseLine(db, line);
+            	LOG.info("Adding lines into arraylist");
+            	lines.add(line);       //adding the rules in a list
+                //parseLine(line);
             }
         } catch (IOException e) {
             LOG.info("Error in rule Parser");
+        }
+        
+        LOG.info("Before parse line in rule parser");
+        for(int i = lines.size() - 1;i >= 0;i--) {
+        	parseLine(lines.get(i));
         }
     }
 
@@ -63,25 +74,24 @@ public class FirewallRuleParser {
      * This function is used to parse a firewall rule
      * @param line
      */
-    private void parseLine(DataBroker db, String line) {
-        //TODO may need to check for wild cards
+    private void parseLine(String line) {
+
         Rule rule = new Rule();
-        LOG.info("\nInside parse Line {}", line);
+        //LOG.info("\nInside parse Line {}", line);
         String[] elements = line.split("\t");
 
-        for(int i = 0; i < elements.length;i++)
-            LOG.info("elements at {} = {}",i,elements[i]);
+        //for(int i = 0; i < elements.length;i++)
+        //    LOG.info("elements at {} = {}",i,elements[i]);
 
+        
         rule.ruleid = Integer.parseInt(elements[0]);
         rule.dpid = elements[1];
         rule.in_port = elements[2];
-
-
         rule.nw_src_prefix = elements[3]; //may need to validate ip address???
         rule.nw_dst_prefix = elements[4]; //may need to validate ip address???
-
         rule.tp_src = elements[5];
         rule.tp_dst = elements[6];
+        
         if(elements[7].equals("DENY")) {
             rule.action = Fwrule.Action.Block;
         }
@@ -91,7 +101,7 @@ public class FirewallRuleParser {
         else {
             LOG.info("Error in valid action for rule {}",rule.ruleid);
         }
-        addStaticRule(db, rule);
+        addStaticRule(rule);
     }
 
 
@@ -102,7 +112,7 @@ public class FirewallRuleParser {
      * Add the rule in the YANG data store
      * @param firewallRule
      */
-    private void addStaticRule(DataBroker db, Rule firewallRule) {
+    private void addStaticRule(Rule firewallRule) {
         FwruleRegistryEntry entry = new FwruleRegistryEntryBuilder()
                  .setRuleId(firewallRule.ruleid)
                  .setNode(firewallRule.dpid)
@@ -124,7 +134,7 @@ public class FirewallRuleParser {
         LOG.info("Added STATIC Rule");
         LOG.info("*****************");
         LOG.info("*****************");
-        LOG.info("input name {}", firewallRule.ruleid);
+        LOG.info("input ruleid {}", firewallRule.ruleid);
         LOG.info("input node {}", firewallRule.dpid);
         LOG.info("input inport {}", firewallRule.in_port);
         LOG.info("input src ip {} ", firewallRule.nw_src_prefix);
