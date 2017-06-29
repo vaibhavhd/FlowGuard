@@ -26,6 +26,7 @@ and is available at http://www.eclipse.org/legal/epl-v10.html
   <feature name='odl-flowguard' version='${project.version}' description='OpenDaylight :: flowguard'>
   	<feature version="${openflowplugin.version}">odl-openflowplugin-all-he</feature>
     <feature version='${mdsal.version}'>odl-mdsal-broker</feature>
+    <feature version='${l2switch.version}'>odl-l2switch-all</feature>
     <feature version='${project.version}'>odl-flowguard-api</feature>
     <bundle>mvn:org.opendaylight.flowguard/flowguard-impl/{{VERSION}}</bundle>
   </feature>

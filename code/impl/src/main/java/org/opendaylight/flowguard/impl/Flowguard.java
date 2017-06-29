@@ -68,7 +68,8 @@ public class Flowguard {
 
         this.sg = new ShiftedGraph(this.flowStorage, this.topologyStorage);
         //Pull the FW Rules from a file.
-        //sg.buildSourceProbeNode(this.ruleStorage);
+        if(ruleStorage.size() != 0)
+            sg.buildSourceProbeNode(this.ruleStorage);
 
     }
 
@@ -81,6 +82,10 @@ public class Flowguard {
         List<FwruleRegistryEntry> entries = null;
         try {
             Optional<FwruleRegistry> fwRules = (Optional<FwruleRegistry>) readTx.read(LogicalDatastoreType.CONFIGURATION, iid).get();
+            if(fwRules == null) {
+                LOG.info("No static firewall rules installed");
+                return;
+            }
             entries = fwRules.get().getFwruleRegistryEntry();
         } catch (InterruptedException e) {
             // TODO Auto-generated catch block
@@ -94,8 +99,15 @@ public class Flowguard {
             FirewallRule rule = new FirewallRule();
 
             rule.ruleid = entry.getRuleId();
-            parseIP(rule, entry.getSourceIpAddress());
-            parseIP(rule, entry.getDestinationIpAddress());
+            int[] arr;
+            arr = parseIP(entry.getSourceIpAddress());
+            rule.nw_src_prefix = arr[0];
+            rule.nw_src_maskbits = arr[1];
+
+            arr = parseIP(entry.getDestinationIpAddress());
+            rule.nw_dst_prefix = arr[0];
+            rule.nw_dst_maskbits = arr[1];
+
             rule.tp_src = Short.parseShort(entry.getSourcePort());
             rule.tp_dst = Short.parseShort(entry.getDestinationPort());
             rule.action = (entry.getAction() == Action.Allow) ? FirewallRule.FirewallAction.ALLOW
@@ -104,15 +116,25 @@ public class Flowguard {
             rule.dpid = entry.getNode();
 
             ruleStorage.add(rule);
+
+            LOG.info("Rule for switch: {} addded to the list: id:{} ", rule.dpid, rule.ruleid);
         }
     }
 
-    private void parseIP(FirewallRule rule, String address) {
+    private int[] parseIP(String address) {
+        int[] arr = new int[2];
+        if(address.equals("*")) {
+            arr[0] = 0;
+            arr[1] = 0;
+            return arr;
+        }
         Ipv4Prefix src_addr = new Ipv4Prefix(address);
-        int src_ip =  FlowRuleNode.calculateIpfromPrefix(src_addr);
-        int src_mask = FlowRuleNode.calculateMaskfromPrefix(src_addr);
-        rule.nw_src_prefix = src_ip;
-        rule.nw_src_maskbits = src_mask;
+        int ip =  FlowRuleNode.calculateIpfromPrefix(src_addr);
+        int mask = FlowRuleNode.calculateMaskfromPrefix(src_addr);
+
+        arr[0] = ip;
+        arr[1] = mask;
+        return arr;
     }
 
     private void buildTopology() {

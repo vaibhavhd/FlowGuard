@@ -108,41 +108,23 @@ public class FlowRuleNode {
     public List<FlowRuleNode> addruletable(List<Flow> flowList){
 
         List<FlowRuleNode> ruletable = new ArrayList<FlowRuleNode>();
-        //Set<String> keys = row.keySet();
         Iterator<Flow> itr = flowList.listIterator();//keys.iterator();
 
         while(itr.hasNext()){
             Flow flow = itr.next();//row.get(key.toString());
             FlowRuleNode instance = new FlowRuleNode();
+
             //instance.switch_name = ;
-
-
             instance.rule_name = flow.getFlowName();//key.toString();
-            //instance.length = value.getLength();
-
-            //instance.in_port = value.getMatch().getInPort();//.getInputPort();
             instance.in_port = flow.getMatch().getInPort(); // It should ne inport or physical input port??
-            //instance.vlan = value.getMatch().getDataLayerVirtualLan();
-            instance.vlan = flow.getMatch().getVlanMatch().getVlanId().getVlanId().getValue();
-            //instance.dl_src = value.getMatch().getDataLayerSource();
-            instance.dl_src = flow.getMatch().getEthernetMatch().getEthernetSource();
-            //instance.dl_dst = value.getMatch().getDataLayerDestination();
-            instance.dl_dst = flow.getMatch().getEthernetMatch().getEthernetDestination();
-
-            //instance.dl_type = value.getMatch().getDataLayerType();
-            instance.dl_type = flow.getMatch().getEthernetMatch().getEthernetType().getType().getValue().intValue();
-            //instance.nw_src_prefix = value.getMatch().getNetworkSource();
-
-            /*if(value.getMatch().getNetworkSourceMaskLen() == 0)
-                instance.nw_src_maskbits = 32;
-            else
-                instance.nw_src_maskbits = value.getMatch().getNetworkSourceMaskLen();
-            instance.nw_dst_prefix = value.getMatch().getNetworkDestination();
-            if(value.getMatch().getNetworkDestinationMaskLen() == 0)
-                instance.nw_dst_maskbits = 32;
-            else
-                instance.nw_dst_maskbits = value.getMatch().getNetworkDestinationMaskLen();
-            */
+            if(flow.getMatch().getVlanMatch() != null)
+                instance.vlan = flow.getMatch().getVlanMatch().getVlanId().getVlanId().getValue();
+            if(flow.getMatch().getEthernetMatch() != null) {
+                instance.dl_src = flow.getMatch().getEthernetMatch().getEthernetSource();
+                instance.dl_dst = flow.getMatch().getEthernetMatch().getEthernetDestination();
+                if(flow.getMatch().getEthernetMatch().getEthernetType() != null)
+                    instance.dl_type = flow.getMatch().getEthernetMatch().getEthernetType().getType().getValue().intValue();
+            }
 
             Layer3Match l3Match = flow.getMatch().getLayer3Match();
             // TODO Handle other L3Match cases: ARP, Ipv6
@@ -168,118 +150,82 @@ public class FlowRuleNode {
                 instance.nw_dst_maskbits = calculateMaskfromPrefix(dst);
             }
 
-            //instance.nw_proto = value.getMatch().getNetworkProtocol();
-            instance.nw_proto = flow.getMatch().getIpMatch().getIpProtocol();
-            //instance.tp_src = value.getMatch().getTransportDestination();
+            if(flow.getMatch().getIpMatch() != null)
+                instance.nw_proto = flow.getMatch().getIpMatch().getIpProtocol();
             // TODO Previois implementation worng? src is taken from dest!!
             Layer4Match l4Match = flow.getMatch().getLayer4Match();
             if(l4Match instanceof TcpMatch) {
             	instance.tp_src = ((TcpMatch)l4Match).getTcpSourcePort().getValue();
             	instance.tp_dst = ((TcpMatch)l4Match).getTcpDestinationPort().getValue();
             }
-            //instance.tp_dst = value.getMatch().getTransportSource();
-            //instance.priority = value.getPriority();
             instance.priority = flow.getPriority();
-            //instance.wildcards = value.getMatch().getWildcards();
-            // TODO instance.wildcards = flow.
-
             instance.flow_info = new FlowInfo();
             instance.flow_info.flow_history = new ArrayList<FlowInfo>();
 
-            //List<OFAction> action = value.getActions();
-            List<Instruction> instList = flow.getInstructions().getInstruction();
-            // TODO System.out.println(StaticFlowEntries.flowModActionsToString(action));
-
+            if(flow.getInstructions() != null) {
+                List<Instruction> instList = flow.getInstructions().getInstruction();
             //TODO Many more instructions and actions to be checked and implemeted :Openflow 1.3
-            for(Instruction i : instList) {
-            	org.opendaylight.yang.gen.v1.urn.opendaylight.flow.types.rev131026.instruction.Instruction instruction = i.getInstruction();
+                for(Instruction i : instList) {
+                	org.opendaylight.yang.gen.v1.urn.opendaylight.flow.types.rev131026.instruction.Instruction instruction = i.getInstruction();
 
-            	if(instruction instanceof Meter){
-            		// Optional
-            	}
-            	else if(instruction instanceof ApplyActions) {
-            		// Optional
-            	}
-            	else if(instruction instanceof ClearActions) {
-            		// Optional
-            	}
-            	else if(instruction instanceof WriteActions) {
-            		// Required
-            		List<Action> action = ((WriteActions)i.getInstruction()).getAction();
-            		for(Action a : action) {
-            			if(a.getAction() instanceof OutputAction) {
-            				instance.action_out_port = new NodeConnectorId(((OutputAction)(a.getAction())).getOutputNodeConnector());
-            			}
-            			else if(a.getAction() instanceof SetField){
-            				instance.action_dl_src = ((SetField)(a.getAction())).getEthernetMatch().getEthernetSource();
-            				instance.action_dl_dst = ((SetField)(a.getAction())).getEthernetMatch().getEthernetDestination();
+                	if(instruction instanceof Meter){
+                		// Optional
+                	}
+                	else if(instruction instanceof ApplyActions) {
+                		// Optional
+                	}
+                	else if(instruction instanceof ClearActions) {
+                		// Optional
+                	}
+                	else if(instruction instanceof WriteActions) {
+                		// Required
+                		List<Action> action = ((WriteActions)i.getInstruction()).getAction();
+                		for(Action a : action) {
+                			if(a.getAction() instanceof OutputAction) {
+                				instance.action_out_port = new NodeConnectorId(((OutputAction)(a.getAction())).getOutputNodeConnector());
+                			}
+                			else if(a.getAction() instanceof SetField){
+                				instance.action_dl_src = ((SetField)(a.getAction())).getEthernetMatch().getEthernetSource();
+                				instance.action_dl_dst = ((SetField)(a.getAction())).getEthernetMatch().getEthernetDestination();
 
-            				l3Match = ((SetField)(a.getAction())).getLayer3Match();
-            	            // TODO Handle other L3Match cases: ARP, Ipv6
-            	            if(l3Match instanceof Ipv4Match){
-            	            	Ipv4Prefix src  = ((Ipv4Match)flow.getMatch().getLayer3Match()).getIpv4Source();
-            	            	Ipv4Prefix dst = ((Ipv4Match)flow.getMatch().getLayer3Match()).getIpv4Destination();
-            	            	instance.action_nw_src_prefix = calculateIpfromPrefix(src);
-            	                instance.action_nw_src_maskbits = calculateMaskfromPrefix(src);
-            	                instance.action_nw_dst_prefix = calculateIpfromPrefix(dst);
-            	                instance.action_nw_dst_maskbits = calculateMaskfromPrefix(dst);
-            	            }
-            	            else if (l3Match instanceof Ipv4MatchArbitraryBitMask){
-            	            	Ipv4Address addr = ((Ipv4MatchArbitraryBitMask)flow.getMatch().getLayer3Match()).getIpv4SourceAddressNoMask();
-            	            	DottedQuad mask = ((Ipv4MatchArbitraryBitMask)flow.getMatch().getLayer3Match()).getIpv4SourceArbitraryBitmask();
-            	            	Ipv4Prefix src = createPrefix(addr, convertArbitraryMaskToByteArray(mask));
+                				l3Match = ((SetField)(a.getAction())).getLayer3Match();
+                	            // TODO Handle other L3Match cases: ARP, Ipv6
+                	            if(l3Match instanceof Ipv4Match){
+                	            	Ipv4Prefix src  = ((Ipv4Match)flow.getMatch().getLayer3Match()).getIpv4Source();
+                	            	Ipv4Prefix dst = ((Ipv4Match)flow.getMatch().getLayer3Match()).getIpv4Destination();
+                	            	instance.action_nw_src_prefix = calculateIpfromPrefix(src);
+                	                instance.action_nw_src_maskbits = calculateMaskfromPrefix(src);
+                	                instance.action_nw_dst_prefix = calculateIpfromPrefix(dst);
+                	                instance.action_nw_dst_maskbits = calculateMaskfromPrefix(dst);
+                	            }
+                	            else if (l3Match instanceof Ipv4MatchArbitraryBitMask){
+                	            	Ipv4Address addr = ((Ipv4MatchArbitraryBitMask)flow.getMatch().getLayer3Match()).getIpv4SourceAddressNoMask();
+                	            	DottedQuad mask = ((Ipv4MatchArbitraryBitMask)flow.getMatch().getLayer3Match()).getIpv4SourceArbitraryBitmask();
+                	            	Ipv4Prefix src = createPrefix(addr, convertArbitraryMaskToByteArray(mask));
 
-            	            	addr = ((Ipv4MatchArbitraryBitMask)flow.getMatch().getLayer3Match()).getIpv4DestinationAddressNoMask();
-            	            	mask = ((Ipv4MatchArbitraryBitMask)flow.getMatch().getLayer3Match()).getIpv4DestinationArbitraryBitmask();
-            	            	Ipv4Prefix dst = createPrefix(addr, convertArbitraryMaskToByteArray(mask));
-            	            	instance.action_nw_src_prefix = calculateIpfromPrefix(src);
-            	                instance.action_nw_src_maskbits = calculateMaskfromPrefix(src);
-            	                instance.action_nw_dst_prefix = calculateIpfromPrefix(dst);
-            	                instance.action_nw_dst_maskbits = calculateMaskfromPrefix(dst);
-            	            }
-            			}
-            			else if(a.getAction() instanceof SetVlanIdAction){
-            			// TODO Check what is assigned
-            				instance.action_vlan = ((SetField)(a.getAction())).getVlanMatch().getVlanId().getVlanId().getValue();
-            			}
-            		}
-            	}
-            	else if(instruction instanceof GoToTable) {
-            		// Required
-
-            	}
-            	else {
-            		// Error when a flow contains a packet with invalid instruction.
-            	}
-            }
-            /*for (OFAction a : action){
-                switch(a.getType()) {
-                case OUTPUT:
-                    instance.action_out_port = ((OFActionOutput)a).getPort();
-                    break;
-                case SET_DL_SRC:
-                    instance.action_dl_src = ((OFActionDataLayerSource)a).getDataLayerAddress();
-                    break;
-                case SET_DL_DST:
-                    instance.action_dl_dst = ((OFActionDataLayerDestination)a).getDataLayerAddress();
-                    break;
-                case SET_NW_SRC:
-                    //add spliter to support wildcards.
-                    //after getting replies from adni, we need to fix it later.
-                    instance.action_nw_src_prefix = ((OFActionNetworkLayerSource)a).getNetworkAddress();
-                    break;
-                case SET_NW_DST:
-                    instance.action_nw_dst_prefix = ((OFActionNetworkLayerDestination)a).getNetworkAddress();
-                    break;
-              TODO case SET_VLAN_ID:
-                    instance.vlan = ((OFActionVirtualLanIdentifier)a).getVirtualLanIdentifier();
-                    break;
-                default:
-                    System.out.println("Could not decode action: {}");
-                    break;
+                	            	addr = ((Ipv4MatchArbitraryBitMask)flow.getMatch().getLayer3Match()).getIpv4DestinationAddressNoMask();
+                	            	mask = ((Ipv4MatchArbitraryBitMask)flow.getMatch().getLayer3Match()).getIpv4DestinationArbitraryBitmask();
+                	            	Ipv4Prefix dst = createPrefix(addr, convertArbitraryMaskToByteArray(mask));
+                	            	instance.action_nw_src_prefix = calculateIpfromPrefix(src);
+                	                instance.action_nw_src_maskbits = calculateMaskfromPrefix(src);
+                	                instance.action_nw_dst_prefix = calculateIpfromPrefix(dst);
+                	                instance.action_nw_dst_maskbits = calculateMaskfromPrefix(dst);
+                	            }
+                			}
+                			else if(a.getAction() instanceof SetVlanIdAction){
+                			// TODO Check what is assigned
+                				instance.action_vlan = ((SetField)(a.getAction())).getVlanMatch().getVlanId().getVlanId().getValue();
+                			}
+                		}
+                	}
+                	else if(instruction instanceof GoToTable) {
+                		// Required
+                	}
+                	else {
+                		// Error when a flow contains a packet with invalid instruction.
+                	}
                 }
-            }*/
-
+            }
             int i = 0;
             for(i = 0; i < ruletable.size(); i++){
                 if (ruletable.get(i) != null && ruletable.get(i).priority <= instance.priority)
@@ -412,7 +358,8 @@ public class FlowRuleNode {
          */
         for(int i = 0; i < ruletable.size() - 1; i++){
             for(int j = i + 1; j < ruletable.size(); j++){
-                if(ruletable.get(i).in_port.equals(ruletable.get(j).in_port)
+                if(isWildcarded(ruletable.get(i).in_port) || isWildcarded(ruletable.get(i).in_port)
+                        || ruletable.get(i).in_port.equals(ruletable.get(j).in_port)
                         && ruletable.get(i).dl_type == (EtherTypes.IPv4.intValue())
                         && ruletable.get(j).dl_type == (EtherTypes.IPv4.intValue())
                         && ruletable.get(i).active == true //TODO The rule will always be active as above!
@@ -773,6 +720,10 @@ public class FlowRuleNode {
             }
 
         return flowRuleNode;
+    }
+
+    private static boolean isWildcarded(Object matchObj) {
+        return matchObj == null ? true : false;
     }
 
     public static int calculateIpfromPrefix(Ipv4Prefix prefix) {

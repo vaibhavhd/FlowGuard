@@ -136,7 +136,7 @@ public class FlowguardImpl implements FlowguardService  {
                 .setDestinationIpAddress(input.getDestinationIpAddress())
                 .setDestinationPort(input.getDestinationPort())
                 .build();
-        transaction.put(LogicalDatastoreType.OPERATIONAL, iid, rule);
+        transaction.put(LogicalDatastoreType.CONFIGURATION, iid, rule);
         CheckedFuture<Void, TransactionCommitFailedException> future = transaction.submit();
         Futures.addCallback(future, new LoggingFuturesCallBack<Void>("Failed to write greeting to greeting registry", LOG));
     }
@@ -160,7 +160,7 @@ public class FlowguardImpl implements FlowguardService  {
                 .setDestinationPort(input.getDestinationPort())
                 .setAction(input.getAction())
                 .build();
-        transaction.put(LogicalDatastoreType.OPERATIONAL, iid, rule);
+        transaction.put(LogicalDatastoreType.CONFIGURATION, iid, rule);
         CheckedFuture<Void, TransactionCommitFailedException> future = transaction.submit();
         Futures.addCallback(future, new LoggingFuturesCallBack<Void>("Failed to write greeting to greeting registry", LOG));
     }
