@@ -1,9 +1,10 @@
 #!/usr/bin/python
-
 from mininet.topo import Topo
 from mininet.net import Mininet
 from mininet.util import irange,dumpNodeConnections
 from mininet.log import setLogLevel
+from mininet.node import Controller, RemoteController, OVSController
+from mininet.cli import CLI
 
 class LinearTopo (Topo):
     "Linear topology of k switches, with one host per switch."
@@ -33,7 +34,8 @@ def simpleTest():
     dumpNodeConnections(net.hosts)
     print "Testing network connectivity"
     net.pingAll()
-    #net.stop()
+    CLI(net)
+    net.stop()
 
 if __name__ == '__main__':
     # Tell mininet to print useful information

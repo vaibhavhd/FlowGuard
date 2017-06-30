@@ -107,7 +107,8 @@ public class ShiftedGraph {
     protected boolean enabled;
     protected int subnet_mask = IPv4.toIPv4Address("255.255.255.0");
 
-    public ShiftedGraph(Map<String, List<FlowRuleNode>> flowStorage, Map<TopologyStruct, TopologyStruct> topologyStorage) {
+    public ShiftedGraph(ReadTransaction readTx, Map<String, List<FlowRuleNode>> flowStorage, Map<TopologyStruct, TopologyStruct> topologyStorage) {
+        this.readTx = readTx;
         this.FlowRuleNodes = flowStorage;
         this.topologyStorage = topologyStorage;
     }
@@ -651,6 +652,17 @@ public class ShiftedGraph {
             if(firewall_rules.get(i).action == FirewallAction.DENY) { //&& firewall_rules.get(i).dpid == -1){
                 TopologyStruct source = this.findDpidPort(firewall_rules.get(i).nw_src_prefix);
                 TopologyStruct probe = this.findDpidPort(firewall_rules.get(i).nw_dst_prefix);
+
+                if(source == null) {
+                    LOG.info("Host {} not found in the network(no corresponding probe node)", firewall_rules.get(i).nw_src_prefix);
+                    continue;
+                }
+                if(probe == null) {
+                    LOG.info("Host {} not found in the network(no corresponding probe node)", firewall_rules.get(i).nw_dst_prefix);
+                    continue;
+                }
+                LOG.info("Rule: {} | source node: {} | probe node: {}", firewall_rules.get(i).ruleid,
+                        source.dpid, probe.dpid);
 
                 FlowInfo sample = new FlowInfo();
                 sample.firewall_ruldid = Integer.toString(firewall_rules.get(i).ruleid);

@@ -109,7 +109,7 @@ public class Firewall {
     final public static int OFPFW_NW_DST_MASK = ((1 << OFPFW_NW_DST_BITS) - 1) << OFPFW_NW_DST_SHIFT;
     final public static int OFPFW_NW_DST_ALL = 32 << OFPFW_NW_DST_SHIFT;
 
-    public String RESULT_PATH="/home/whan7/evaluation/result.txt";
+    public String RESULT_PATH="/home/local/ASUAD/vdixit2/workspace/FlowGuard/results/result.log";
     public Map<TopologyStruct, TopologyStruct> TopologyStorage;
     // Map<DPID, Map<Name, FlowMod>>; FlowMod can be null to indicate non-active
     protected Map<String, Map<String, FlowBuilder>> entriesFromStorage;
