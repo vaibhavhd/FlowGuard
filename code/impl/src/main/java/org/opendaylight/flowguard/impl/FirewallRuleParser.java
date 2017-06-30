@@ -49,25 +49,17 @@ public class FirewallRuleParser {
      */
     public void ruleParser(){
     	LOG.info("Entering rule parser");
-    	ArrayList<String> lines = new ArrayList<String>();
 
         try (BufferedReader reader = new BufferedReader(new FileReader(filePath))) {
             String line = null;
 
             reader.readLine(); // skip the first line because the first line is the Title ROW such rule id dpid src ip ...
             while ((line = reader.readLine()) != null) {
-            	LOG.info("Adding lines into arraylist");
-            	//lines.add(line);       //adding the rules in a list
                 parseLine(line);
             }
         } catch (IOException e) {
             LOG.info("Error in rule Parser");
         }
-
-        /*LOG.info("Before parse line in rule parser");
-        for(int i = lines.size() - 1;i >= 0;i--) {
-        	parseLine(lines.get(i));
-        }*/
     }
 
     /**
@@ -104,10 +96,6 @@ public class FirewallRuleParser {
         addStaticRule(rule);
     }
 
-
-
-
-
     /**
      * Add the rule in the YANG data store
      * @param firewallRule
@@ -130,7 +118,7 @@ public class FirewallRuleParser {
         transaction.merge(LogicalDatastoreType.CONFIGURATION, iid, entry);
         CheckedFuture<Void, TransactionCommitFailedException> future = transaction.submit();
         Futures.addCallback(future, new LoggingFuturesCallBack<Void>("Failed add firewall rule", LOG));
-        LOG.info("*****************");
+        LOG.info("\n*****************");
         LOG.info("Added STATIC Rule");
         LOG.info("*****************");
         LOG.info("*****************");
@@ -142,7 +130,7 @@ public class FirewallRuleParser {
         LOG.info("input src port {}", firewallRule.tp_src);
         LOG.info("input dst port {}", firewallRule.tp_dst);
         LOG.info("input action {}", firewallRule.action);
-        LOG.info("*****************");
+        LOG.info("*****************\n");
     }
 
     public class Rule {

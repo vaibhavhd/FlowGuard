@@ -163,6 +163,18 @@ public class FlowguardImpl implements FlowguardService  {
         transaction.put(LogicalDatastoreType.CONFIGURATION, iid, rule);
         CheckedFuture<Void, TransactionCommitFailedException> future = transaction.submit();
         Futures.addCallback(future, new LoggingFuturesCallBack<Void>("Failed to write greeting to greeting registry", LOG));
+        LOG.info("\n*****************");
+        LOG.info("Added DYNAMIC Firewall Rule");
+        LOG.info("*****************");
+        LOG.info("*****************");
+        LOG.info("input rule_id {}", input.getRuleId());
+        LOG.info("input node {}", input.getNode());
+        LOG.info("input src ip {} ", input.getSourceIpAddress());
+        LOG.info("input dst ip {} ", input.getDestinationIpAddress());
+        LOG.info("input src port {}", input.getSourcePort());
+        LOG.info("input dst port {}", input.getDestinationPort());
+        LOG.info("input action {}", input.getAction());
+        LOG.info("*****************\n");
     }
 
     private InstanceIdentifier<FwruleRegistryEntry> toInstanceIdentifier(AddDynamicFwruleInput input) {
