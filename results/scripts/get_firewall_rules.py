@@ -13,9 +13,10 @@ def GET_Request():
 	
 	if response.status_code == 404 or response.status_code == 400:
 		print "Nothing to return"
-	
-	json_data=json.loads(response.text)
-	return json_data
+	else:
+		json_data=json.loads(response.text)
+		print_json(json_data)
+		#return json_data
 
 def print_json(dictionary):
 	rules = dictionary["fwrule-registry"]['fwrule-registry-entry']
@@ -35,8 +36,8 @@ def print_json(dictionary):
 	
 
 def main():	
-	dictionary = GET_Request()
-	print_json(dictionary)
+	GET_Request()
+	
 
 
 if __name__ == "__main__":
