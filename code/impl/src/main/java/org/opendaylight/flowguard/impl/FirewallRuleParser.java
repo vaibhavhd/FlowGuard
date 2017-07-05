@@ -16,6 +16,7 @@ import org.opendaylight.controller.md.sal.binding.api.DataBroker;
 import org.opendaylight.controller.md.sal.binding.api.WriteTransaction;
 import org.opendaylight.controller.md.sal.common.api.data.LogicalDatastoreType;
 import org.opendaylight.controller.md.sal.common.api.data.TransactionCommitFailedException;
+import org.opendaylight.flowguard.packet.IPv4;
 import org.opendaylight.yang.gen.v1.urn.opendaylight.params.xml.ns.yang.flowguard.rev170505.Fwrule;
 import org.opendaylight.yang.gen.v1.urn.opendaylight.params.xml.ns.yang.flowguard.rev170505.FwruleRegistry;
 import org.opendaylight.yang.gen.v1.urn.opendaylight.params.xml.ns.yang.flowguard.rev170505.fwrule.registry.FwruleRegistryEntry;
@@ -58,12 +59,12 @@ public class FirewallRuleParser {
                 parseLine(line);
             }
         } catch (IOException e) {
-            LOG.info("Error in rule Parser");
+            LOG.info("Error in rule Parser:{}", e.getMessage());
         }
     }
 
     /**
-     * This function is used to parse a firewall rule
+     * This function is used to parse a line of firewall rule from a file.
      * @param line
      */
     private void parseLine(String line) {
@@ -94,6 +95,22 @@ public class FirewallRuleParser {
             LOG.info("Error in valid action for rule {}",rule.ruleid);
         }
         addStaticRule(rule);
+    }
+    
+    private void parseRule(FirewallRule fwRule) {
+    	Rule rule = new Rule();
+    	
+    	rule.ruleid = fwRule.ruleid;
+    	rule.dpid = fwRule.dpid;
+    	rule.in_port = fwRule.in_port.getValue();
+    	rule.nw_src_prefix = IPv4.fromIPv4Address(fwRule.nw_src_prefix) + (new Integer(fwRule.nw_src_maskbits)).toString();
+    	rule.nw_dst_prefix = IPv4.fromIPv4Address(fwRule.nw_dst_prefix) + (new Integer(fwRule.nw_dst_maskbits)).toString();
+    	rule.tp_src = ""; //TODO
+    	rule.tp_dst = ""; //TODO
+    	rule.action = fwRule.action == FirewallRule.FirewallAction.ALLOW ? Fwrule.Action.Allow : Fwrule.Action.Block;
+    	
+    	addStaticRule(rule);
+    	
     }
 
     /**

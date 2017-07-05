@@ -9,6 +9,9 @@ package org.opendaylight.flowguard.impl;
 
 import com.google.common.util.concurrent.CheckedFuture;
 import com.google.common.util.concurrent.Futures;
+
+import java.util.ArrayList;
+import java.util.List;
 import java.util.concurrent.Future;
 import org.opendaylight.controller.md.sal.binding.api.DataBroker;
 import org.opendaylight.controller.md.sal.binding.api.WriteTransaction;
@@ -23,18 +26,31 @@ import org.opendaylight.yang.gen.v1.urn.opendaylight.params.xml.ns.yang.flowguar
 import org.opendaylight.yang.gen.v1.urn.opendaylight.params.xml.ns.yang.flowguard.rev170505.AddStaticFwruleInput;
 import org.opendaylight.yang.gen.v1.urn.opendaylight.params.xml.ns.yang.flowguard.rev170505.AddStaticFwruleOutput;
 import org.opendaylight.yang.gen.v1.urn.opendaylight.params.xml.ns.yang.flowguard.rev170505.AddStaticFwruleOutputBuilder;
+import org.opendaylight.yang.gen.v1.urn.opendaylight.params.xml.ns.yang.flowguard.rev170505.ConflictInfo.Action;
+import org.opendaylight.yang.gen.v1.urn.opendaylight.params.xml.ns.yang.flowguard.rev170505.ConflictInfo.Protocol;
+import org.opendaylight.yang.gen.v1.urn.opendaylight.params.xml.ns.yang.flowguard.rev170505.ConflictInfoRegistry;
 import org.opendaylight.yang.gen.v1.urn.opendaylight.params.xml.ns.yang.flowguard.rev170505.Controls;
 import org.opendaylight.yang.gen.v1.urn.opendaylight.params.xml.ns.yang.flowguard.rev170505.ControlsBuilder;
 import org.opendaylight.yang.gen.v1.urn.opendaylight.params.xml.ns.yang.flowguard.rev170505.FlowguardControlInput;
 import org.opendaylight.yang.gen.v1.urn.opendaylight.params.xml.ns.yang.flowguard.rev170505.FlowguardControlOutput;
 import org.opendaylight.yang.gen.v1.urn.opendaylight.params.xml.ns.yang.flowguard.rev170505.FlowguardControlOutputBuilder;
 import org.opendaylight.yang.gen.v1.urn.opendaylight.params.xml.ns.yang.flowguard.rev170505.FlowguardService;
+import org.opendaylight.yang.gen.v1.urn.opendaylight.params.xml.ns.yang.flowguard.rev170505.FlowguardStatus;
+import org.opendaylight.yang.gen.v1.urn.opendaylight.params.xml.ns.yang.flowguard.rev170505.FlowguardStatusBuilder;
 import org.opendaylight.yang.gen.v1.urn.opendaylight.params.xml.ns.yang.flowguard.rev170505.FwruleRegistry;
+import org.opendaylight.yang.gen.v1.urn.opendaylight.params.xml.ns.yang.flowguard.rev170505.GetConflictsInput;
+import org.opendaylight.yang.gen.v1.urn.opendaylight.params.xml.ns.yang.flowguard.rev170505.GetConflictsOutput;
+import org.opendaylight.yang.gen.v1.urn.opendaylight.params.xml.ns.yang.flowguard.rev170505.GetConflictsOutputBuilder;
 import org.opendaylight.yang.gen.v1.urn.opendaylight.params.xml.ns.yang.flowguard.rev170505.RuleRegistry;
 import org.opendaylight.yang.gen.v1.urn.opendaylight.params.xml.ns.yang.flowguard.rev170505.RuleRegistryBuilder;
+import org.opendaylight.yang.gen.v1.urn.opendaylight.params.xml.ns.yang.flowguard.rev170505.conflict.info.registry.ConflictGroupEntry;
+import org.opendaylight.yang.gen.v1.urn.opendaylight.params.xml.ns.yang.flowguard.rev170505.conflict.info.registry.ConflictGroupEntryBuilder;
+import org.opendaylight.yang.gen.v1.urn.opendaylight.params.xml.ns.yang.flowguard.rev170505.conflict.info.registry.ConflictGroupEntryKey;
 import org.opendaylight.yang.gen.v1.urn.opendaylight.params.xml.ns.yang.flowguard.rev170505.fwrule.registry.FwruleRegistryEntry;
 import org.opendaylight.yang.gen.v1.urn.opendaylight.params.xml.ns.yang.flowguard.rev170505.fwrule.registry.FwruleRegistryEntryBuilder;
 import org.opendaylight.yang.gen.v1.urn.opendaylight.params.xml.ns.yang.flowguard.rev170505.fwrule.registry.FwruleRegistryEntryKey;
+import org.opendaylight.yang.gen.v1.urn.opendaylight.params.xml.ns.yang.flowguard.rev170505.get.conflicts.output.ConflictGroupList;
+import org.opendaylight.yang.gen.v1.urn.opendaylight.params.xml.ns.yang.flowguard.rev170505.get.conflicts.output.ConflictGroupListBuilder;
 import org.opendaylight.yang.gen.v1.urn.opendaylight.params.xml.ns.yang.flowguard.rev170505.rule.registry.RuleRegistryEntry;
 import org.opendaylight.yang.gen.v1.urn.opendaylight.params.xml.ns.yang.flowguard.rev170505.rule.registry.RuleRegistryEntryBuilder;
 import org.opendaylight.yang.gen.v1.urn.opendaylight.params.xml.ns.yang.flowguard.rev170505.rule.registry.RuleRegistryEntryKey;
@@ -104,18 +120,54 @@ public class FlowguardImpl implements FlowguardService  {
         AddStaticFwruleOutput output = new AddStaticFwruleOutputBuilder().setGreeting("Added static firewall rule(s)").build();
         return  RpcResultBuilder.success(output).buildFuture();
     }
+    /**
+     * RPC for fetching existing conflicts
+     */
+    @Override
+	public Future<RpcResult<GetConflictsOutput>> getConflicts(GetConflictsInput input) {
+		LOG.info("Preparing to pull the flows and calculate conflicts");
+		List<ConflictGroupList> list = new ArrayList<ConflictGroupList>();
+		
+		ConflictGroupList element = new ConflictGroupListBuilder().setAction(Action.DROP).setConflictGroupNumber(1).setConflictType("1.5;5.4;2.3;2.1")
+				.setCorCount(0).setDlDst("1.1.1.1").setDlSrc("1.1.1.1").setGenCount(0).setId(new Long(1)).setInPort("Openflow:1:1")
+				.setL4Dst("").setL4Src("").setNwDst("").setNwSrc("").setOverCount(1).setPriority(1).setProtocol(Protocol.ANY).setRedCount(0)
+				.setShCount(0).setVlanId(new Long(0)).build();
 
-    private void initializeDataTree(DataBroker db) {
+		list.add(element);
+		GetConflictsOutput output = new GetConflictsOutputBuilder().setConflictGroupList(list).build();
+						
+		writeToConflictRegistry(input);
+		return RpcResultBuilder.success(output).buildFuture();
+	}
+
+    private void writeToConflictRegistry(GetConflictsInput input) {
+    	WriteTransaction transaction = db.newWriteOnlyTransaction();
+    	
+    	/* Update the conflict data */
+    	InstanceIdentifier<ConflictGroupEntry> iid = InstanceIdentifier.create(ConflictInfoRegistry.class)
+    	            .child(ConflictGroupEntry.class, new ConflictGroupEntryKey(new Long(1)));
+    	ConflictGroupEntry node = new ConflictGroupEntryBuilder()
+    			.setAction(Action.DROP).setConflictGroupNumber(1).setConflictType("1.5;5.4;2.3;2.1")
+				.setCorCount(0).setDlDst("1.1.1.1").setDlSrc("1.1.1.1").setGenCount(0).setId(new Long(1)).setInPort("Openflow:1:1")
+				.setL4Dst("").setL4Src("").setNwDst("").setNwSrc("").setOverCount(1).setPriority(1).setProtocol(Protocol.ANY).setRedCount(0)
+				.setShCount(0).setVlanId(new Long(0)).build();    	
+        transaction.put(LogicalDatastoreType.CONFIGURATION, iid, node);
+        CheckedFuture<Void, TransactionCommitFailedException> future = transaction.submit();
+        Futures.addCallback(future, new LoggingFuturesCallBack<Void>("Failed to write greeting to greeting registry", LOG));
+        
+        /* Update the status for the visualization engine */
+        transaction = db.newWriteOnlyTransaction();
+        InstanceIdentifier<FlowguardStatus> statusIid = InstanceIdentifier.create(FlowguardStatus.class);
+    	FlowguardStatus status = new FlowguardStatusBuilder().setFlowguardStatus(10).build();
+        transaction.put(LogicalDatastoreType.CONFIGURATION, statusIid, status);
+        CheckedFuture<Void, TransactionCommitFailedException> futureStatus = transaction.submit();
+        Futures.addCallback(futureStatus, new LoggingFuturesCallBack<Void>("Failed to updaet the Flwoguard Status", LOG));
+        
+	}
+
+	private void initializeDataTree(DataBroker db) {
         LOG.info("Preparing to initialize the controls and rules registry");
         WriteTransaction transaction = db.newWriteOnlyTransaction();
-
-        // Create and initialize the rule_registry tree
-        /*InstanceIdentifier<Controls> ctrlId = InstanceIdentifier.create(Controls.class);
-        Controls controls = new ControlsBuilder().build();
-        transaction.put(LogicalDatastoreType.OPERATIONAL, ctrlId, controls);
-        CheckedFuture<Void, TransactionCommitFailedException> future = transaction.submit();
-        Futures.addCallback(future, new LoggingFuturesCallBack<>("Failed to create controls",
-            LOG));*/
 
         // Create and initialize the rule_registry tree
         InstanceIdentifier<RuleRegistry> rulesId = InstanceIdentifier.create(RuleRegistry.class);

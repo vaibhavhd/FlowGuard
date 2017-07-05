@@ -100,7 +100,108 @@ module flowguard {
                 "The destination port";
           }
 
-      }
+    }
+    
+    grouping conflict-info {
+	     leaf priority {
+	     	type uint16;
+	     	config true;
+	     }
+	     leaf id {
+	     	type uint32;
+	     	config true;
+	     }
+	     leaf vlan-id {
+	     	type uint32;
+	     	config true;
+	     }
+	     leaf in-port {
+	     	type string;
+	     	config true;
+	     }
+	     leaf dl-src {
+	     	type string;
+	     	config true;
+	     }
+	     leaf dl-dst {
+	     	type string;
+	     	config true;
+	     }
+	     leaf nw-src {
+	     	type string;
+	     	config true;
+	     }
+	     leaf nw-dst {
+	     	type string;
+	     	config true;
+	     }
+	     leaf l4-src {
+	     	type string;
+	     	config true;
+	     }
+	     leaf l4-dst {
+	     	type string;
+	     	config true;
+	     }
+	     leaf action {
+	     	type enumeration {
+              enum "DROP" {
+                value 1;
+                description
+                    "drop = 1";
+              }
+              enum "FORWARD" {
+                value 2;
+                description
+                  "forward = 2";
+              }
+            }
+            config true; 
+	     }
+	     leaf protocol {
+	     	type enumeration {
+              enum "TCP" {
+                value 1;
+              }
+              enum "UDP" {
+                value 2;
+              }
+              enum "ANY" {
+                value 3;
+              }
+              
+            }
+            config true; 
+	     }
+	     leaf gen-count {
+	     	type uint16;
+	     	config true;
+	     }
+	     leaf sh-count {
+	     	type uint16;
+	     	config true;
+	     }
+	     leaf red-count {
+	     	type uint16;
+	     	config true;
+	     }
+	     leaf cor-count {
+	     	type uint16;
+	     	config true;
+	     }
+	     leaf over-count {
+	     	type uint16;
+	     	config true;
+	     }
+	     leaf conflict-type {
+	     	type string;
+	     	config true;
+	     }
+	     leaf conflict-group-number {
+	     	type uint16;
+	     	config true;
+	     }
+    }
     container rule-registry {
     	list rule-registry-entry {
     		key "name";
@@ -115,6 +216,12 @@ module flowguard {
             key "ruleId";
             uses flowguard:fwrule;
         }
+    }
+    container conflict-info-registry {
+    	list conflict-group-entry {
+    		key "id";
+    		uses flowguard:conflict-info;
+    	}
     }
     container controls {
         leaf action {
@@ -135,7 +242,11 @@ module flowguard {
             type string;
         }
     }
-
+	container flowguard-status {
+		leaf flowguard-status {
+			type uint16;
+		}
+	}
     rpc add-rule {
     	input {
     		uses flowguard:rule;
@@ -156,8 +267,6 @@ module flowguard {
                   }
                   enum "Disable" {
                     value 2;
-                    description
-                      "TCP protocol.";
                   }
                 }
                 config true;
@@ -193,6 +302,41 @@ module flowguard {
                 type string;
             }
         }
+    }
+    
+    rpc get-conflicts {
+    	input {
+    		leaf conflict-type {
+    			type enumeration {
+                  enum "all" {
+                    value 1;
+                  }
+                  enum "GENERALIZATION" {
+                    value 2;
+                  }
+                  enum "SHADOWING" {
+                    value 3;
+                  }
+                  enum "REDUNDANCY" {
+                    value 4;
+                  }
+                  enum "CORRELATION" {
+                    value 5;
+                  }
+                  enum "OVERLAP" {
+                    value 6;
+                  }
+                }
+                config true;
+                mandatory true;
+    		}
+    	}
+    	output {
+    		list conflict-group-list {
+    			key "id";
+    			uses flowguard:conflict-info;
+    		}
+    	}
     }
 
 }

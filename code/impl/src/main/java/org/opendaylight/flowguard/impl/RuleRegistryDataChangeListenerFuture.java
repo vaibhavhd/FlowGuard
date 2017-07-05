@@ -60,15 +60,12 @@ import org.slf4j.LoggerFactory;
 
 public class RuleRegistryDataChangeListenerFuture extends AbstractFuture<RuleRegistryEntry> implements DataChangeListener,AutoCloseable{
 
-    DataBroker db;
-    ShiftedGraph shiftedGraph;
+	  DataBroker db;
       private static final Logger LOG = LoggerFactory.getLogger(RuleRegistryDataChangeListenerFuture.class);
       private ListenerRegistration<DataChangeListener> registration;
 
       public RuleRegistryDataChangeListenerFuture(DataBroker db) {
         this.db = db;
-        this.shiftedGraph = shiftedGraph;
-
 
         InstanceIdentifier<RuleRegistry> ruleIID =
             InstanceIdentifier.builder(RuleRegistry.class).build();
@@ -97,10 +94,6 @@ public class RuleRegistryDataChangeListenerFuture extends AbstractFuture<RuleReg
           dataObject = entry.getValue();
           if (dataObject instanceof RuleRegistryEntry) {
             addFlowRule((RuleRegistryEntry) dataObject);
-          }
-
-          if(dataObject instanceof FwruleRegistryEntry) {
-            addFirewallRule((FwruleRegistryEntry) dataObject);
           }
         }
 
@@ -156,46 +149,6 @@ public class RuleRegistryDataChangeListenerFuture extends AbstractFuture<RuleReg
         LOG.info("Added security rule with ip {} and port {} into node {}", input.getDestinationIpAddress(), input.getDestinationPort(),input.getNode());
 
       }
-
-    /**
-     * Add the rule in the YANG data store
-     * @param firewallRule
-     */
-    private void addFirewallRule(FwruleRegistryEntry input) {
-
-        FwruleRegistryEntry entry = new FwruleRegistryEntryBuilder()
-                 .setRuleId(input.getRuleId())
-                 .setNode(input.getNode())
-                 .setInPort(input.getInPort())
-                 .setSourceIpAddress(input.getSourceIpAddress())                //Need some work here, convert String to int
-                 .setDestinationIpAddress(input.getDestinationIpAddress()) //Need some work here, convert String to int
-                 .setSourcePort(input.getSourcePort())
-                 .setDestinationPort(input.getDestinationPort())
-                 .setAction(input.getAction())
-                 .build();
-
-
-        WriteTransaction transaction = db.newWriteOnlyTransaction();
-        InstanceIdentifier<FwruleRegistryEntry> iid = InstanceIdentifier.create(FwruleRegistry.class)
-                 .child(FwruleRegistryEntry.class, new FwruleRegistryEntryKey(input.getRuleId()));
-        transaction.merge(LogicalDatastoreType.CONFIGURATION, iid, entry);
-        CheckedFuture<Void, TransactionCommitFailedException> future = transaction.submit();
-        Futures.addCallback(future, new LoggingFuturesCallBack<Void>("Failed add DYNAMIC firewall rule", LOG));
-        //LOG.info("Added security rule with ID {} and Dst IP {} into Dst Port {}", input.getName(), input.getDestinationIpAddress(), input.getDestinationPort());
-        LOG.info("*****************");
-        LOG.info("Added DYNAMIC Rule");
-        LOG.info("*****************");
-        LOG.info("*****************");
-        LOG.info("input name {}", input.getRuleId());
-        LOG.info("input node {}", input.getNode());
-        LOG.info("input src ip {} ", input.getSourceIpAddress());
-        LOG.info("input dst ip {} ", input.getDestinationIpAddress());
-        LOG.info("input src port {}", input.getSourcePort());
-        LOG.info("input dst port {}", input.getDestinationPort());
-        LOG.info("input action {}", input.getAction());
-        LOG.info("*****************");
-
-    }
 
     @Override
       public boolean cancel(boolean mayInterruptIfRunning) {

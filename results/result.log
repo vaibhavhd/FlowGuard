@@ -1,0 +1,56 @@
+Flows are reached to the Destination!!!
+DEBUG3 unmatch_count = 4
+DEBUG3 NO FLOW FOR: SWITCHDPID=openflow:1
+ sample dpid:openflow:1target dpid:openflow:1
+<<<<< current_HeaderObject >>>>>
+{ vlan = 0, src_IP = /10.0.0.0/8, dst_IP = /10.0.0.0/8 }
+current_switch_info = openflow:1 / Uri [_value=openflow:1:1]
+<<<<< next_HeaderObject >>>>>
+{ vlan = 0, src_IP = /10.0.0.0/8, dst_IP = /10.0.0.0/8 }
+next_switch_info = openflow:1 / Uri [_value=openflow:1:1]
+*************** This is 1 th flow ***************
+*************** Firewall RuleID : 1 ***************
+-----------------------------------------------------------------------------------
+(((flow_history : this is 0 th visits.)))
+Applied FlowRuleNode Name : SourceNode
+<<<<< current_HeaderObject >>>>>
+{ vlan = 0, src_IP = /10.0.0.0/8, dst_IP = /10.0.0.0/8 }
+current_switch_info = openflow:1 / Uri [_value=openflow:1:1]
+<<<<< next_HeaderObject >>>>>
+{ vlan = 0, src_IP = /10.0.0.0/8, dst_IP = /10.0.0.0/8 }
+next_switch_info = openflow:1 / Uri [_value=openflow:1:1]
+-----------------------------------------------------------------------------------
+-----------------------------------------------------------------------------------
+<<< Inverse Flow Computation >>>
+{ vlan = 0, src_IP = /10.0.0.0/8, dst_IP = /10.0.0.0/8 }
+***********************************************************************************
+S3-Flow Removing applied!!
+
+Flows are unreachable!!!
+sample next switch dpidopenflow:1
+ ruletable i switch name null
+ sample next ingress port Uri [_value=openflow:1:1]
+ruletable i inport null
+DEBUG3 unmatch_count = 4
+DEBUG3 NO FLOW FOR: SWITCHDPID=openflow:1
+ sample dpid:openflow:1target dpid:openflow:2
+<<<<< current_HeaderObject >>>>>
+{ vlan = 0, src_IP = /10.0.0.0/8, dst_IP = /10.0.0.0/8 }
+current_switch_info = openflow:1 / Uri [_value=openflow:1:1]
+<<<<< next_HeaderObject >>>>>
+{ vlan = 0, src_IP = /10.0.0.0/8, dst_IP = /10.0.0.0/8 }
+next_switch_info = openflow:1 / Uri [_value=openflow:1:1]
+*************** This is 1 th flow ***************
+*************** Firewall RuleID : 1 ***************
+-----------------------------------------------------------------------------------
+(((flow_history : this is 0 th visits.)))
+Applied FlowRuleNode Name : SourceNode
+<<<<< current_HeaderObject >>>>>
+{ vlan = 0, src_IP = /10.0.0.0/8, dst_IP = /10.0.0.0/8 }
+current_switch_info = openflow:1 / Uri [_value=openflow:1:1]
+<<<<< next_HeaderObject >>>>>
+{ vlan = 0, src_IP = /10.0.0.0/8, dst_IP = /10.0.0.0/8 }
+next_switch_info = openflow:1 / Uri [_value=openflow:1:1]
+-----------------------------------------------------------------------------------
+
+

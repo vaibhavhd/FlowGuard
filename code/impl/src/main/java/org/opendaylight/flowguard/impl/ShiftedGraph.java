@@ -92,12 +92,12 @@ public class ShiftedGraph {
     public List<FlowInfo> flowstorage;
     public int current_flow_index = 0;
     //public StaticFlowEntryPusher static_pusher;
-    public Firewall firewall;
+    public Flowguard firewall;
     // Entry Name -> DPID of Switch it's on
     protected boolean AUTOPORTFAST_DEFAULT = false;
     protected boolean autoPortFastFeature = AUTOPORTFAST_DEFAULT;
     //protected IResultSet topologyResult;
-    public String RESULT_PATH="/home/whan7/SDN-test/result.txt";
+    public String RESULT_PATH="/tmp/";
     public int resolution_index = 0;
     public int resolution_method = 0;
 
@@ -107,8 +107,9 @@ public class ShiftedGraph {
     protected boolean enabled;
     protected int subnet_mask = IPv4.toIPv4Address("255.255.255.0");
 
-    public ShiftedGraph(ReadTransaction readTx, Map<String, List<FlowRuleNode>> flowStorage, Map<TopologyStruct, TopologyStruct> topologyStorage) {
-        this.readTx = readTx;
+    public ShiftedGraph(Flowguard firewall, ReadTransaction readTx, Map<String, List<FlowRuleNode>> flowStorage, Map<TopologyStruct, TopologyStruct> topologyStorage) {
+        this.firewall = firewall;
+    	this.readTx = readTx;
         this.FlowRuleNodes = flowStorage;
         this.topologyStorage = topologyStorage;
     }
@@ -215,10 +216,10 @@ public class ShiftedGraph {
     }
     public boolean checkflowremoving(FlowInfo flowinfo, HeaderObject ho){
         FirewallRule frule = new FirewallRule();
-        if(this.firewall.rules != null){
-            for(int i=0;i<this.firewall.rules.size(); i++){
-                if(this.firewall.rules.get(i).ruleid == Integer.parseInt(flowinfo.firewall_ruldid)){
-                    frule = this.firewall.rules.get(i);
+        if(this.firewall.ruleStorage != null){
+            for(int i=0;i<this.firewall.ruleStorage.size(); i++){
+                if(this.firewall.ruleStorage.get(i).ruleid == Integer.parseInt(flowinfo.firewall_ruldid)){
+                    frule = this.firewall.ruleStorage.get(i);
                 }
             }
         }
@@ -243,6 +244,7 @@ public class ShiftedGraph {
                 List<FlowRuleNode> ruletable = this.FlowRuleNodes.get(key.toString());
                 int size = ruletable.size();
                 for(int i = size-1; i >= 0; i--){
+                	if(ruletable.get(i) != null)
                     if(keyword.equals(ruletable.get(i).rule_name.substring(0,5))){
                         // TODO this.storageSource.deleteRowAsync(STATICENTRY_TABLE_NAME, ruletable.get(i).rule_name);
                     }
@@ -403,6 +405,7 @@ public class ShiftedGraph {
         Map<String, Object> entry = new HashMap<String, Object>();
         String rulename = "resolution"+Integer.toString(this.resolution_index);
         this.resolution_index++;
+        System.out.println("Flow rule to be added" + rulename);
         /* TODO Push flow entry.put(StaticFlowEntryPusher.COLUMN_NAME, rulename);
         entry.put(StaticFlowEntryPusher.COLUMN_SWITCH, dpid);
         entry.put(StaticFlowEntryPusher.COLUMN_ACTIVE, Boolean.toString(true));
@@ -503,6 +506,7 @@ public class ShiftedGraph {
                     this.printFlowInfo(sample, true);
                     return;
                 }else{
+                	System.out.println("DEBUG1 NO FLOW FOR: SWITCHDPID=" + SWITCHDPID + "\n sample dpid:" + sample.next_switch_dpid + "target dpid:" + targetdpid  );
                     System.out.println("Flows are unreachable!!!");
                     this.printFlowInfo(sample, false);
                     return;
@@ -551,6 +555,7 @@ public class ShiftedGraph {
                     if(sample.next_switch_dpid.equals(ruletable.get(i).switch_name) &&
                             sample.next_ingress_port.toString().equals(ruletable.get(i).in_port.toString())){
                         FlowRuleNode flowRule = ruletable.get(i);
+                        System.out.println("DEBUG2");
                         /* check for flow rule matching ARP packet, ignore the rule of ARP is found*/
                         if(flowRule.dl_type == EtherTypes.ARP.intValue()){
                             unmatch_count++;
@@ -590,10 +595,20 @@ public class ShiftedGraph {
                             if(sample.next_switch_dpid.equals(targetdpid)){
                                 //normal execution
                                 System.out.println("Flows are reached to the Destination!!!");
+                                System.out.println("DEBUG3 unmatch_count = "+unmatch_count);
+                                System.out.println("DEBUG3 NO FLOW FOR: SWITCHDPID=" + SWITCHDPID + "\n sample dpid:" + sample.next_switch_dpid + "target dpid:" + targetdpid  );
+                                
                                 this.printFlowInfo(sample, true);
                                 return;
                             }
                             System.out.println("Flows are unreachable!!!");
+                            System.out.println("sample next switch dpid" + sample.next_switch_dpid +
+                            		"\n ruletable i switch name " + ruletable.get(i).switch_name +
+                            		"\n sample next ingress port " + sample.next_ingress_port.toString() +
+                            		"\nruletable i inport " + ruletable.get(i).in_port);
+                            System.out.println("DEBUG3 unmatch_count = "+unmatch_count);
+                            System.out.println("DEBUG3 NO FLOW FOR: SWITCHDPID=" + SWITCHDPID + "\n sample dpid:" + sample.next_switch_dpid + "target dpid:" + targetdpid  );
+                            
                             this.printFlowInfo(sample, false);
                             return;
                         }
@@ -695,7 +710,7 @@ public class ShiftedGraph {
 
                 this.propagateFlow(sample, probe, 0);
 
-                long end = System.nanoTime();
+/*                long end = System.nanoTime();
                 try {
                     File f = new File(this.RESULT_PATH);
                     FileWriter fw = new FileWriter(f, true);
@@ -707,7 +722,7 @@ public class ShiftedGraph {
                 } catch (IOException e) {
                     e.printStackTrace();
                 }
-            } else {
+*/            } else {
                 continue;
             }
         }
@@ -793,8 +808,7 @@ public class ShiftedGraph {
             /* Retrieve all the switches in the operational data tree */
             optNodes = readTx.read(LogicalDatastoreType.OPERATIONAL, nodesIdentifier).get();
             nodeList = optNodes.get().getNode();
-            LOG.info("No. of detected nodes: {}", nodeList.size());
-
+            
             /* Iterate through the list of nodes(switches) for flow tables per node */
             for(Node node : nodeList){
             	List<NodeConnector> connectorList = node.getNodeConnector();
@@ -1085,7 +1099,7 @@ public class ShiftedGraph {
             }
         }
         long end = System.nanoTime();
-        try {
+/*        try {
             File f = new File(this.RESULT_PATH);
             FileWriter fw = new FileWriter(f, true);
             BufferedWriter bw = new BufferedWriter(fw);
@@ -1094,7 +1108,7 @@ public class ShiftedGraph {
             fw.close();
         } catch (IOException e) {
             e.printStackTrace();
-        }
+        }*/
     }
 
 }

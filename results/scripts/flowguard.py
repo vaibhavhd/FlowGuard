@@ -1,13 +1,15 @@
 #!/usr/bin/python
 import json
 import requests
-from requests.auth import HTTPBasicAuth
 import httplib2
+import sys
+from pathlib import Path
+from requests.auth import HTTPBasicAuth
 
-def pushStaticRules(http):
+def pushStaticRules(http, filePath):
     #Authetication
     url = 'http://127.0.0.1:8181/restconf/operations/flowguard:add-static-fwrule'
-    filePath = '/home/local/ASUAD/vdixit2/workspace/FlowGuard/results/scripts/FirewallPolicy.txt'
+    #filePath = '/home/local/ASUAD/vdixit2/workspace/FlowGuard/results/scripts/FirewallPolicy.txt'
     json_data = { "input": { "filePath": filePath } }
     payload = json.dumps(json_data)
 
@@ -34,11 +36,18 @@ def startFlowguard(http):
 
 def main():
 
+    if len(sys.argv) != 2:
+	print "Usage: ./flowguard.py /path/to/file/with/static/FW/rules"
+	sys.exit()
+    filePath = sys.argv[1];
+    if not ((Path(filePath)).is_file()):
+	print "Error: File "+ sys.argv[1] +" does not exist"
+	sys.exit();
+
     h = httplib2.Http(".cache")
     h.add_credentials('admin', 'admin')
-
     #Push the list of Firewall Rules
-    pushStaticRules(h)
+    pushStaticRules(h, filePath)
     #Enable Flowguard
     startFlowguard(h)
 

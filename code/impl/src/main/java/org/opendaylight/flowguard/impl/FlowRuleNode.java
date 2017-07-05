@@ -53,6 +53,7 @@ import org.opendaylight.yang.gen.v1.urn.opendaylight.model.match.types.rev131026
 import org.opendaylight.yang.gen.v1.urn.opendaylight.model.match.types.rev131026.match.layer._3.match.Ipv4Match;
 import org.opendaylight.yang.gen.v1.urn.opendaylight.model.match.types.rev131026.match.layer._3.match.Ipv4MatchArbitraryBitMask;
 import org.opendaylight.yang.gen.v1.urn.opendaylight.model.match.types.rev131026.match.layer._4.match.TcpMatch;
+import org.opendaylight.yang.gen.v1.urn.opendaylight.model.match.types.rev131026.match.layer._4.match.UdpMatch;
 import org.opendaylight.yang.gen.v1.urn.opendaylight.model.match.types.rev131026.vlan.match.fields.VlanId;
 
 import com.google.common.net.InetAddresses;
@@ -77,6 +78,8 @@ public class FlowRuleNode {
     public short nw_proto = 0;
     public int tp_src;
     public int tp_dst;
+    public int udp_src;
+    public int udp_dst;
     public int priority = 0;
     public int wildcards = 0;
 
@@ -104,7 +107,10 @@ public class FlowRuleNode {
      * Spec:
      * A  zero-length  OpenFlow  match  (one  with  no  OXM  TLVs)  matches  every  packet.
      * Match  fields  that should be wildcarded are omitted from the OpenFlow match.
-     */
+     *
+	 * Algorithm:
+	 * 
+	 */
     public List<FlowRuleNode> addruletable(List<Flow> flowList){
 
         List<FlowRuleNode> ruletable = new ArrayList<FlowRuleNode>();
@@ -119,45 +125,58 @@ public class FlowRuleNode {
             instance.in_port = flow.getMatch().getInPort(); // It should ne inport or physical input port??
             if(flow.getMatch().getVlanMatch() != null)
                 instance.vlan = flow.getMatch().getVlanMatch().getVlanId().getVlanId().getValue();
+            
+            // Extract L2 details
             if(flow.getMatch().getEthernetMatch() != null) {
                 instance.dl_src = flow.getMatch().getEthernetMatch().getEthernetSource();
                 instance.dl_dst = flow.getMatch().getEthernetMatch().getEthernetDestination();
                 if(flow.getMatch().getEthernetMatch().getEthernetType() != null)
                     instance.dl_type = flow.getMatch().getEthernetMatch().getEthernetType().getType().getValue().intValue();
             }
-
+            
+            // Extract L3 details
             Layer3Match l3Match = flow.getMatch().getLayer3Match();
             // TODO Handle other L3Match cases: ARP, Ipv6
-            if(l3Match instanceof Ipv4Match){
-            	Ipv4Prefix src = ((Ipv4Match)flow.getMatch().getLayer3Match()).getIpv4Source();
-            	Ipv4Prefix dst = ((Ipv4Match)flow.getMatch().getLayer3Match()).getIpv4Destination();
-            	instance.nw_src_prefix = calculateIpfromPrefix(src);
-                instance.nw_src_maskbits = calculateMaskfromPrefix(src);
-                instance.nw_dst_prefix = calculateIpfromPrefix(dst);
-                instance.nw_dst_maskbits = calculateMaskfromPrefix(dst);
+            if(l3Match != null) {
+	            if(l3Match instanceof Ipv4Match){
+	            	Ipv4Prefix src = ((Ipv4Match)flow.getMatch().getLayer3Match()).getIpv4Source();
+	            	Ipv4Prefix dst = ((Ipv4Match)flow.getMatch().getLayer3Match()).getIpv4Destination();
+	            	instance.nw_src_prefix = calculateIpfromPrefix(src);
+	                instance.nw_src_maskbits = calculateMaskfromPrefix(src);
+	                instance.nw_dst_prefix = calculateIpfromPrefix(dst);
+	                instance.nw_dst_maskbits = calculateMaskfromPrefix(dst);
+	            }
+	            else if (l3Match instanceof Ipv4MatchArbitraryBitMask){
+	            	Ipv4Address addr = ((Ipv4MatchArbitraryBitMask)flow.getMatch().getLayer3Match()).getIpv4SourceAddressNoMask();
+	            	DottedQuad mask = ((Ipv4MatchArbitraryBitMask)flow.getMatch().getLayer3Match()).getIpv4SourceArbitraryBitmask();
+	            	Ipv4Prefix src = createPrefix(addr, convertArbitraryMaskToByteArray(mask));
+	            	instance.nw_src_prefix = calculateIpfromPrefix(src);
+	                instance.nw_src_maskbits = calculateMaskfromPrefix(src);
+	
+	            	addr = ((Ipv4MatchArbitraryBitMask)flow.getMatch().getLayer3Match()).getIpv4DestinationAddressNoMask();
+	            	mask = ((Ipv4MatchArbitraryBitMask)flow.getMatch().getLayer3Match()).getIpv4DestinationArbitraryBitmask();
+	            	Ipv4Prefix dst = createPrefix(addr, convertArbitraryMaskToByteArray(mask));
+	                instance.nw_dst_prefix = calculateIpfromPrefix(dst);
+	                instance.nw_dst_maskbits = calculateMaskfromPrefix(dst);
+	            }
             }
-            else if (l3Match instanceof Ipv4MatchArbitraryBitMask){
-            	Ipv4Address addr = ((Ipv4MatchArbitraryBitMask)flow.getMatch().getLayer3Match()).getIpv4SourceAddressNoMask();
-            	DottedQuad mask = ((Ipv4MatchArbitraryBitMask)flow.getMatch().getLayer3Match()).getIpv4SourceArbitraryBitmask();
-            	Ipv4Prefix src = createPrefix(addr, convertArbitraryMaskToByteArray(mask));
-            	instance.nw_src_prefix = calculateIpfromPrefix(src);
-                instance.nw_src_maskbits = calculateMaskfromPrefix(src);
-
-            	addr = ((Ipv4MatchArbitraryBitMask)flow.getMatch().getLayer3Match()).getIpv4DestinationAddressNoMask();
-            	mask = ((Ipv4MatchArbitraryBitMask)flow.getMatch().getLayer3Match()).getIpv4DestinationArbitraryBitmask();
-            	Ipv4Prefix dst = createPrefix(addr, convertArbitraryMaskToByteArray(mask));
-                instance.nw_dst_prefix = calculateIpfromPrefix(dst);
-                instance.nw_dst_maskbits = calculateMaskfromPrefix(dst);
-            }
-
-            if(flow.getMatch().getIpMatch() != null)
-                instance.nw_proto = flow.getMatch().getIpMatch().getIpProtocol();
+            
+            // Extract L4 details
             // TODO Previois implementation worng? src is taken from dest!!
             Layer4Match l4Match = flow.getMatch().getLayer4Match();
-            if(l4Match instanceof TcpMatch) {
-            	instance.tp_src = ((TcpMatch)l4Match).getTcpSourcePort().getValue();
-            	instance.tp_dst = ((TcpMatch)l4Match).getTcpDestinationPort().getValue();
+            if(l4Match != null) {
+	            if(l4Match instanceof TcpMatch) {
+	            	instance.tp_src = ((TcpMatch)l4Match).getTcpSourcePort().getValue();
+	            	instance.tp_dst = ((TcpMatch)l4Match).getTcpDestinationPort().getValue();
+	            }
+	            else if (l4Match instanceof UdpMatch) {
+	            	instance.udp_src = ((UdpMatch)l4Match).getUdpSourcePort().getValue();
+	            	instance.udp_dst = ((UdpMatch)l4Match).getUdpDestinationPort().getValue();
+	            }
             }
+            if(flow.getMatch().getIpMatch() != null)
+                instance.nw_proto = flow.getMatch().getIpMatch().getIpProtocol();
+            
             instance.priority = flow.getPriority();
             instance.flow_info = new FlowInfo();
             instance.flow_info.flow_history = new ArrayList<FlowInfo>();

@@ -66,7 +66,7 @@ public class Flowguard {
         this.importStaticFlows();
         this.importStaticRules();
 
-        this.sg = new ShiftedGraph(this.readTx, this.flowStorage, this.topologyStorage);
+        this.sg = new ShiftedGraph(this, this.readTx, this.flowStorage, this.topologyStorage);
         //Pull the FW Rules from a file.
         if(ruleStorage.size() != 0)
             sg.buildSourceProbeNode(this.ruleStorage);
@@ -82,7 +82,7 @@ public class Flowguard {
         List<FwruleRegistryEntry> entries = null;
         try {
             Optional<FwruleRegistry> fwRules = (Optional<FwruleRegistry>) readTx.read(LogicalDatastoreType.CONFIGURATION, iid).get();
-            if(fwRules == null) {
+            if(!fwRules.isPresent() || fwRules.get() == null) {
                 LOG.info("No static firewall rules installed");
                 return;
             }
@@ -188,8 +188,9 @@ public class Flowguard {
                     LOG.info("Flow found with ID: {}, outport: {}, Match: {}", flow.getId(), flow.getOutPort(), flow.getMatch().getLayer3Match());
                 }
                 FlowRuleNode rn = new FlowRuleNode();
-
                 flowStorage.put(node.getId().getValue(), rn.addruletable(flowList));
+                LOG.info("{} flows added for switch {}", flowStorage.get(node.getId().getValue()).size(), node.getId().getValue());
+
             }
 
         } catch (InterruptedException | ExecutionException e) {
@@ -250,4 +251,9 @@ public class Flowguard {
         Topology flowTopology = getFlowTopology();
         return flowTopology.getLink();
     }
+
+	public void addRule(FirewallRule rule) {
+		// TODO Auto-generated method stub
+		
+	}
 }
