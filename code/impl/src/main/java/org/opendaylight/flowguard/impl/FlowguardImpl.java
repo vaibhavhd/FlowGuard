@@ -127,42 +127,55 @@ public class FlowguardImpl implements FlowguardService  {
 	public Future<RpcResult<GetConflictsOutput>> getConflicts(GetConflictsInput input) {
 		LOG.info("Preparing to pull the flows and calculate conflicts");
 		List<ConflictGroupList> list = new ArrayList<ConflictGroupList>();
-		
-		ConflictGroupList element = new ConflictGroupListBuilder().setAction(Action.DROP).setConflictGroupNumber(1).setConflictType("1.5;5.4;2.3;2.1")
-				.setCorCount(0).setDlDst("1.1.1.1").setDlSrc("1.1.1.1").setGenCount(0).setId(new Long(1)).setInPort("Openflow:1:1")
-				.setL4Dst("").setL4Src("").setNwDst("").setNwSrc("").setOverCount(1).setPriority(1).setProtocol(Protocol.ANY).setRedCount(0)
-				.setShCount(0).setVlanId(new Long(0)).build();
 
-		list.add(element);
-		GetConflictsOutput output = new GetConflictsOutputBuilder().setConflictGroupList(list).build();
-						
-		writeToConflictRegistry(input);
+		ConflictGroupList head = new ConflictGroupListBuilder().setId(new Long(1)).setVlanId(new Long(0))
+		        .setDlDst("1.1.1.1").setDlSrc("1.1.1.1").setL4Dst("").setL4Src("").setNwDst("").setNwSrc("")
+		        .setPriority(1).setProtocol(Protocol.ANY).setInPort("Openflow:1:1").setAction(Action.DROP)
+		        .setConflictGroupNumber(1).setConflictType("3.3;3.11;3.19;3.20;3.15;1.12;3.4;3.17")
+				.setShCount(0).setGenCount(1).setCorCount(0).setRedCount(7).setOverCount(1)
+				.build();
+
+		list.add(head);
+
+		for (long i=2; i<=20 ; i++ ) {
+		    ConflictGroupList element = new ConflictGroupListBuilder().setId(i).setVlanId(new Long(0))
+	                .setDlDst("1.1.1.1").setDlSrc("1.1.1.1").setL4Dst("").setL4Src("").setNwDst("").setNwSrc("")
+	                .setPriority(1).setProtocol(Protocol.ANY).setInPort("Openflow:1:1").setAction(Action.DROP)
+	                .setConflictGroupNumber(1).setConflictType("")
+	                .setShCount(0).setGenCount(0).setCorCount(0).setRedCount(0).setOverCount(0)
+	                .build();
+
+	        list.add(element);
+		}
+        GetConflictsOutput output = new GetConflictsOutputBuilder().setConflictGroupList(list).build();
+        writeToConflictRegistry(input);
+
 		return RpcResultBuilder.success(output).buildFuture();
 	}
 
     private void writeToConflictRegistry(GetConflictsInput input) {
     	WriteTransaction transaction = db.newWriteOnlyTransaction();
-    	
+
     	/* Update the conflict data */
-    	InstanceIdentifier<ConflictGroupEntry> iid = InstanceIdentifier.create(ConflictInfoRegistry.class)
-    	            .child(ConflictGroupEntry.class, new ConflictGroupEntryKey(new Long(1)));
+    	/*InstanceIdentifier<ConflictGroupEntry> iid = InstanceIdentifier.create(ConflictInfoRegistry.class)
+    	            .child(ConflictGroupEntry.class, new ConflictGroupEntryKey(flow_index));
     	ConflictGroupEntry node = new ConflictGroupEntryBuilder()
     			.setAction(Action.DROP).setConflictGroupNumber(1).setConflictType("1.5;5.4;2.3;2.1")
 				.setCorCount(0).setDlDst("1.1.1.1").setDlSrc("1.1.1.1").setGenCount(0).setId(new Long(1)).setInPort("Openflow:1:1")
 				.setL4Dst("").setL4Src("").setNwDst("").setNwSrc("").setOverCount(1).setPriority(1).setProtocol(Protocol.ANY).setRedCount(0)
-				.setShCount(0).setVlanId(new Long(0)).build();    	
+				.setShCount(0).setVlanId(new Long(0)).build();
         transaction.put(LogicalDatastoreType.CONFIGURATION, iid, node);
         CheckedFuture<Void, TransactionCommitFailedException> future = transaction.submit();
         Futures.addCallback(future, new LoggingFuturesCallBack<Void>("Failed to write greeting to greeting registry", LOG));
-        
+        */
         /* Update the status for the visualization engine */
         transaction = db.newWriteOnlyTransaction();
         InstanceIdentifier<FlowguardStatus> statusIid = InstanceIdentifier.create(FlowguardStatus.class);
     	FlowguardStatus status = new FlowguardStatusBuilder().setFlowguardStatus(10).build();
         transaction.put(LogicalDatastoreType.CONFIGURATION, statusIid, status);
         CheckedFuture<Void, TransactionCommitFailedException> futureStatus = transaction.submit();
-        Futures.addCallback(futureStatus, new LoggingFuturesCallBack<Void>("Failed to updaet the Flwoguard Status", LOG));
-        
+        Futures.addCallback(futureStatus, new LoggingFuturesCallBack<Void>("Failed to update the Flowguard status", LOG));
+
 	}
 
 	private void initializeDataTree(DataBroker db) {
