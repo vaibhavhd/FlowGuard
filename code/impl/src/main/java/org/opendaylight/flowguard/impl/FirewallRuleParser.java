@@ -102,7 +102,7 @@ public class FirewallRuleParser {
     	
     	rule.ruleid = fwRule.ruleid;
     	rule.dpid = fwRule.dpid;
-    	rule.in_port = fwRule.in_port.getValue();
+    	rule.in_port = new String(fwRule.in_port);
     	rule.nw_src_prefix = IPv4.fromIPv4Address(fwRule.nw_src_prefix) + (new Integer(fwRule.nw_src_maskbits)).toString();
     	rule.nw_dst_prefix = IPv4.fromIPv4Address(fwRule.nw_dst_prefix) + (new Integer(fwRule.nw_dst_maskbits)).toString();
     	rule.tp_src = ""; //TODO

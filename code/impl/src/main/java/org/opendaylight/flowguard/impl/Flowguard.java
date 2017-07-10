@@ -15,7 +15,10 @@ import java.util.concurrent.ExecutionException;
 
 import org.opendaylight.controller.md.sal.binding.api.DataBroker;
 import org.opendaylight.controller.md.sal.binding.api.ReadTransaction;
+import org.opendaylight.controller.md.sal.binding.api.WriteTransaction;
 import org.opendaylight.controller.md.sal.common.api.data.LogicalDatastoreType;
+import org.opendaylight.controller.md.sal.common.api.data.TransactionCommitFailedException;
+import org.opendaylight.flowguard.packet.IPv4;
 import org.opendaylight.yang.gen.v1.urn.ietf.params.xml.ns.yang.ietf.inet.types.rev130715.Ipv4Prefix;
 import org.opendaylight.yang.gen.v1.urn.opendaylight.flow.inventory.rev130819.FlowCapableNode;
 import org.opendaylight.yang.gen.v1.urn.opendaylight.flow.inventory.rev130819.tables.Table;
@@ -28,9 +31,23 @@ import org.opendaylight.yang.gen.v1.urn.opendaylight.inventory.rev130819.Nodes;
 import org.opendaylight.yang.gen.v1.urn.opendaylight.inventory.rev130819.nodes.Node;
 import org.opendaylight.yang.gen.v1.urn.opendaylight.inventory.rev130819.nodes.NodeKey;
 import org.opendaylight.yang.gen.v1.urn.opendaylight.params.xml.ns.yang.flowguard.rev170505.Fwrule.Action;
+import org.opendaylight.yang.gen.v1.urn.opendaylight.params.xml.ns.yang.flowguard.rev170505.ConflictInfo;
+import org.opendaylight.yang.gen.v1.urn.opendaylight.params.xml.ns.yang.flowguard.rev170505.ConflictInfo.Protocol;
+import org.opendaylight.yang.gen.v1.urn.opendaylight.params.xml.ns.yang.flowguard.rev170505.ConflictInfoRegistry;
+import org.opendaylight.yang.gen.v1.urn.opendaylight.params.xml.ns.yang.flowguard.rev170505.FlowguardStatus;
+import org.opendaylight.yang.gen.v1.urn.opendaylight.params.xml.ns.yang.flowguard.rev170505.FlowguardStatusBuilder;
 import org.opendaylight.yang.gen.v1.urn.opendaylight.params.xml.ns.yang.flowguard.rev170505.FwruleRegistry;
+import org.opendaylight.yang.gen.v1.urn.opendaylight.params.xml.ns.yang.flowguard.rev170505.GetConflictsInput;
+import org.opendaylight.yang.gen.v1.urn.opendaylight.params.xml.ns.yang.flowguard.rev170505.conflict.info.registry.ConflictSwitch;
+import org.opendaylight.yang.gen.v1.urn.opendaylight.params.xml.ns.yang.flowguard.rev170505.conflict.info.registry.ConflictSwitchKey;
+import org.opendaylight.yang.gen.v1.urn.opendaylight.params.xml.ns.yang.flowguard.rev170505.conflict.info.registry.conflictswitch.ConflictTable;
+import org.opendaylight.yang.gen.v1.urn.opendaylight.params.xml.ns.yang.flowguard.rev170505.conflict.info.registry.conflictswitch.ConflictTableKey;
+import org.opendaylight.yang.gen.v1.urn.opendaylight.params.xml.ns.yang.flowguard.rev170505.conflict.info.registry.conflictswitch.conflicttable.ConflictGroupEntry;
+import org.opendaylight.yang.gen.v1.urn.opendaylight.params.xml.ns.yang.flowguard.rev170505.conflict.info.registry.conflictswitch.conflicttable.ConflictGroupEntryBuilder;
+import org.opendaylight.yang.gen.v1.urn.opendaylight.params.xml.ns.yang.flowguard.rev170505.conflict.info.registry.conflictswitch.conflicttable.ConflictGroupEntryKey;
 import org.opendaylight.yang.gen.v1.urn.opendaylight.params.xml.ns.yang.flowguard.rev170505.fwrule.registry.FwruleRegistryEntry;
 import org.opendaylight.yang.gen.v1.urn.opendaylight.params.xml.ns.yang.flowguard.rev170505.fwrule.registry.FwruleRegistryEntryKey;
+import org.opendaylight.yang.gen.v1.urn.opendaylight.params.xml.ns.yang.flowguard.rev170505.get.conflicts.output.ConflictGroupListBuilder;
 import org.opendaylight.yang.gen.v1.urn.tbd.params.xml.ns.yang.network.topology.rev131021.NetworkTopology;
 //import org.opendaylight.yang.gen.v1.urn.tbd.params.xml.ns.yang.network.topology.rev131021.NodeId;
 import org.opendaylight.yang.gen.v1.urn.tbd.params.xml.ns.yang.network.topology.rev131021.TopologyId;
@@ -42,6 +59,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.google.common.base.Optional;
+import com.google.common.util.concurrent.CheckedFuture;
+import com.google.common.util.concurrent.Futures;
 
 public class Flowguard {
     private static final Logger LOG = LoggerFactory.getLogger(Flowguard.class);
@@ -112,7 +131,7 @@ public class Flowguard {
             rule.tp_dst = Short.parseShort(entry.getDestinationPort());
             rule.action = (entry.getAction() == Action.Allow) ? FirewallRule.FirewallAction.ALLOW
                     : FirewallRule.FirewallAction.DENY;
-            rule.in_port = new NodeConnectorId(entry.getInPort());
+            rule.in_port = new String(entry.getInPort());
             rule.dpid = entry.getNode();
 
             ruleStorage.add(rule);
@@ -188,7 +207,13 @@ public class Flowguard {
                     LOG.info("Flow found with ID: {}, outport: {}, Match: {}", flow.getId(), flow.getOutPort(), flow.getMatch().getLayer3Match());
                 }
                 FlowRuleNode rn = new FlowRuleNode();
-                flowStorage.put(node.getId().getValue(), rn.addruletable(flowList));
+                String nodeID = node.getId().getValue();
+                
+                List<FlowRuleNode> list = rn.addruletable(flowList);
+                for (FlowRuleNode rule : list) {
+                	writeToConflictRegistry(nodeID, rule);
+                }
+                flowStorage.put(nodeID, list);
                 LOG.info("{} flows added for switch {}", flowStorage.get(node.getId().getValue()).size(), node.getId().getValue());
 
             }
@@ -255,5 +280,51 @@ public class Flowguard {
 	public void addRule(FirewallRule rule) {
 		// TODO Auto-generated method stub
 		
+	}
+	
+	private void writeToConflictRegistry(String nodeID, FlowRuleNode rule) {
+    	WriteTransaction transaction = db.newWriteOnlyTransaction();
+    	/* Update the conflict data */    	
+
+    	ConflictInfo.Action action;
+    	if(rule.actionDrop)
+    		action = ConflictInfo.Action.BLOCK;
+    	else
+    		action = ConflictInfo.Action.ALLOW;
+    	
+    	ConflictInfo.Protocol proto;
+    	if(rule.nw_proto == 6)
+    		proto = ConflictInfo.Protocol.TCP;
+    	else if (rule.nw_proto == 17)
+    		proto = ConflictInfo.Protocol.UDP;
+    	else
+    		proto = ConflictInfo.Protocol.ANY;
+    	
+    	ConflictGroupEntry newFlow = new ConflictGroupEntryBuilder().setId(rule.flowId).setVlanId(new Long(0))
+        .setDlDst(rule.dl_dst).setDlSrc(rule.dl_src).setL4Dst(rule.tp_dst).setL4Src(rule.tp_src)
+        .setNwDst(IPv4.fromIPv4Address(rule.nw_dst_prefix)).setNwSrc(IPv4.fromIPv4Address(rule.nw_src_prefix))
+        .setPriority(rule.priority).setProtocol(proto).setInPort(rule.in_port).setAction(action)
+        .setConflictGroupNumber(1).setConflictType(rule.conflictList.toString())
+		.setShCount(rule.shCount).setGenCount(rule.genCount).setCorCount(rule.corCount).setRedCount(rule.redCount).setOverCount(rule.overCount)
+		.build();
+
+    	InstanceIdentifier<ConflictGroupEntry> conflict = InstanceIdentifier.create(ConflictInfoRegistry.class)
+    			.child(ConflictSwitch.class, new ConflictSwitchKey(nodeID))
+    			.child(ConflictTable.class, new  ConflictTableKey(0))
+    			.child(ConflictGroupEntry.class, new ConflictGroupEntryKey(newFlow.getId()));
+
+    	transaction.merge(LogicalDatastoreType.CONFIGURATION, conflict , newFlow, true);
+        CheckedFuture<Void, TransactionCommitFailedException> future = transaction.submit();
+        Futures.addCallback(future, new LoggingFuturesCallBack<Void>("Failed to write newFlow to conflict registry", LOG));
+        
+        /* Update the status for the visualization engine */
+        /* The status is the synchronization flag for front-end with back-end */
+        transaction = db.newWriteOnlyTransaction();
+        InstanceIdentifier<FlowguardStatus> statusIid = InstanceIdentifier.create(FlowguardStatus.class);
+    	FlowguardStatus status = new FlowguardStatusBuilder().setFlowguardStatus(10).build();
+        transaction.merge(LogicalDatastoreType.CONFIGURATION, statusIid, status, true);
+        CheckedFuture<Void, TransactionCommitFailedException> futureStatus = transaction.submit();
+        Futures.addCallback(futureStatus, new LoggingFuturesCallBack<Void>("Failed to update the Flowguard status", LOG));
+
 	}
 }

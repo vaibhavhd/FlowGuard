@@ -43,9 +43,6 @@ import org.opendaylight.yang.gen.v1.urn.opendaylight.params.xml.ns.yang.flowguar
 import org.opendaylight.yang.gen.v1.urn.opendaylight.params.xml.ns.yang.flowguard.rev170505.GetConflictsOutputBuilder;
 import org.opendaylight.yang.gen.v1.urn.opendaylight.params.xml.ns.yang.flowguard.rev170505.RuleRegistry;
 import org.opendaylight.yang.gen.v1.urn.opendaylight.params.xml.ns.yang.flowguard.rev170505.RuleRegistryBuilder;
-import org.opendaylight.yang.gen.v1.urn.opendaylight.params.xml.ns.yang.flowguard.rev170505.conflict.info.registry.ConflictGroupEntry;
-import org.opendaylight.yang.gen.v1.urn.opendaylight.params.xml.ns.yang.flowguard.rev170505.conflict.info.registry.ConflictGroupEntryBuilder;
-import org.opendaylight.yang.gen.v1.urn.opendaylight.params.xml.ns.yang.flowguard.rev170505.conflict.info.registry.ConflictGroupEntryKey;
 import org.opendaylight.yang.gen.v1.urn.opendaylight.params.xml.ns.yang.flowguard.rev170505.fwrule.registry.FwruleRegistryEntry;
 import org.opendaylight.yang.gen.v1.urn.opendaylight.params.xml.ns.yang.flowguard.rev170505.fwrule.registry.FwruleRegistryEntryBuilder;
 import org.opendaylight.yang.gen.v1.urn.opendaylight.params.xml.ns.yang.flowguard.rev170505.fwrule.registry.FwruleRegistryEntryKey;
@@ -127,7 +124,7 @@ public class FlowguardImpl implements FlowguardService  {
 	public Future<RpcResult<GetConflictsOutput>> getConflicts(GetConflictsInput input) {
 		LOG.info("Preparing to pull the flows and calculate conflicts");
 		List<ConflictGroupList> list = new ArrayList<ConflictGroupList>();
-
+/*
 		ConflictGroupList head = new ConflictGroupListBuilder().setId(new Long(1)).setVlanId(new Long(0))
 		        .setDlDst("1.1.1.1").setDlSrc("1.1.1.1").setL4Dst("").setL4Src("").setNwDst("").setNwSrc("")
 		        .setPriority(1).setProtocol(Protocol.ANY).setInPort("Openflow:1:1").setAction(Action.DROP)
@@ -149,8 +146,8 @@ public class FlowguardImpl implements FlowguardService  {
 		}
         GetConflictsOutput output = new GetConflictsOutputBuilder().setConflictGroupList(list).build();
         writeToConflictRegistry(input);
-
-		return RpcResultBuilder.success(output).buildFuture();
+*/
+		return null;// RpcResultBuilder.success(output).buildFuture();
 	}
 
     private void writeToConflictRegistry(GetConflictsInput input) {

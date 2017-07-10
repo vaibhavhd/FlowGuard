@@ -379,13 +379,13 @@ public class ShiftedGraph {
     }
 
 
-    public void addFirewallRule(HeaderObject ho, String dpid, NodeConnectorId port){
+    public void addFirewallRule(HeaderObject ho, String dpid, String port){
         FirewallRule rule = new FirewallRule();
         rule.ruleid = rule.genID();
         rule.priority = 32768;
         rule.dpid = dpid;
         rule.wildcard_dpid = false;
-        rule.in_port = port;
+        rule.in_port = new String(port);
         rule.wildcard_in_port = false;
         rule.wildcard_nw_src = false;
         rule.wildcard_dl_type = false;
@@ -401,7 +401,7 @@ public class ShiftedGraph {
         this.firewall.addRule(rule);
     }
 
-    public void addFlowEntry(HeaderObject ho, String dpid, NodeConnectorId port){
+    public void addFlowEntry(HeaderObject ho, String dpid, String port){
         Map<String, Object> entry = new HashMap<String, Object>();
         String rulename = "resolution"+Integer.toString(this.resolution_index);
         this.resolution_index++;
@@ -483,7 +483,7 @@ public class ShiftedGraph {
 
         FlowInfo sample = flowinfo;
         String targetdpid = target.dpid;
-        NodeConnectorId targetport = new NodeConnectorId(target.port);
+        String targetport = new String(target.port);
 
         while(true){
             String SWITCHDPID = sample.next_switch_dpid;
@@ -580,7 +580,7 @@ public class ShiftedGraph {
                         }
                         sample = flowRule.flow_info;
 
-                        if(sample.next_switch_dpid.equals(targetdpid) && sample.next_ingress_port==targetport){
+                        if(sample.next_switch_dpid.equals(targetdpid) && sample.next_ingress_port.equals(targetport)){
                             //normal execution
                             System.out.println("Flows are reached to the Destination!!!");
                             this.printFlowInfo(sample, true);
@@ -630,10 +630,10 @@ public class ShiftedGraph {
         {
             TopologyStruct t = iter.next();
             // TODO Check port equivalence and URI type
-            if(t.dpid.equals(flowinfo.next_switch_dpid) && t.port.equals(flowinfo.next_ingress_port.getValue())){
+            if(t.dpid.equals(flowinfo.next_switch_dpid) && t.port.equals(flowinfo.next_ingress_port)){
                 TopologyStruct t2 = this.topologyStorage.get(t);
                 flowinfo.next_switch_dpid = t2.dpid;
-                flowinfo.next_ingress_port = new NodeConnectorId(t2.port);
+                flowinfo.next_ingress_port = new String(t2.port);
                 //System.out.println(t.dpid + " / " + t.port + " <--> " +t2.dpid + "/ " + t2.port);
                 break;
             }
@@ -690,9 +690,9 @@ public class ShiftedGraph {
                 sample.current_ho.nw_src_prefix = 167772160;
                 sample.current_ho.nw_src_maskbits = 8;
                 sample.current_switch_dpid = source.dpid;
-                sample.current_ingress_port = new NodeConnectorId(source.port);
+                sample.current_ingress_port = new String(source.port);
                 sample.next_switch_dpid = source.dpid;
-                sample.next_ingress_port = new NodeConnectorId(source.port);
+                sample.next_ingress_port = new String(source.port);
                 sample.next_ho = new HeaderObject();
                 sample.next_ho.nw_dst_prefix = 167772160;
                 sample.next_ho.nw_dst_maskbits = 8;
@@ -761,10 +761,10 @@ public class ShiftedGraph {
             sample.current_ho.vlan = -1;
             sample.current_ho.nw_src_maskbits = 8;
             sample.current_switch_dpid = source.dpid;
-            sample.current_ingress_port = new NodeConnectorId(source.port);
+            sample.current_ingress_port = new String(source.port);
             sample.next_switch_dpid = source.dpid;
             // TODO Current and next ingress ports are same!!
-            sample.next_ingress_port = new NodeConnectorId(source.port);
+            sample.next_ingress_port = new String(source.port);
             sample.next_ho = new HeaderObject();
             sample.next_ho.nw_dst_prefix = 167772160;
             sample.next_ho.nw_dst_maskbits = 8;
@@ -898,7 +898,7 @@ public class ShiftedGraph {
     }
 
 
-    public void staticEntryModified(String dpid, String rulename, FlowBuilder newFlowMod){
+    public void staticEntryModified(String dpid, String rulename, Flow newFlow){
 
         List<FlowRuleNode> ruletable = new ArrayList<FlowRuleNode>();
 
@@ -914,7 +914,7 @@ public class ShiftedGraph {
             this.FlowRuleNodes.remove(dpid);
         }
         long start = System.nanoTime();
-        ruletable = FlowRuleNode.addFlowRuleNode(ruletable, rulename, newFlowMod);
+        ruletable = FlowRuleNode.addFlowRuleNode(ruletable, rulename, newFlow);
         long end = System.nanoTime();
         try {
             File f = new File(this.RESULT_PATH);
@@ -936,7 +936,7 @@ public class ShiftedGraph {
                     if(this.flowstorage.get(i).flow_history != null && this.flowstorage.get(i).flow_history.size() > 0){
                         for(int j = 0; j < this.flowstorage.get(i).flow_history.size(); j++){
                             if(dpid.equals(this.flowstorage.get(i).flow_history.get(j).current_switch_dpid) &&
-                                    newFlowMod.getPriority() >= this.getPriority(this.flowstorage.get(i).flow_history.get(j).rule_node_name)){
+                                    newFlow.getPriority() >= this.getPriority(this.flowstorage.get(i).flow_history.get(j).rule_node_name)){
                                 String rule_name = this.flowstorage.get(i).flow_history.get(j).rule_node_name;
                                 int size = this.flowstorage.get(i).flow_history.size();
                                 if(j >0){
@@ -960,7 +960,7 @@ public class ShiftedGraph {
                                 }
                                 break;
                             }else if(dpid.equals(this.flowstorage.get(i).flow_history.get(j).current_switch_dpid) &&
-                                    newFlowMod.getPriority() < this.getPriority(this.flowstorage.get(i).flow_history.get(j).rule_node_name) &&
+                                    newFlow.getPriority() < this.getPriority(this.flowstorage.get(i).flow_history.get(j).rule_node_name) &&
                                     onetimepass){
                                 String rule_name = this.flowstorage.get(i).flow_history.get(j).rule_node_name;
                                 FlowInfo fi = new FlowInfo();
@@ -1000,7 +1000,7 @@ public class ShiftedGraph {
                     if(this.flowstorage.get(i).flow_history != null){
                         for(int j = 0; j < this.flowstorage.get(i).flow_history.size(); j++){
                             if(dpid.equals(this.flowstorage.get(i).flow_history.get(j).current_switch_dpid) &&
-                                    newFlowMod.getPriority() >= this.getPriority(this.flowstorage.get(i).flow_history.get(j).rule_node_name)){
+                                    newFlow.getPriority() >= this.getPriority(this.flowstorage.get(i).flow_history.get(j).rule_node_name)){
                                 String rule_name = this.flowstorage.get(i).flow_history.get(j).rule_node_name;
                                 int size = this.flowstorage.get(i).flow_history.size();
                                 if(j>0){

@@ -22,9 +22,9 @@ public class FlowInfo {
 	public HeaderObject current_ho; //input header objects
 	public HeaderObject next_ho; //output header objects
 	public String next_switch_dpid; //next switch id to propagate
-	public NodeConnectorId next_ingress_port;
+	public String next_ingress_port;
 	public String current_switch_dpid; //next switch id to propagate
-	public NodeConnectorId current_ingress_port;
+	public String current_ingress_port;
 	public String rule_node_name;
 	public TopologyStruct target;
 	public String candidate_rule;

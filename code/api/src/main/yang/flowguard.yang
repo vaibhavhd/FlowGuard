@@ -108,7 +108,7 @@ module flowguard {
 	     	config true;
 	     }
 	     leaf id {
-	     	type uint32;
+	     	type uint16;
 	     	config true;
 	     }
 	     leaf vlan-id {
@@ -136,21 +136,21 @@ module flowguard {
 	     	config true;
 	     }
 	     leaf l4-src {
-	     	type string;
+	     	type uint16;
 	     	config true;
 	     }
 	     leaf l4-dst {
-	     	type string;
+	     	type uint16;
 	     	config true;
 	     }
 	     leaf action {
 	     	type enumeration {
-              enum "DROP" {
+              enum "BLOCK" {
                 value 1;
                 description
                     "drop = 1";
               }
-              enum "FORWARD" {
+              enum "ALLOW" {
                 value 2;
                 description
                   "forward = 2";
@@ -218,10 +218,22 @@ module flowguard {
         }
     }
     container conflict-info-registry {
-    	list conflict-group-entry {
-    		key "id";
-    		uses flowguard:conflict-info;
-    	}
+    	list conflictSwitch {
+    		key switchId;
+    		leaf switchId {
+    			type string;
+    		}
+    		list conflictTable {
+    			key "tableId";
+    			leaf tableId {
+	    			type uint16;
+	    			}
+    	 		list conflict-group-entry {
+    	 			key "id";
+    				uses flowguard:conflict-info;
+    	 		}
+    	 	}
+    	 }
     }
     container controls {
         leaf action {

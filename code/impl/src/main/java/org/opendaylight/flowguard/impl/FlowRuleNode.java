@@ -13,21 +13,15 @@ import java.net.UnknownHostException;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
-import java.util.Map;
-import java.util.Set;
 
 import org.opendaylight.controller.liblldp.EtherTypes;
 import org.opendaylight.yang.gen.v1.urn.ietf.params.xml.ns.yang.ietf.inet.types.rev130715.Ipv4Address;
 import org.opendaylight.yang.gen.v1.urn.ietf.params.xml.ns.yang.ietf.inet.types.rev130715.Ipv4Prefix;
-import org.opendaylight.yang.gen.v1.urn.ietf.params.xml.ns.yang.ietf.inet.types.rev130715.PortNumber;
-import org.opendaylight.yang.gen.v1.urn.ietf.params.xml.ns.yang.ietf.inet.types.rev130715.Uri;
 import org.opendaylight.yang.gen.v1.urn.ietf.params.xml.ns.yang.ietf.yang.types.rev130715.DottedQuad;
-import org.opendaylight.yang.gen.v1.urn.opendaylight.action.types.rev131112.action.action.push.mpls.action._case.PushMplsAction;
 import org.opendaylight.yang.gen.v1.urn.opendaylight.action.types.rev131112.action.action.set.field._case.SetField;
 import org.opendaylight.yang.gen.v1.urn.opendaylight.action.types.rev131112.action.action.output.action._case.OutputAction;
 import org.opendaylight.yang.gen.v1.urn.opendaylight.action.types.rev131112.action.action.set.vlan.id.action._case.SetVlanIdAction;
 import org.opendaylight.yang.gen.v1.urn.opendaylight.action.types.rev131112.action.list.Action;
-import org.opendaylight.yang.gen.v1.urn.opendaylight.flow.inventory.rev130819.tables.table.Flow;
 // TODO import net.floodlightcontroller.staticflowentry.StaticFlowEntries;
 /*import org.openflow.protocol.action.OFActionDataLayerDestination;
 import org.openflow.protocol.action.OFActionDataLayerSource;
@@ -35,18 +29,15 @@ import org.openflow.protocol.action.OFActionNetworkLayerDestination;
 import org.openflow.protocol.action.OFActionNetworkLayerSource;
 import org.openflow.protocol.action.OFActionVirtualLanIdentifier;
 */
-import org.opendaylight.yang.gen.v1.urn.opendaylight.flow.inventory.rev130819.tables.table.FlowBuilder;
-import org.opendaylight.yang.gen.v1.urn.opendaylight.flow.types.rev131026.flow.Instructions;
 import org.opendaylight.yang.gen.v1.urn.opendaylight.flow.types.rev131026.instruction.instruction.clear.actions._case.ClearActions;
 import org.opendaylight.yang.gen.v1.urn.opendaylight.flow.types.rev131026.instruction.instruction.write.actions._case.WriteActions;
+import org.opendaylight.yang.gen.v1.urn.opendaylight.flow.inventory.rev130819.tables.table.Flow;
 import org.opendaylight.yang.gen.v1.urn.opendaylight.flow.types.rev131026.instruction.instruction.apply.actions._case.ApplyActions;
 import org.opendaylight.yang.gen.v1.urn.opendaylight.flow.types.rev131026.instruction.instruction.go.to.table._case.GoToTable;
 import org.opendaylight.yang.gen.v1.urn.opendaylight.flow.types.rev131026.instruction.instruction.meter._case.Meter;
 
 import org.opendaylight.yang.gen.v1.urn.opendaylight.flow.types.rev131026.instruction.list.Instruction;
-import org.opendaylight.yang.gen.v1.urn.opendaylight.inventory.rev130819.NodeConnectorId;
-import org.opendaylight.yang.gen.v1.urn.opendaylight.model.match.types.rev131026.ethernet.match.fields.EthernetDestination;
-import org.opendaylight.yang.gen.v1.urn.opendaylight.model.match.types.rev131026.ethernet.match.fields.EthernetSource;
+
 import org.opendaylight.yang.gen.v1.urn.opendaylight.model.match.types.rev131026.ethernet.match.fields.EthernetType;
 import org.opendaylight.yang.gen.v1.urn.opendaylight.model.match.types.rev131026.match.Layer3Match;
 import org.opendaylight.yang.gen.v1.urn.opendaylight.model.match.types.rev131026.match.Layer4Match;
@@ -65,11 +56,12 @@ public class FlowRuleNode {
 	// TODO Rename fields to that of openflow 1.3
     String switch_name;
     String rule_name;
+    public int flowId;
     public int vlan;
     public short length = 0;
-    public NodeConnectorId in_port;
-    public EthernetSource dl_src;
-    public EthernetDestination dl_dst;
+    public String in_port;
+    public String dl_src;
+    public String dl_dst;
     public int dl_type;
     public int nw_src_prefix = 0;
     public int nw_src_maskbits = 0;
@@ -82,10 +74,10 @@ public class FlowRuleNode {
     public int udp_dst;
     public int priority = 0;
     public int wildcards = 0;
-
-    public NodeConnectorId action_out_port;
-    public EthernetSource action_dl_src;
-    public EthernetDestination action_dl_dst;
+    public boolean actionDrop=false;
+    public String action_out_port;
+    public String action_dl_src;
+    public String action_dl_dst;
     public int action_nw_src_prefix;
     public int action_nw_src_maskbits = 32;
     public int action_nw_dst_prefix;
@@ -95,10 +87,18 @@ public class FlowRuleNode {
     public List<HeaderObject> diff;
 
     public FlowInfo flow_info;
-	private EthernetSource eth_src;
-	private EthernetDestination eth_dst;
-	private EthernetType eth_type;
-
+    public String eth_src;
+    public String eth_dst;
+	public EthernetType eth_type;
+	
+	public int corCount, genCount, redCount, shCount, overCount;
+	public StringBuilder conflictList = new StringBuilder();
+	private static final int CORELATION =1;
+	private static final int GENERALIZATION = 2;
+	private static final int REDUNDANCY = 3;
+	private static final int SHADOWING = 4;
+	private static final int OVERLAP = 5;
+	
 	private static final String PREFIX_SEPARATOR = "/";
 	private static final int IPV4_ADDRESS_LENGTH = 32;
 	private static final String DEFAULT_ARBITRARY_BIT_MASK = "255.255.255.255";
@@ -122,14 +122,19 @@ public class FlowRuleNode {
 
             //instance.switch_name = ;
             instance.rule_name = flow.getFlowName();//key.toString();
-            instance.in_port = flow.getMatch().getInPort(); // It should ne inport or physical input port??
+            if(flow.getMatch().getInPort() != null)
+            	instance.in_port = flow.getMatch().getInPort().getValue();//.substring(beginIndex); // It should ne inport or physical input port??
             if(flow.getMatch().getVlanMatch() != null)
                 instance.vlan = flow.getMatch().getVlanMatch().getVlanId().getVlanId().getValue();
             
             // Extract L2 details
             if(flow.getMatch().getEthernetMatch() != null) {
-                instance.dl_src = flow.getMatch().getEthernetMatch().getEthernetSource();
-                instance.dl_dst = flow.getMatch().getEthernetMatch().getEthernetDestination();
+                if(flow.getMatch().getEthernetMatch().getEthernetSource() != null) {
+                	instance.dl_src = 	flow.getMatch().getEthernetMatch().getEthernetSource().getAddress().getValue();
+                };
+                if(flow.getMatch().getEthernetMatch().getEthernetDestination() != null) {
+                	instance.dl_dst = 	flow.getMatch().getEthernetMatch().getEthernetDestination().getAddress().getValue();
+                };
                 if(flow.getMatch().getEthernetMatch().getEthernetType() != null)
                     instance.dl_type = flow.getMatch().getEthernetMatch().getEthernetType().getType().getValue().intValue();
             }
@@ -201,11 +206,11 @@ public class FlowRuleNode {
                 		List<Action> action = ((WriteActions)i.getInstruction()).getAction();
                 		for(Action a : action) {
                 			if(a.getAction() instanceof OutputAction) {
-                				instance.action_out_port = new NodeConnectorId(((OutputAction)(a.getAction())).getOutputNodeConnector());
+                				instance.action_out_port = ((OutputAction)(a.getAction())).getOutputNodeConnector().getValue();
                 			}
                 			else if(a.getAction() instanceof SetField){
-                				instance.action_dl_src = ((SetField)(a.getAction())).getEthernetMatch().getEthernetSource();
-                				instance.action_dl_dst = ((SetField)(a.getAction())).getEthernetMatch().getEthernetDestination();
+                				instance.action_dl_src = ((SetField)(a.getAction())).getEthernetMatch().getEthernetSource().getAddress().getValue();
+                				instance.action_dl_dst = ((SetField)(a.getAction())).getEthernetMatch().getEthernetDestination().getAddress().getValue();
 
                 				l3Match = ((SetField)(a.getAction())).getLayer3Match();
                 	            // TODO Handle other L3Match cases: ARP, Ipv6
@@ -244,6 +249,8 @@ public class FlowRuleNode {
                 		// Error when a flow contains a packet with invalid instruction.
                 	}
                 }
+            } else { // The Instruction Field is not set - default instruction for OVS = DROP the packet.
+            	instance.actionDrop = true;
             }
             int i = 0;
             for(i = 0; i < ruletable.size(); i++){
@@ -260,9 +267,9 @@ public class FlowRuleNode {
         return ruletable;
     }
 
-    public static List<FlowRuleNode> addFlowRuleNode(List<FlowRuleNode> ruletable, String flowname, FlowBuilder newflowmod){
+    public static List<FlowRuleNode> addFlowRuleNode(List<FlowRuleNode> ruletable, String flowname, Flow newflow){
 
-        FlowBuilder value = newflowmod;
+        //FlowBuilder value = newflowmod;
         FlowRuleNode instance = new FlowRuleNode();
         //instance.switch_name = ;
         /*instance.rule_name = flowname;
@@ -357,12 +364,18 @@ public class FlowRuleNode {
 
         return ruletable;
     }
-
+    
+    /* TODO 
+     * For deciding the conflicts among the rules for visualization, actions are compared as:
+     * Action is DROP or not. All the actions which are not DROP actions should ideally be 
+     * then checked for equality in terms of specific actions.
+     */
     public static List<FlowRuleNode> computedependency(List<FlowRuleNode> ruletable){
         //compute intra table dependency
         //compare i th rule and j th rule such that i th rule is prior to j th rule.
         for(int i = 0; i < ruletable.size(); i++){
             ruletable.get(i).active = true;
+            ruletable.get(i).flowId = i;
             if(ruletable.get(i).diff != null)
                 ruletable.get(i).diff.clear();
         }
@@ -377,8 +390,8 @@ public class FlowRuleNode {
          */
         for(int i = 0; i < ruletable.size() - 1; i++){
             for(int j = i + 1; j < ruletable.size(); j++){
-                if(isWildcarded(ruletable.get(i).in_port) || isWildcarded(ruletable.get(i).in_port)
-                        || ruletable.get(i).in_port.equals(ruletable.get(j).in_port)
+                if((isWildcarded(ruletable.get(i).in_port) || isWildcarded(ruletable.get(i).in_port)
+                        || ruletable.get(i).in_port.equals(ruletable.get(j).in_port))
                         && ruletable.get(i).dl_type == (EtherTypes.IPv4.intValue())
                         && ruletable.get(j).dl_type == (EtherTypes.IPv4.intValue())
                         && ruletable.get(i).active == true //TODO The rule will always be active as above!
@@ -388,57 +401,99 @@ public class FlowRuleNode {
                     		ruletable.get(j).nw_dst_prefix, ruletable.get(j).nw_dst_maskbits))
                     	if(matchIPAddress(ruletable.get(i).nw_src_prefix, ruletable.get(i).nw_src_maskbits,
                         		ruletable.get(j).nw_src_prefix, ruletable.get(j).nw_src_maskbits)){
-
-                            if(ruletable.get(j).diff == null){
-                                ruletable.get(j).diff = new ArrayList<HeaderObject>();
-                            }
-                            /* If two rules have same IP range and higher priority rule has more(>=)0 IP range
-                            than the lower priority rule, mark the lower priority rule as disabled. */
-                            if(ruletable.get(i).nw_dst_maskbits <= ruletable.get(j).nw_dst_maskbits &&
-                                    ruletable.get(i).nw_src_maskbits <= ruletable.get(j).nw_src_maskbits){
-                                //handle for full overlap case
-                                ruletable.get(j).active = false;
-                            }
-                            else{
-                                //handle for partial overlap case
-                                HeaderObject ho = new HeaderObject();
-
-                                // Take the larger maskbits of the two rules for both dest and source.
-                                ho.nw_dst_prefix = ruletable.get(i).nw_dst_prefix;
-                                ho.nw_src_prefix = ruletable.get(i).nw_src_prefix;
-                                ho.nw_dst_maskbits = ruletable.get(i).nw_dst_maskbits;
-                                ho.nw_src_maskbits = ruletable.get(i).nw_src_maskbits;
-
-                                boolean donothing = false;
-
-                                for(int k = 0; k < ruletable.get(j).diff.size(); k++){
-                                    if(matchIPAddress(ho.nw_dst_prefix, ho.nw_dst_maskbits,
-                                            ruletable.get(j).diff.get(k).nw_dst_prefix, ruletable.get(j).diff.get(k).nw_dst_maskbits))
-                                        if(matchIPAddress(ho.nw_src_prefix, ho.nw_src_maskbits,
-                                                ruletable.get(j).diff.get(k).nw_src_prefix, ruletable.get(j).diff.get(k).nw_src_maskbits))
-                                            if(ho.nw_dst_maskbits <= ruletable.get(j).diff.get(k).nw_dst_maskbits &&
-                                                    ho.nw_src_maskbits <= ruletable.get(j).diff.get(k).nw_src_maskbits){
-                                                //handle for full overlap case 1 : ho range contains diff
-                                                ruletable.get(j).diff.remove(k);
-                                            }else if(ho.nw_dst_maskbits >= ruletable.get(j).diff.get(k).nw_dst_maskbits &&
-                                                    ho.nw_src_maskbits >= ruletable.get(j).diff.get(k).nw_src_maskbits){
-                                                //handle for full overlap case 1 : diff range contains ho
-                                                //do nothing
-                                                donothing = true;
-                                                break;
-                                            }else{
-                                                //handle for partial overlap case
-                                            }
+                    		if (ruletable.get(i).nw_proto == ruletable.get(j).nw_proto) {
+	
+	                            if(ruletable.get(j).diff == null){
+	                                ruletable.get(j).diff = new ArrayList<HeaderObject>();
+	                            }
+	                            /* If two rules have same IP range and higher priority rule has more(>=)0 IP range
+	                            than the lower priority rule, mark the lower priority rule as disabled. */
+	                            if(ruletable.get(i).nw_dst_maskbits <= ruletable.get(j).nw_dst_maskbits &&
+	                                    ruletable.get(i).nw_src_maskbits <= ruletable.get(j).nw_src_maskbits){
+	                                //handle for full overlap case
+	                                ruletable.get(j).active = false;
+	                                if(ruletable.get(i).actionDrop != ruletable.get(j).actionDrop) {
+	                                	ruletable.get(j).shCount++;
+	                                	ruletable.get(j).conflictList.append(SHADOWING);
+	                                	ruletable.get(j).conflictList.append("." + i + ";");
+	                                }
+	                                else {
+	                                	ruletable.get(j).redCount++;
+	                                	ruletable.get(j).conflictList.append(REDUNDANCY);
+	                                	ruletable.get(j).conflictList.append("." + i + ";");
+	                                }
+	                            }
+	                            else{
+	                                //handle for partial overlap case
+	                            	if(ruletable.get(i).actionDrop != ruletable.get(j).actionDrop) {
+	                                	ruletable.get(i).genCount++;
+	                                	ruletable.get(i).conflictList.append(GENERALIZATION);
+	                                	ruletable.get(i).conflictList.append("." + j + ";");
+	                                } else {
+	                                	ruletable.get(i).redCount++;
+	                                	ruletable.get(i).conflictList.append(REDUNDANCY);
+	                                	ruletable.get(i).conflictList.append("." + j + ";");
+	                                }
+	                            	
+	                            	HeaderObject ho = new HeaderObject();
+	
+	                                // Take the larger maskbits of the two rules for both dest and source.
+	                                ho.nw_dst_prefix = ruletable.get(i).nw_dst_prefix;
+	                                ho.nw_src_prefix = ruletable.get(i).nw_src_prefix;
+	                                ho.nw_dst_maskbits = ruletable.get(i).nw_dst_maskbits;
+	                                ho.nw_src_maskbits = ruletable.get(i).nw_src_maskbits;
+	
+	                                boolean donothing = false;
+	
+	                                for(int k = 0; k < ruletable.get(j).diff.size(); k++){
+	                                    if(matchIPAddress(ho.nw_dst_prefix, ho.nw_dst_maskbits,
+	                                            ruletable.get(j).diff.get(k).nw_dst_prefix, ruletable.get(j).diff.get(k).nw_dst_maskbits))
+	                                        if(matchIPAddress(ho.nw_src_prefix, ho.nw_src_maskbits,
+	                                                ruletable.get(j).diff.get(k).nw_src_prefix, ruletable.get(j).diff.get(k).nw_src_maskbits))
+	                                            if(ho.nw_dst_maskbits <= ruletable.get(j).diff.get(k).nw_dst_maskbits &&
+	                                                    ho.nw_src_maskbits <= ruletable.get(j).diff.get(k).nw_src_maskbits){
+	                                                //handle for full overlap case 1 : ho range contains diff
+	                                                ruletable.get(j).diff.remove(k);
+	                                            }else if(ho.nw_dst_maskbits >= ruletable.get(j).diff.get(k).nw_dst_maskbits &&
+	                                                    ho.nw_src_maskbits >= ruletable.get(j).diff.get(k).nw_src_maskbits){
+	                                                //handle for full overlap case 1 : diff range contains ho
+	                                                //do nothing
+	                                                donothing = true;
+	                                                break;
+	                                            }else{
+	                                                //handle for partial overlap case
+	                                            }
+	                                }
+	                                if(donothing == true){
+	                                    //do nothing
+	                                }
+	                                else {
+	                                    ruletable.get(j).diff.add(ho);
+	                                }
+	                            }
+                    		} else if (ruletable.get(i).nw_proto == 0 || ruletable.get(j).nw_proto == 0) {
+                    			// Reaching here would mean that address space overlaps between i and j but wildcard protocols 
+                    			// turns the full overlap into an intersection.
+                    			if(ruletable.get(i).actionDrop != ruletable.get(j).actionDrop) {
+                                	ruletable.get(i).corCount++;
+                                	ruletable.get(i).conflictList.append(CORELATION);
+                                	ruletable.get(i).conflictList.append("." + j + ";");
+                                	ruletable.get(j).corCount++;
+                                	ruletable.get(j).conflictList.append(CORELATION);
+                                	ruletable.get(j).conflictList.append("." + i + ";");
+                                } else {
+                                	ruletable.get(i).overCount++;
+                                	ruletable.get(i).conflictList.append(OVERLAP);
+                                	ruletable.get(i).conflictList.append("." + j + ";");
+                                	ruletable.get(j).overCount++;
+                                	ruletable.get(j).conflictList.append(OVERLAP);
+                                	ruletable.get(j).conflictList.append("." + i + ";");
                                 }
-                                if(donothing == true){
-                                    //do nothing
-                                }
-                                else {
-                                    ruletable.get(j).diff.add(ho);
-                                }
-                            }
-                        }
+                    		}
+                    	}
+                        
                 }
+                
             }
         }
         return ruletable;
