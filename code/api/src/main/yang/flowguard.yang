@@ -256,7 +256,7 @@ module flowguard {
     }
 	container flowguard-status {
 		leaf flowguard-status {
-			type uint16;
+			type string;
 		}
 	}
     rpc add-rule {

@@ -321,7 +321,8 @@ public class Flowguard {
         /* The status is the synchronization flag for front-end with back-end */
         transaction = db.newWriteOnlyTransaction();
         InstanceIdentifier<FlowguardStatus> statusIid = InstanceIdentifier.create(FlowguardStatus.class);
-    	FlowguardStatus status = new FlowguardStatusBuilder().setFlowguardStatus(10).build();
+        /* Update the status flag with the Switch ID which has been updated */
+    	FlowguardStatus status = new FlowguardStatusBuilder().setFlowguardStatus(nodeID).build();
         transaction.merge(LogicalDatastoreType.CONFIGURATION, statusIid, status, true);
         CheckedFuture<Void, TransactionCommitFailedException> futureStatus = transaction.submit();
         Futures.addCallback(futureStatus, new LoggingFuturesCallBack<Void>("Failed to update the Flowguard status", LOG));
