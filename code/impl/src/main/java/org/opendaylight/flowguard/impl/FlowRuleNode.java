@@ -93,6 +93,8 @@ public class FlowRuleNode {
 	
 	public int corCount, genCount, redCount, shCount, overCount;
 	public StringBuilder conflictList = new StringBuilder();
+	public boolean resolution;
+	public String mechanism = new String();
 	private static final int CORELATION =1;
 	private static final int GENERALIZATION = 2;
 	private static final int REDUNDANCY = 3;

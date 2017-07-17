@@ -210,9 +210,8 @@ public class Flowguard {
                 String nodeID = node.getId().getValue();
                 
                 List<FlowRuleNode> list = rn.addruletable(flowList);
-                for (FlowRuleNode rule : list) {
-                	writeToConflictRegistry(nodeID, rule);
-                }
+                writeToConflictRegistry(nodeID, list);
+                
                 flowStorage.put(nodeID, list);
                 LOG.info("{} flows added for switch {}", flowStorage.get(node.getId().getValue()).size(), node.getId().getValue());
 
@@ -282,50 +281,96 @@ public class Flowguard {
 		
 	}
 	
-	private void writeToConflictRegistry(String nodeID, FlowRuleNode rule) {
-    	WriteTransaction transaction = db.newWriteOnlyTransaction();
-    	/* Update the conflict data */    	
-
-    	ConflictInfo.Action action;
-    	if(rule.actionDrop)
-    		action = ConflictInfo.Action.BLOCK;
-    	else
-    		action = ConflictInfo.Action.ALLOW;
-    	
-    	ConflictInfo.Protocol proto;
-    	if(rule.nw_proto == 6)
-    		proto = ConflictInfo.Protocol.TCP;
-    	else if (rule.nw_proto == 17)
-    		proto = ConflictInfo.Protocol.UDP;
-    	else
-    		proto = ConflictInfo.Protocol.ANY;
-    	
-    	ConflictGroupEntry newFlow = new ConflictGroupEntryBuilder().setId(rule.flowId).setVlanId(new Long(0))
-        .setDlDst(rule.dl_dst).setDlSrc(rule.dl_src).setL4Dst(rule.tp_dst).setL4Src(rule.tp_src)
-        .setNwDst(IPv4.fromIPv4Address(rule.nw_dst_prefix)).setNwSrc(IPv4.fromIPv4Address(rule.nw_src_prefix))
-        .setPriority(rule.priority).setProtocol(proto).setInPort(rule.in_port).setAction(action)
-        .setConflictGroupNumber(1).setConflictType(rule.conflictList.toString())
-		.setShCount(rule.shCount).setGenCount(rule.genCount).setCorCount(rule.corCount).setRedCount(rule.redCount).setOverCount(rule.overCount)
-		.build();
-
-    	InstanceIdentifier<ConflictGroupEntry> conflict = InstanceIdentifier.create(ConflictInfoRegistry.class)
-    			.child(ConflictSwitch.class, new ConflictSwitchKey(nodeID))
-    			.child(ConflictTable.class, new  ConflictTableKey(0))
-    			.child(ConflictGroupEntry.class, new ConflictGroupEntryKey(newFlow.getId()));
-
-    	transaction.merge(LogicalDatastoreType.CONFIGURATION, conflict , newFlow, true);
-        CheckedFuture<Void, TransactionCommitFailedException> future = transaction.submit();
-        Futures.addCallback(future, new LoggingFuturesCallBack<Void>("Failed to write newFlow to conflict registry", LOG));
-        
-        /* Update the status for the visualization engine */
-        /* The status is the synchronization flag for front-end with back-end */
-        transaction = db.newWriteOnlyTransaction();
-        InstanceIdentifier<FlowguardStatus> statusIid = InstanceIdentifier.create(FlowguardStatus.class);
-        /* Update the status flag with the Switch ID which has been updated */
-    	FlowguardStatus status = new FlowguardStatusBuilder().setFlowguardStatus(nodeID).build();
-        transaction.merge(LogicalDatastoreType.CONFIGURATION, statusIid, status, true);
-        CheckedFuture<Void, TransactionCommitFailedException> futureStatus = transaction.submit();
-        Futures.addCallback(futureStatus, new LoggingFuturesCallBack<Void>("Failed to update the Flowguard status", LOG));
-
+	private void writeToConflictRegistry(String nodeID, List<FlowRuleNode> list) {
+		
+		//for ( FlowRuleNode rule : list) {
+			WriteTransaction transaction = db.newWriteOnlyTransaction();
+	    	/* Update the conflict data */    	
+			FlowRuleNode rule = list.get(0);
+	    	ConflictInfo.Action action;
+	    	if(rule.actionDrop)
+	    		action = ConflictInfo.Action.BLOCK;
+	    	else
+	    		action = ConflictInfo.Action.ALLOW;
+	    	
+	    	ConflictInfo.Protocol proto;
+	    	if(rule.nw_proto == 6)
+	    		proto = ConflictInfo.Protocol.TCP;
+	    	else if (rule.nw_proto == 17)
+	    		proto = ConflictInfo.Protocol.UDP;
+	    	else
+	    		proto = ConflictInfo.Protocol.ANY;
+	    	/*
+	    	ConflictGroupEntry newFlow = new ConflictGroupEntryBuilder().setId(rule.flowId).setVlanId(new Long(0))
+	        .setDlDst(rule.dl_dst).setDlSrc(rule.dl_src).setL4Dst(rule.tp_dst).setL4Src(rule.tp_src)
+	        .setNwDst(IPv4.fromIPv4Address(rule.nw_dst_prefix)).setNwSrc(IPv4.fromIPv4Address(rule.nw_src_prefix))
+	        .setPriority(rule.priority).setProtocol(proto).setInPort(rule.in_port).setAction(action)
+	        .setConflictGroupNumber(1).setConflictType(rule.conflictList.toString())
+			.setShCount(rule.shCount).setGenCount(rule.genCount).setCorCount(rule.corCount).setRedCount(rule.redCount).setOverCount(rule.overCount)
+			.build();
+	    	*/
+	    	ConflictGroupEntry newFlow = new ConflictGroupEntryBuilder().setId(1).setVlanId(new Long(0))
+			        .setDlDst("ff:ff:ff:ff:ff:ff").setDlSrc("").setL4Dst(0).setL4Src(0).setNwDst("10.0.1.1").setNwSrc("10.0.1.2")
+			        .setPriority(1).setProtocol(Protocol.ANY).setInPort("Openflow:1:1").setAction(action)
+			        .setConflictGroupNumber(1).setConflictType("3.3;3.11;3.19;2.20;2.5;1.12;3.4;3.17")
+					.setShCount(0).setGenCount(1).setCorCount(0).setRedCount(7).setOverCount(1)
+					.build();
+	
+	    	InstanceIdentifier<ConflictGroupEntry> conflict = InstanceIdentifier.create(ConflictInfoRegistry.class)
+	    			.child(ConflictSwitch.class, new ConflictSwitchKey(nodeID))
+	    			.child(ConflictTable.class, new  ConflictTableKey(0))
+	    			.child(ConflictGroupEntry.class, new ConflictGroupEntryKey(newFlow.getId()));
+	
+	    	transaction.merge(LogicalDatastoreType.CONFIGURATION, conflict , newFlow, true);
+	        CheckedFuture<Void, TransactionCommitFailedException> future = transaction.submit();
+	        Futures.addCallback(future, new LoggingFuturesCallBack<Void>("Failed to write newFlow to conflict registry", LOG));
+	        
+	        for (int i=2; i<=10 ; i++ ) {
+	        	ConflictGroupEntry element = new ConflictGroupEntryBuilder().setId(i).setVlanId(new Long(0))
+		                .setDlDst("ff:ff:ff:ff:ff:ff").setDlSrc("").setL4Dst(0).setL4Src(2323).setNwDst("10.0.1.1/32").setNwSrc("10.1.1.0/24")
+		                .setPriority(22).setProtocol(Protocol.TCP).setInPort("Openflow:1:1").setAction(action)
+		                .setConflictGroupNumber(1).setConflictType("3.3;3.11;3.19;2.20;2.15;1.12;3.4;3.17")
+		                .setShCount(1).setGenCount(0).setCorCount(0).setRedCount(2).setOverCount(0)
+		                .setResolution(true).setMechanism("Dependency Breaking")
+		                .build();
+	        	InstanceIdentifier<ConflictGroupEntry> conflict_element = InstanceIdentifier.create(ConflictInfoRegistry.class)
+		    			.child(ConflictSwitch.class, new ConflictSwitchKey(nodeID))
+		    			.child(ConflictTable.class, new  ConflictTableKey(0))
+		    			.child(ConflictGroupEntry.class, new ConflictGroupEntryKey(element.getId()));
+	        	
+	        	transaction = db.newWriteOnlyTransaction();
+	        	transaction.merge(LogicalDatastoreType.CONFIGURATION, conflict_element , element, true);
+		        CheckedFuture<Void, TransactionCommitFailedException> future1 = transaction.submit();
+		        Futures.addCallback(future1, new LoggingFuturesCallBack<Void>("Failed to write newFlow to conflict registry", LOG));
+			}
+	        for (int i=11; i<=20 ; i++ ) {
+	        	ConflictGroupEntry element = new ConflictGroupEntryBuilder().setId(i).setVlanId(new Long(0))
+		                .setDlDst("ff:ff:ff:ff:ff:ff").setDlSrc("").setL4Dst(0).setL4Src(2323).setNwDst("10.0.1.1/32").setNwSrc("10.1.1.0/24")
+		                .setPriority(22).setProtocol(Protocol.TCP).setInPort("Openflow:1:1").setAction(action)
+		                .setConflictGroupNumber(1).setConflictType("3.3;3.11;3.19;2.20;2.15;1.12;3.4;3.17")
+		                .setShCount(1).setGenCount(0).setCorCount(0).setRedCount(2).setOverCount(0)
+		                .setResolution(false).setMechanism("")
+		                .build();
+	        	InstanceIdentifier<ConflictGroupEntry> conflict_element = InstanceIdentifier.create(ConflictInfoRegistry.class)
+		    			.child(ConflictSwitch.class, new ConflictSwitchKey(nodeID))
+		    			.child(ConflictTable.class, new  ConflictTableKey(0))
+		    			.child(ConflictGroupEntry.class, new ConflictGroupEntryKey(element.getId()));
+	        	
+	        	transaction = db.newWriteOnlyTransaction();
+	        	transaction.merge(LogicalDatastoreType.CONFIGURATION, conflict_element , element, true);
+		        CheckedFuture<Void, TransactionCommitFailedException> future1 = transaction.submit();
+		        Futures.addCallback(future1, new LoggingFuturesCallBack<Void>("Failed to write newFlow to conflict registry", LOG));
+			}
+	        
+	        /* Update the status for the visualization engine */
+	        /* The status is the synchronization flag for front-end with back-end */
+	        transaction = db.newWriteOnlyTransaction();
+	        InstanceIdentifier<FlowguardStatus> statusIid = InstanceIdentifier.create(FlowguardStatus.class);
+	        /* Update the status flag with the Switch ID which has been updated */
+	    	FlowguardStatus status = new FlowguardStatusBuilder().setFlowguardStatus(nodeID).build();
+	        transaction.merge(LogicalDatastoreType.CONFIGURATION, statusIid, status, true);
+	        CheckedFuture<Void, TransactionCommitFailedException> futureStatus = transaction.submit();
+	        Futures.addCallback(futureStatus, new LoggingFuturesCallBack<Void>("Failed to update the Flowguard status", LOG));
+	//	}
 	}
 }

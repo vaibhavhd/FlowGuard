@@ -201,6 +201,15 @@ module flowguard {
 	     	type uint16;
 	     	config true;
 	     }
+	     leaf resolution {
+	     	type boolean;
+	     	default true;
+	     	config true;
+	     }
+	     leaf mechanism {
+	     	type string;
+	     	config true;
+	     }
     }
     container rule-registry {
     	list rule-registry-entry {
