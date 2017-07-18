@@ -1,10 +1,18 @@
 #!/usr/bin/python
-from mininet.topo import Topo
 from mininet.net import Mininet
-from mininet.util import irange,dumpNodeConnections
-from mininet.log import setLogLevel
-from mininet.node import Controller, RemoteController, OVSController
+from mininet.node import UserSwitch, OVSKernelSwitch, Controller
+from mininet.topo import Topo
+from mininet.log import lg, info
+from mininet.util import irange, quietRun, dumpNodeConnections
+
+from mininet.link import TCLink
+from functools import partial
+from mininet.node import RemoteController
 from mininet.cli import CLI
+
+
+import sys,os
+flush = sys.stdout.flush
 
 class LinearTopo (Topo):
     "Linear topology of k switches, with one host per switch."
@@ -24,11 +32,13 @@ class LinearTopo (Topo):
                 self.addLink( switch, lastSwitch)
             lastSwitch = switch
 
+
 def simpleTest():
+
     "Create and test a simple network"
-    topo = LinearTopo(k=3)
-    net = Mininet(topo)
-    net.addController( 'c0', controller=RemoteController, ip='127.0.0.1', port=6633 )
+    c = RemoteController('c','127.0.0.1',6633)
+    topo = LinearTopo(3)
+    net = Mininet( topo=topo, switch=OVSKernelSwitch,controller=c, waitConnected=True)
     net.start()
     print "Dumping host connections"
     dumpNodeConnections(net.hosts)
@@ -37,7 +47,13 @@ def simpleTest():
     CLI(net)
     net.stop()
 
+def clearPreviousTopo():
+    os.system('sudo mn -c')
+
 if __name__ == '__main__':
-    # Tell mininet to print useful information
-    setLogLevel('info')
+    lg.setLogLevel( 'info' )
+    #
+    #info( "*** Running linearBandwidthTest", sizes, '\n' )
+    #linearBandwidthTest( sizes  )
+    clearPreviousTopo()
     simpleTest()
