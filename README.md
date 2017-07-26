@@ -200,6 +200,35 @@ On the left panel of DLUX, click on ofvisualizer app
 All the Openflow switches with corresponding tables and actions will be ready to be analyzed.
 Click on CONFLICTS tab to see the D# visualization.
 
+## Working with Science DMZ ODL VM
+Follow following steps:
+
+    Start ODL: On terminal, simply execute "my_karaf".
+```
+    $ my_karaf
+```
+If there are changes to the code( locally or pulled), build and start the Flowguard.
+Note that the -all option takes much time to finish the tests. If there are no changes to feature project use -test option.
+```
+    $ ~/workspace/FlowGuard/results/scripts/build.sh
+    Usage: ./build.sh <build_type>
+    build_type: all / test
+```
+Start Mininet on a different tab:
+```
+    $ sudo ~/workspace/FlowGuard/results/scripts/linear_topo.py
+```
+Start Flowguard and install static firewall rules:
+```
+    $ ~/workspace/FlowGuard/results/scripts/flowguard.py ~/workspace/FlowGuard/results/scripts/FirewallPolicy.txt 
+```
+Verify that the two REST requests are successful(200):
+```
+    $ ~/workspace/FlowGuard/results/scripts/flowguard.py ~/workspace/FlowGuard/results/scripts/FirewallPolicy.txt 
+    {'status': '200', 'transfer-encoding': 'chunked', 'set-cookie': 'JSESSIONID=1v6alx2rcgtihqtrs0tz78cse;Path=/restconf, rememberMe=deleteMe; Path=/restconf; Max-Age=0; Expires=Tue, 25-Jul-2017 00:49:25 GMT', 'expires': 'Thu, 01 Jan 1970 00:00:00 GMT', 'server': 'Jetty(8.1.19.v20160209)', 'content-type': 'application/yang.operation+json'}
+    {'status': '200', 'transfer-encoding': 'chunked', 'set-cookie': 'JSESSIONID=18u080q7qaqunfbk4sz1mgt3b;Path=/restconf, rememberMe=deleteMe; Path=/restconf; Max-Age=0; Expires=Tue, 25-Jul-2017 00:49:25 GMT', 'expires': 'Thu, 01 Jan 1970 00:00:00 GMT', 'server': 'Jetty(8.1.19.v20160209)', 'content-type': 'application/yang.operation+json'}
+```
+The controller might take longer sometimes to install the flows and the second REST request might come as an error(500) untill then.
 ## Contributing
 
 ## Versioning
