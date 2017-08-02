@@ -14,8 +14,10 @@ import com.google.common.util.concurrent.AbstractFuture;
 import com.google.common.util.concurrent.CheckedFuture;
 import com.google.common.util.concurrent.Futures;
 
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.ExecutionException;
 
 import org.opendaylight.controller.md.sal.binding.api.DataBroker;
@@ -54,50 +56,110 @@ import org.opendaylight.yang.gen.v1.urn.opendaylight.params.xml.ns.yang.flowguar
 import org.opendaylight.yangtools.concepts.ListenerRegistration;
 import org.opendaylight.yangtools.yang.binding.DataObject;
 import org.opendaylight.yangtools.yang.binding.InstanceIdentifier;
-
+import org.opendaylight.yangtools.yang.binding.InstanceIdentifier.PathArgument;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 public class RuleRegistryDataChangeListenerFuture extends AbstractFuture<RuleRegistryEntry> implements DataChangeListener,AutoCloseable{
 
-	  DataBroker db;
-      private static final Logger LOG = LoggerFactory.getLogger(RuleRegistryDataChangeListenerFuture.class);
-      private ListenerRegistration<DataChangeListener> registration;
+    DataBroker db;
+    ShiftedGraph sg;
+    private static final Logger LOG = LoggerFactory.getLogger(RuleRegistryDataChangeListenerFuture.class);
+    private ListenerRegistration<DataChangeListener> registration;
+    private ReadTransaction readTx;
 
-      public RuleRegistryDataChangeListenerFuture(DataBroker db) {
+    public RuleRegistryDataChangeListenerFuture(DataBroker db, ShiftedGraph sg) {
         this.db = db;
+        this.readTx  = db.newReadOnlyTransaction();
+        this.sg = sg;
+        /* Implement listeners for any MDSAL Flow datastore
+         * Pull all the switches present in the network and implement
+         * listeners on the tables of each switch.
+         * TODO: functionality when a new switch is added to the network.
+         */
+        InstanceIdentifier<Nodes> nodesIdentifier = InstanceIdentifier.builder(Nodes.class).toInstance();
 
-        InstanceIdentifier<RuleRegistry> ruleIID =
-            InstanceIdentifier.builder(RuleRegistry.class).build();
-        db.registerDataChangeListener(LogicalDatastoreType.OPERATIONAL, ruleIID, this,
-            AsyncDataBroker.DataChangeScope.SUBTREE);
-        LOG.info("DataChangeListener registered with MD-SAL for path {}", ruleIID);
+        try {
+            Optional<Nodes> optNodes= null;
+            Optional<Table> optTable = null;
+            Optional<Flow> optFlow = null;
 
-        /* Retrieve all the static flow enteries from the switches */
+            List<Node> nodeList;
+            List<Flow> flowList;
 
-      }
+            /* Retrieve all the switches in the operational data tree */
+            optNodes = readTx.read(LogicalDatastoreType.OPERATIONAL, nodesIdentifier).get();
+            nodeList = optNodes.get().getNode();
+            LOG.info("No. of detected nodes: {}", nodeList.size());
 
-      @Override
-      public void close() throws Exception {
+            /* Iterate through the list of nodes(switches) for flow tables per node */
+            for(Node node : nodeList){
+                InstanceIdentifier<Flow> flowID = InstanceIdentifier.builder(Nodes.class).child(Node.class, new NodeKey(node.getId()))
+                        .augmentation(FlowCapableNode.class)
+                        .child(Table.class, new TableKey((short)0))
+                        .child(Flow.class)
+                        .build();
+                db.registerDataChangeListener(LogicalDatastoreType.CONFIGURATION, flowID, this, AsyncDataBroker.DataChangeScope.SUBTREE);
+                LOG.info("DataChangeListener registered with MD-SAL for path {}", flowID);
+            }
+        }
+        catch (InterruptedException | ExecutionException e) {
+            e.printStackTrace();
+        }
+    }
+
+    @Override
+    public void close() throws Exception {
         if (registration != null) {
-          registration.close();
+            registration.close();
         }
-      }
+    }
 
-      @Override
-      public void onDataChanged(AsyncDataChangeEvent<InstanceIdentifier<?>, DataObject> change) {
-        LOG.info("dataChanged");
+    @Override
+    public void onDataChanged(AsyncDataChangeEvent<InstanceIdentifier<?>, DataObject> change) {
+        LOG.info("dataChanged while listening to Flow change");
         DataObject dataObject;
+        /* Possible data changes: 1-New Flow 2- Modified Flow 3- Deleted Flows
+         * getCreatedData(): Returns a map of paths and newly created objects, which were introduced by this change into conceptual data tree
+         * getRemovedPaths(): Returns an immutable set of removed paths
+         * getUpdatedData(): Returns a map of path and objs which were updated by this change in the conceptual tree.
+         */
+        Iterator<InstanceIdentifier<?>> iter = change.getCreatedData().keySet().iterator();
 
-        // Iterate over any created nodes or interfaces
-        for (Map.Entry<InstanceIdentifier<?>, DataObject> entry : change.getCreatedData().entrySet()) {
-          dataObject = entry.getValue();
-          if (dataObject instanceof RuleRegistryEntry) {
-            addFlowRule((RuleRegistryEntry) dataObject);
-          }
+        while(iter.hasNext()) {
+            InstanceIdentifier<?> iid = iter.next();
+            /* change data returns a bunch of newly created objects.
+             * Object of interest is a new Flow object and its path.
+             */
+
+            if(iid.getTargetType().getSimpleName().equals("Flow")) {
+                InstanceIdentifier<Node> node = iid.firstIdentifierOf(Node.class);
+                for (Map.Entry<InstanceIdentifier<?>, DataObject> entry : change.getCreatedData().entrySet()) {
+                    dataObject = entry.getValue();
+                    if (dataObject instanceof Flow) {
+                        LOG.info("Node {} Flow {} ", node.firstKeyOf(Node.class).getId().getValue(), ((Flow)dataObject).getFlowName());
+                        sg.staticEntryModified(node.firstKeyOf(Node.class).getId().getValue(), ((Flow)dataObject).getFlowName(), ((Flow)dataObject));
+                    }
+                }
+                break;
+            }
         }
 
-      }
+
+        for (Map.Entry<InstanceIdentifier<?>, DataObject> entry : change.getUpdatedData().entrySet()) {
+            dataObject = entry.getValue();
+            if (dataObject instanceof Flow) {
+                LOG.info("Leaf updated is Flow");
+            }
+        }
+        Set<InstanceIdentifier<?>> set = change.getRemovedPaths();
+        for (InstanceIdentifier<?> entry : set) {
+            if (entry instanceof Flow ) {
+                LOG.info("Leaf removed is a Flow");
+            }
+        }
+
+    }
 
     private void addFlowRule(RuleRegistryEntry input) {
 
@@ -133,7 +195,7 @@ public class RuleRegistryDataChangeListenerFuture extends AbstractFuture<RuleReg
          * Nodes -> Node -> "add" -> Table -> Flow -> build[flow]()
          */
         InstanceIdentifier<Flow> flowIID =
-            InstanceIdentifier.builder(Nodes.class).child(Node.class, new NodeKey(nodeId))
+                InstanceIdentifier.builder(Nodes.class).child(Node.class, new NodeKey(nodeId))
                 .augmentation(FlowCapableNode.class)
                 .child(Table.class, new TableKey(flowBuilder.getTableId()))
                 .child(Flow.class, flowBuilder.getKey())
@@ -148,19 +210,19 @@ public class RuleRegistryDataChangeListenerFuture extends AbstractFuture<RuleReg
 
         LOG.info("Added security rule with ip {} and port {} into node {}", input.getDestinationIpAddress(), input.getDestinationPort(),input.getNode());
 
-      }
+    }
 
     @Override
-      public boolean cancel(boolean mayInterruptIfRunning) {
-          quietClose();
-          return super.cancel(mayInterruptIfRunning);
-      }
+    public boolean cancel(boolean mayInterruptIfRunning) {
+        quietClose();
+        return super.cancel(mayInterruptIfRunning);
+    }
 
-      private void quietClose() {
+    private void quietClose() {
         try {
-          this.close();
+            this.close();
         } catch (Exception e) {
-          throw new IllegalStateException("Unable to close registration", e);
+            throw new IllegalStateException("Unable to close registration", e);
         }
-      }
+    }
 }

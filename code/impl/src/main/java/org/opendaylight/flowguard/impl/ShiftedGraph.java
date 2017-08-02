@@ -447,6 +447,7 @@ public class ShiftedGraph {
             System.out.println("-----------------------------------------------------------------------------------");
             i++;
         }
+        /* InverseFlow is true when the sample flow has been propagated to the target */
         if(inverseflow){
             HeaderObject ho = new HeaderObject();
             ho = this.computeInverseFlow(flowinfo);
@@ -497,17 +498,20 @@ public class ShiftedGraph {
                     table_size = ruletable.size();
                     /* The switch has no flows. Stop the propagation */
                     if(table_size == 0) {
+                        System.out.println("Returning: " + SWITCHDPID + " has no flows in the flowtable index 0!");
                         return;
                     }
                 }
                 else if(sample.next_switch_dpid.equals(targetdpid)){
-                    /* After propagation,if the final dpid is same as target, the sample packet has been reached. */
-                    System.out.println("Flows are reached to the Destination!!!");
+                    /* After propagation,if the final dpid is same as target, the sample packet has been reached.
+                     * This case happens when a switch with no installed flows is reached and happens to be the target
+                     */
+                    System.out.println("Flow reached to the Destination " + targetdpid + " . No installed flows in switch: " + SWITCHDPID);
                     this.printFlowInfo(sample, true);
                     return;
                 }else{
                 	System.out.println("DEBUG1 NO FLOW FOR: SWITCHDPID=" + SWITCHDPID + "\n sample dpid:" + sample.next_switch_dpid + "target dpid:" + targetdpid  );
-                    System.out.println("Flows are unreachable!!!");
+                    System.out.println("Flow is not reachable to target: " +targetdpid + "Node: " + SWITCHDPID + " has no flows!!!");
                     this.printFlowInfo(sample, false);
                     return;
                 }
@@ -519,45 +523,59 @@ public class ShiftedGraph {
                 }
                 /* Flows have not reached the destination switch */
                 /* Loop through all the flows in the table from SWITCHDPID
-                 * Index: index of the flow rule in a table.
+                 * Index: index of the flow rule in a table. Set to 0 when a FW Rule is tested
                  * Counter:
                  */
                 int counter = 0;
                 if(index == 0){
                     for(i = index; i < table_size; i++){
-                        // TODO Flaw in old code: sample.next_switch_dpid.equals(SWITCHDPID.toString()) already been checked
                         // Check if the switch and port of the new flow rule are the same
                         /* check for flow rule matching IP packet */
-                        if(sample.next_switch_dpid.equals(ruletable.get(i).switch_name)
-                                && sample.next_ingress_port.toString().equals(ruletable.get(i).in_port.toString())
+                        if (sample.next_ingress_port.toString().equals(ruletable.get(i).in_port.toString())
                                 && ruletable.get(i).dl_type == EtherTypes.IPv4.intValue() && ruletable.get(i).active == true) {
                             counter++;
                         }
-                        /* The rule has matched more than one flow per switch */
+                        /* The rule has matched more than one flow(Same: Dpid, inport and ETH_TYPE per switch */
                         if(counter >= 2
                                 && sample.next_ho.vlan == ruletable.get(i).vlan
-                                && FlowRuleNode.matchIPAddress(sample.next_ho.nw_dst_prefix, sample.next_ho.nw_dst_maskbits, ruletable.get(i).nw_dst_prefix, ruletable.get(i).nw_dst_maskbits)
-                                && FlowRuleNode.matchIPAddress(sample.next_ho.nw_src_prefix, sample.next_ho.nw_src_maskbits, ruletable.get(i).nw_src_prefix, ruletable.get(i).nw_src_maskbits)){
+                                && FlowRuleNode.matchIPAddress(sample.next_ho.nw_dst_prefix, sample.next_ho.nw_dst_maskbits,
+                                        ruletable.get(i).nw_dst_prefix, ruletable.get(i).nw_dst_maskbits)
+                                && FlowRuleNode.matchIPAddress(sample.next_ho.nw_src_prefix, sample.next_ho.nw_src_maskbits,
+                                        ruletable.get(i).nw_src_prefix, ruletable.get(i).nw_src_maskbits)){
                                 FlowInfo sample_clone = new FlowInfo();
                                 sample_clone = FlowInfo.valueCopy(sample);
                                 this.current_flow_index++;
                                 sample_clone.flow_index = this.current_flow_index;
-                                /* Propagate with non zero index */
+                                /*
+                                 * If two or more flow rules match the sample flow, propogate the cloned sample
+                                 * from the matched index.
+                                 * Match criteria: Same: (DPID, INPORT, ETHTYPE, VLAN, Overlapping SRC DST)
+                                 * Propagate all the matching flows with the respective index in the flow table
+                                 *  */
                                 this.propagateFlow(sample_clone, target, i);
                         }
                     }
                 }
 
-                /* Reached here when ((index==0) && (Rule matches just one flow)) || index != 0 */
+                /*  IMPORTANT TODO
+                 *  Reached here when ((index==0) && (Rule matches just one flow)) || index != 0
+                 *  When a flow is installed/modified, index of the flow in flowtable is passed as "index".
+                 *  Rules are sorted(descending) in the local table. TODO : the loop should be decremental??
+                 *  As the index progresses, all the lower priority rules are being matched!!
+                 *  Loop over the rules with higher priority only.
+                */
 
                 int unmatch_count = 0;
                 for(i = index; i < table_size; i++){
-                    if(sample.next_switch_dpid.equals(ruletable.get(i).switch_name) &&
-                            sample.next_ingress_port.toString().equals(ruletable.get(i).in_port.toString())){
+                    // TODO The if will never pass. Correction: switch_name is never set and is not required either.
+                    // Moreover, dpid will be same ith rule is pulled from the node of sample flow.
+                    //if(sample.next_switch_dpid.equals(ruletable.get(i).switch_name) &&
+                    if(sample.next_ingress_port.toString().equals(ruletable.get(i).in_port.toString())){
                         FlowRuleNode flowRule = ruletable.get(i);
-                        System.out.println("DEBUG2");
+                        System.out.println("Found a higher prior rule with same next ingress port");
                         /* check for flow rule matching ARP packet, ignore the rule of ARP is found*/
                         if(flowRule.dl_type == EtherTypes.ARP.intValue()){
+                            System.out.println("ETHERNET TYPE=ARP. Unmatched flow");
                             unmatch_count++;
                             continue;
                         }
@@ -565,19 +583,23 @@ public class ShiftedGraph {
                         else if(flowRule.dl_type == EtherTypes.IPv4.intValue() && flowRule.active == true){
                             flowRule = FlowRuleNode.computeFlow(flowRule, sample);
                             if(flowRule.flow_info.flow_history == null) {
+                                // TODO what is this? Is it failure or a success??
+                                /* This would mean that the sample flow could not be further matched and propogated */
                                 return;
                             }
                         } else {
+                            // TODO unmatch_count++ ???
                             System.out.println("Unrecognized Ethernet Type.");
                             continue;
                         }
-
+                        /* Update the rule with its flow info and respective flow infow's flow history */
                         this.FlowRuleNodes.get(SWITCHDPID).remove(i);
                         if(i == 0){
                             this.FlowRuleNodes.get(SWITCHDPID).add(flowRule);
                         }else{
                             this.FlowRuleNodes.get(SWITCHDPID).add(i, flowRule);
                         }
+                        /* Now sample should have some propagation history */
                         sample = flowRule.flow_info;
 
                         if(sample.next_switch_dpid.equals(targetdpid) && sample.next_ingress_port.equals(targetport)){
@@ -592,23 +614,27 @@ public class ShiftedGraph {
                     }else{
                         unmatch_count++;
                         if(table_size == unmatch_count){
+                            /*
+                             * None of the rules have matched the new flow. TODO Increase the unmatch count for every non match.
+                             * If the index >= 1, the count can never be table_size!
+                             * TODO Change the if match to count == (table_size - index!)
+                             */
                             if(sample.next_switch_dpid.equals(targetdpid)){
                                 //normal execution
-                                System.out.println("Flows are reached to the Destination!!!");
-                                System.out.println("DEBUG3 unmatch_count = "+unmatch_count);
-                                System.out.println("DEBUG3 NO FLOW FOR: SWITCHDPID=" + SWITCHDPID + "\n sample dpid:" + sample.next_switch_dpid + "target dpid:" + targetdpid  );
-                                
+                                System.out.println("No rules in the table matched the new flow. Flow reached to the Destination!!!");
+                                System.out.println("Unmatch_count = "+unmatch_count);
+                                System.out.println("NO FLOW FOR: SWITCHDPID=" + SWITCHDPID + "\n sample dpid:" + sample.next_switch_dpid + "target dpid:" + targetdpid  );
                                 this.printFlowInfo(sample, true);
                                 return;
                             }
-                            System.out.println("Flows are unreachable!!!");
+                            System.out.println("No rules in the next switch table matched: Flows are unreachable!!!");
                             System.out.println("sample next switch dpid" + sample.next_switch_dpid +
                             		"\n ruletable i switch name " + ruletable.get(i).switch_name +
                             		"\n sample next ingress port " + sample.next_ingress_port.toString() +
                             		"\nruletable i inport " + ruletable.get(i).in_port);
-                            System.out.println("DEBUG3 unmatch_count = "+unmatch_count);
-                            System.out.println("DEBUG3 NO FLOW FOR: SWITCHDPID=" + SWITCHDPID + "\n sample dpid:" + sample.next_switch_dpid + "target dpid:" + targetdpid  );
-                            
+                            System.out.println("Unmatch_count = "+unmatch_count);
+                            System.out.println("NO FLOW FOR: SWITCHDPID=" + SWITCHDPID + "\n sample dpid:" + sample.next_switch_dpid + "target dpid:" + targetdpid  );
+
                             this.printFlowInfo(sample, false);
                             return;
                         }
@@ -808,7 +834,7 @@ public class ShiftedGraph {
             /* Retrieve all the switches in the operational data tree */
             optNodes = readTx.read(LogicalDatastoreType.OPERATIONAL, nodesIdentifier).get();
             nodeList = optNodes.get().getNode();
-            
+
             /* Iterate through the list of nodes(switches) for flow tables per node */
             for(Node node : nodeList){
             	List<NodeConnector> connectorList = node.getNodeConnector();
@@ -855,11 +881,11 @@ public class ShiftedGraph {
                 for(int j = 0; j < ruletable.size(); j++){
                     if(rulename.equals(ruletable.get(j).rule_name)) {
                         result = true;
+                        break;
                     }
                 }
             }
         }
-
         return result;
     }
 
@@ -879,7 +905,7 @@ public class ShiftedGraph {
         }
         return priority;
     }
-
+// TODO Correction: The rule should be specifically pulled from a particular switch. going through all the switches seems wrong.
     public int getRuleIndex(String rulename){
         int k = 0;
         Set<String> set = this.FlowRuleNodes.keySet();
@@ -915,7 +941,7 @@ public class ShiftedGraph {
         }
         long start = System.nanoTime();
         ruletable = FlowRuleNode.addFlowRuleNode(ruletable, rulename, newFlow);
-        long end = System.nanoTime();
+        /*long end = System.nanoTime();
         try {
             File f = new File(this.RESULT_PATH);
             FileWriter fw = new FileWriter(f, true);
@@ -925,13 +951,14 @@ public class ShiftedGraph {
             fw.close();
         } catch (IOException e) {
             e.printStackTrace();
-        }
+        }*/
         this.FlowRuleNodes.put(dpid, ruletable);
-        int flowstorage_size = this.flowstorage.size();
+
         if(newrule){
             boolean onetimepass = true;
             //new rules inserted
-            if(this.flowstorage != null && flowstorage_size > 0){
+            if(this.flowstorage != null){
+                int flowstorage_size = this.flowstorage.size();
                 for(int i = 0; i < flowstorage_size; i++){
                     if(this.flowstorage.get(i).flow_history != null && this.flowstorage.get(i).flow_history.size() > 0){
                         for(int j = 0; j < this.flowstorage.get(i).flow_history.size(); j++){
@@ -941,10 +968,12 @@ public class ShiftedGraph {
                                 int size = this.flowstorage.get(i).flow_history.size();
                                 if(j >0){
                                     for(int k = j; k < size; k++){
+                                        // TODO What is Correction: K loop not required | remove kth rule from history?
                                         this.flowstorage.get(i).flow_history.remove(j);
                                     }
                                 }
                                 FlowInfo fi = new FlowInfo();
+                                // Copy the information from last rule in the flowhistory of ith rule.
                                 fi = FlowInfo.valueCopy2(this.flowstorage.get(i));
                                 fi.candidate_rule = rulename;
                                 this.propagateFlow(fi, this.flowstorage.get(i).target, this.getRuleIndex(rule_name));
@@ -964,9 +993,11 @@ public class ShiftedGraph {
                                     onetimepass){
                                 String rule_name = this.flowstorage.get(i).flow_history.get(j).rule_node_name;
                                 FlowInfo fi = new FlowInfo();
+                                // Copy the information from the ith rule itself
                                 fi = FlowInfo.valueCopy(this.flowstorage.get(i));
                                 int size = fi.flow_history.size();
                                 if(j>0){
+                                 // TODO What is Correction: K loop not required | remove kth rule from history?
                                     for(int k = j; k < size; k++){
                                         fi.flow_history.remove(j);
                                     }
@@ -995,7 +1026,8 @@ public class ShiftedGraph {
             }
         }else{
             //existing rule_node update case
-            if(this.flowstorage != null && flowstorage_size > 0){
+            if(this.flowstorage != null){
+                int flowstorage_size = this.flowstorage.size();
                 for(int i = 0; i < flowstorage_size; i++){
                     if(this.flowstorage.get(i).flow_history != null){
                         for(int j = 0; j < this.flowstorage.get(i).flow_history.size(); j++){
@@ -1004,6 +1036,7 @@ public class ShiftedGraph {
                                 String rule_name = this.flowstorage.get(i).flow_history.get(j).rule_node_name;
                                 int size = this.flowstorage.get(i).flow_history.size();
                                 if(j>0){
+                                 // TODO What is Correction: K loop not required | remove kth rule from history?
                                     for(int k = j; k < size; k++){
                                         this.flowstorage.get(i).flow_history.remove(j);
                                     }
@@ -1019,7 +1052,7 @@ public class ShiftedGraph {
                     }
                 }
             }
-        }
+        }/*
         end = System.nanoTime();
         try {
             File f = new File(this.RESULT_PATH);
@@ -1030,7 +1063,7 @@ public class ShiftedGraph {
             fw.close();
         } catch (IOException e) {
             e.printStackTrace();
-        }
+        }*/
     }
 
     public boolean findRulename(String rulename){
