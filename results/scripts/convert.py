@@ -47,37 +47,42 @@ def checkActionExits(actions):
 			return True
 
 
-def set_field_actions(src_ip,src_mac,dst_ip,dst_mac):
+def set_field_actions(set_src_ip,set_src_mac,set_dst_ip,set_dst_mac):
 
+	
 	result = None
 	#case 1 if src ip and src mac exist
-	if src_ip != "" and src_mac != "":
+	if ((set_src_ip != "" and set_src_mac != "") and (set_dst_ip != "" and set_dst_mac != "")):
 		result = {
-			"ipv4-source":str(src_ip + "/32") if src_ip != "" else "",
+			"ipv4-source":str(set_src_ip + "/32"),
 			"ethernet-source": {
-				"address":src_mac
+				"address":set_src_mac
+			},
+			"ipv4-destination":str(set_dst_ip + "/32"),
+			"ethernet-destination": {
+				"address":set_dst_mac
+			}
+		}
+	elif set_src_ip != "" and set_src_mac != "":
+		result = {
+			"ipv4-source":str(set_src_ip + "/32"),
+			"ethernet-source": {
+				"address":set_src_mac
 			}
 		}
 	#case 2 if dst ip and dst mac exist
-	elif dst_ip != "" and dst_mac != "":
+	elif set_dst_ip != "" and set_dst_mac != "":
 		result = {
-			"ipv4-destination":str(dst_ip + "/32") if dst_ip != "" else "",
+			"ipv4-destination":str(set_dst_ip + "/32"),
 			"ethernet-destination": {
-				"address":dst_mac
+				"address":set_dst_mac
 			}
 		}
 	#case 3 if both of the cases above exist
-	elif (src_ip != "" and src_mac != "") and (dst_ip != "" and dst_mac != ""):
-		result = {
-			"ipv4-source":str(src_ip + "/32") if src_ip != "" else "",
-			"ethernet-source": {
-				"address":src_mac
-			},
-			"ipv4-destination":str(dst_ip + "/32") if dst_ip != "" else "",
-			"ethernet-destination": {
-				"address":dst_mac
-			}
-		}
+	else: #((src_ip != "" and src_mac != "") and (dst_ip != "" and dst_mac != "")):
+		print "SOMETHING"
+		
+		
 	#else:
 	#	print "No set actions"
 
