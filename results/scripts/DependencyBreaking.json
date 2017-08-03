@@ -1,0 +1,271 @@
+{
+"ftag1_1": {
+    "switch":"00:00:00:00:00:00:00:02",
+    "name":"ftag1_ingress_1",
+    "priority":"1",
+    "active":"true",
+    "ether-type":"0x800",
+    "src-ip":"10.0.0.1",
+    "dst-ip":"10.0.0.4",
+    "ingress-port":"1",
+    "actions":"output=3"
+	},
+"ftag1_2": {
+    "switch":"00:00:00:00:00:00:00:02",
+    "name":"ftag1_2",
+    "priority":"1",
+    "active":"true",
+    "ether-type":"0x806",
+    "src-ip":"10.0.0.1",
+    "dst-ip":"10.0.0.4",
+    "ingress-port":"1",
+    "actions":"output=3"
+    },
+
+"ftag1_3" : {
+    "switch":"00:00:00:00:00:00:00:01",
+    "name":"ftag1_3",
+    "priority":"1",
+    "active":"true",
+    "ether-type":"0x800",
+    "src-ip":"10.0.0.1",
+    "dst-ip":"10.0.0.4",
+    "ingress-port":"1",
+    "actions":"output=2"
+    },
+"ftag1_4" : {
+    "switch":"00:00:00:00:00:00:00:01",
+    "name":"ftag1_4",
+    "priority":"1",
+    "active":"true",
+    "ether-type":"0x806",
+    "src-ip":"10.0.0.1",
+    "dst-ip":"10.0.0.4",
+    "ingress-port":"1",
+    "actions":"output=2"
+    },
+"ftag1_5" : {
+    "switch":"00:00:00:00:00:00:00:03",
+    "name":"ftag1_egress_5",
+    "priority":"1",
+    "active":"true",
+    "ether-type":"0x800",
+    "src-ip":"10.0.0.1",
+    "dst-ip":"10.0.0.4",
+    "ingress-port":"3",
+    "actions":"output=2"
+    },
+"ftag1_6" : {
+    "switch":"00:00:00:00:00:00:00:03",
+    "name":"ftag1_6",
+    "priority":"1",
+    "active":"true",
+    "ether-type":"0x806",
+    "src-ip":"10.0.0.1",
+    "dst-ip":"10.0.0.4",
+    "ingress-port":"3",
+    "actions":"output=2"
+    },
+"ftag1_7" : {
+    "switch":"00:00:00:00:00:00:00:02",
+    "name":"ftag1_egress_7",
+    "priority":"11",
+    "active":"true",
+    "ether-type":"0x800",
+    "src-ip":"10.0.0.4",
+    "dst-ip":"10.0.0.1",
+    "ingress-port":"3",
+    "actions":"output=1"
+    },
+"ftag1_8" : {
+    "switch":"00:00:00:00:00:00:00:02",
+    "name":"ftag1_8",
+    "priority":"11",
+    "active":"true",
+    "ether-type":"0x806",
+    "src-ip":"10.0.0.4",
+    "dst-ip":"10.0.0.1",
+    "ingress-port":"3",
+    "actions":"output=1"
+    } ,
+"ftag1_9" : {
+    "switch":"00:00:00:00:00:00:00:01",
+    "name":"ftag1_9",
+    "priority":"1",
+    "active":"true",
+    "ether-type":"0x800",
+    "src-ip":"10.0.0.4",
+    "dst-ip":"10.0.0.1",
+    "ingress-port":"2",
+    "actions":"output=1"
+    },
+"ftag1_10" : {
+    "switch":"00:00:00:00:00:00:00:01",
+    "name":"ftag1_10",
+    "priority":"1",
+    "active":"true",
+    "ether-type":"0x806",
+    "src-ip":"10.0.0.4",
+    "dst-ip":"10.0.0.1",
+    "ingress-port":"2",
+    "actions":"output=1"
+    },
+"ftag1_11" : {
+    "switch":"00:00:00:00:00:00:00:03",
+    "name":"ftag1_ingress_11",
+    "priority":"1",
+    "active":"true",
+    "ether-type":"0x800",
+    "src-ip":"10.0.0.4",
+    "dst-ip":"10.0.0.1",
+    "ingress-port":"2",
+    "actions":"output=3"
+    },
+"ftag1_12" : {
+    "switch":"00:00:00:00:00:00:00:03",
+    "name":"ftag1_12",
+    "priority":"1",
+    "active":"true",
+    "ether-type":"0x806",
+    "src-ip":"10.0.0.4",
+    "dst-ip":"10.0.0.1",
+    "ingress-port":"2",
+    "actions":"output=3"
+    } ,
+
+
+
+"flow2_1" : {
+    "switch":"00:00:00:00:00:00:00:02",
+    "name":"flow2_1",
+    "priority":"10",
+    "active":"true",
+    "ether-type":"0x800",
+    "src-ip":"10.0.0.2",
+    "dst-ip":"10.0.0.4",
+    "ingress-port":"2",
+    "actions":"set-src-ip=10.0.0.1,set-src-mac=00:00:00:00:00:01,output=3"
+    },
+"flow2_2" : {
+    "switch":"00:00:00:00:00:00:00:02",
+    "name":"flow2_2",
+    "priority":"10",
+    "active":"true",
+    "ether-type":"0x806",
+    "src-ip":"10.0.0.2",
+    "dst-ip":"10.0.0.4",
+    "ingress-port":"2",
+    "actions":"set-src-ip=10.0.0.1,set-src-mac=00:00:00:00:00:01,output=3"
+    },    
+"flow2_3" : {
+    "switch":"00:00:00:00:00:00:00:01",
+    "name":"flow2_3",
+    "priority":"10",
+    "active":"true",
+    "ether-type":"0x800",
+    "src-ip":"10.0.0.1",
+    "dst-ip":"10.0.0.4",
+    "ingress-port":"1",
+    "actions":"set-src-ip=10.0.0.5,set-src-mac=00:00:00:00:00:02,set-dst-ip=10.0.0.3,set-dst-mac=00:00:00:00:00:03,output=2"
+    },
+"flow2_4" : {
+    "switch":"00:00:00:00:00:00:00:01",
+    "name":"flow2_4",
+    "priority":"10",
+    "active":"true",
+    "ether-type":"0x806",
+    "src-ip":"10.0.0.1",
+    "dst-ip":"10.0.0.4",
+    "ingress-port":"1",
+    "actions":"set-src-ip=10.0.0.5,set-src-mac=00:00:00:00:00:02,set-dst-ip=10.0.0.3,set-dst-mac=00:00:00:00:00:03,output=2"
+    },
+"flow2_5" : {
+    "switch":"00:00:00:00:00:00:00:03",
+    "name":"flow2_5",
+    "priority":"10",
+    "active":"true",
+    "ether-type":"0x800",
+    "src-ip":"10.0.0.5",
+    "dst-ip":"10.0.0.3",
+    "ingress-port":"3",
+    "actions":"output=1"
+    },
+"flow2_6" : {
+    "switch":"00:00:00:00:00:00:00:03",
+    "name":"flow2_6",
+    "priority":"10",
+    "active":"true",
+    "ether-type":"0x806",
+    "src-ip":"10.0.0.5",
+    "dst-ip":"10.0.0.3",
+    "ingress-port":"3",
+    "actions":"output=1"
+    },
+"flow2_7" : {
+    "switch":"00:00:00:00:00:00:00:02",
+    "name":"flow2_7",
+    "priority":"10",
+    "active":"true",
+    "ether-type":"0x800",
+    "src-ip":"10.0.0.4",
+    "dst-ip":"10.0.0.1",
+    "ingress-port":"3",
+    "actions":"set-dst-ip=10.0.0.2,set-dst-mac=00:00:00:00:00:02,output=2"
+    },
+"flow2_8" : {
+    "switch":"00:00:00:00:00:00:00:02",
+    "name":"flow2_8",
+    "priority":"10",
+    "active":"true",
+    "ether-type":"0x806",
+    "src-ip":"10.0.0.4",
+    "dst-ip":"10.0.0.1",
+    "ingress-port":"3",
+    "actions":"set-dst-ip=10.0.0.2,set-dst-mac=00:00:00:00:00:02,output=2"
+    },   
+"flow2_9" : {
+    "switch":"00:00:00:00:00:00:00:01",
+    "name":"flow2_9",
+    "priority":"10",
+    "active":"true",
+    "ether-type":"0x800",
+    "src-ip":"10.0.0.3",
+    "dst-ip":"10.0.0.5",
+    "ingress-port":"2",
+    "actions":"set-src-ip=10.0.0.4,set-src-mac=00:00:00:00:00:04,set-dst-ip=10.0.0.1,set-dst-mac=00:00:00:00:00:01,output=1"
+    },
+"flow2_10" : {
+    "switch":"00:00:00:00:00:00:00:01",
+    "name":"flow2_10",
+    "priority":"10",
+    "active":"true",
+    "ether-type":"0x806",
+    "src-ip":"10.0.0.3",
+    "dst-ip":"10.0.0.5",
+    "ingress-port":"2",
+    "actions":"set-src-ip=10.0.0.4,set-src-mac=00:00:00:00:00:04,set-dst-ip=10.0.0.1,set-dst-mac=00:00:00:00:00:01,output=1"
+
+    },
+"flow2_11" : {
+    "switch":"00:00:00:00:00:00:00:03",
+    "name":"flow2_11",
+    "priority":"10",
+    "active":"true",
+    "ether-type":"0x800",
+    "src-ip":"10.0.0.3",
+    "dst-ip":"10.0.0.5",
+    "ingress-port":"1",
+    "actions":"output=3"
+    },
+"flow2_12" : {
+    "switch":"00:00:00:00:00:00:00:03",
+    "name":"flow2_12",
+    "priority":"10",
+    "active":"true",
+    "ether-type":"0x806",
+    "src-ip":"10.0.0.3",
+    "dst-ip":"10.0.0.5",
+    "ingress-port":"1",
+    "actions":"output=3"
+    }
+}

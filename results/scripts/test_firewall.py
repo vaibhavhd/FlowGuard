@@ -65,25 +65,39 @@ def pushDynamicRule(input):
 
 def delFwRule(input):
     #Authetication
-    url = 'http://localhost:8181/restconf/operations/flowguard:delete-fwrule'
+    url = 'http://localhost:8181/restconf/config/flowguard:fwrule-registry/fwrule-registry-entry/' + str(input)
 
     h = httplib2.Http(".cache")
     h.add_credentials('admin', 'admin')
 
-    json_data = { "input": {"ruleId": input} }
-    payload = json.dumps(json_data)
-
     resp, content = h.request(
         uri = url,
-        method = 'POST',
-        headers={'Content-Type' : 'application/json'},
-        body=payload
+        method = 'DELETE',
+        headers={'Content-Type' : 'application/json'}
     )
+
     if resp['status'] == '200' or resp['status'] == '204':
         print "[Successfully] deleted rule",input
     else:
         print "[Failed] to delete rule",input
-    
+
+def delAllFwRules():
+    #Authetication
+    url = 'http://localhost:8181/restconf/config/flowguard:fwrule-registry'
+
+    h = httplib2.Http(".cache")
+    h.add_credentials('admin', 'admin')
+
+    resp, content = h.request(
+        uri = url,
+        method = 'DELETE',
+        headers={'Content-Type' : 'application/json'}
+    )
+    if resp['status'] == '200' or resp['status'] == '204':
+        print "[Successfully] deleted ALL firewall rules"
+    else:
+        print "[Failed] to delete all firewall rules"
+
 
 def getFwRules():
     url='http://localhost:8181/restconf/config/flowguard:fwrule-registry'
@@ -213,6 +227,7 @@ parser = argparse.ArgumentParser(description='Test firewall policy: add | delete
 parser.add_argument("-a", "--add",    action = "store_true", help='add dynamic rules')
 parser.add_argument("-m", "--modify", action = "store_true", help='modify existing rule(s)')
 parser.add_argument("-d", "--delete", dest = "ruleId",       help = 'delete firewall rule with the rule ID from user input')
+parser.add_argument("-da","--delete_all",action="store_true",help = 'delete firewall rule with the rule ID from user input')
 parser.add_argument("-g", "--get",    action = "store_true", help = 'get all firewall rules')
 parser.add_argument("-s", "--add-static", dest = "filePath", help = 'add static rule with the file path provided by user')
 
@@ -248,7 +263,8 @@ elif args.get == True:
 elif args.filePath != None:
     print "\nAdding static rules"
     pushStaticRules(args.filePath)
-
+elif args.delete_all == True:
+    delAllFwRules()
 else:
     parser.print_usage()
 

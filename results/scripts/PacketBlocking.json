@@ -1,0 +1,90 @@
+{
+"rule1" : {
+    "switch":"00:00:00:00:00:00:00:02",
+    "name":"rule1",
+    "priority":"0",
+    "active":"true",
+    "ether-type":"0x800",
+    "src-ip":"10.0.0.1/32",
+    "dst-ip":"10.0.0.5/32",
+    "ingress-port":"1",
+    "actions":"set-src-ip=10.0.0.6,set-src-mac=00:00:00:00:00:01,output=3"
+    },
+"rule2" : {
+    "switch":"00:00:00:00:00:00:00:02",
+    "name":"rule2",
+    "priority":"0",
+    "active":"true",
+    "ether-type":"0x806",
+    "src-ip":"10.0.0.1/32",
+    "dst-ip":"10.0.0.5/32",
+    "ingress-port":"1",
+    "actions":"set-src-ip=10.0.0.6,set-src-mac=00:00:00:00:00:01,output=3"
+    },   
+"rule3" : {
+    "switch":"00:00:00:00:00:00:00:01",
+    "name":"rule3",
+    "priority":"0",
+    "active":"true",
+    "ether-type":"0x800",
+    "src-ip":"10.0.0.6/32",
+    "dst-ip":"10.0.0.5/32",
+    "ingress-port":"1",
+    "actions":"set-dst-ip=10.0.0.4,set-dst-mac=00:00:00:00:00:04,output=2"
+    },
+"rule4" : {
+    "switch":"00:00:00:00:00:00:00:01",
+    "name":"rule4",
+    "priority":"0",
+    "active":"true",
+    "ether-type":"0x806",
+    "src-ip":"10.0.0.6/32",
+    "dst-ip":"10.0.0.5/32",
+    "ingress-port":"1",
+    "actions":"set-dst-ip=10.0.0.4,set-dst-mac=00:00:00:00:00:04,output=2"
+    },
+"rule5" : {
+    "switch":"00:00:00:00:00:00:00:03",
+    "name":"rule5",
+    "priority":"0",
+    "active":"true",
+    "ether-type":"0x800",
+    "src-ip":"10.0.0.4/32",
+    "dst-ip":"10.0.0.6/32",
+    "ingress-port":"2",
+    "actions":"set-src-ip=10.0.0.5,set-src-mac=00:00:00:00:00:04,output=3"
+    },
+"rule6" : {
+    "switch":"00:00:00:00:00:00:00:03",
+    "name":"rule6",
+    "priority":"0",
+    "active":"true",
+    "ether-type":"0x806",
+    "src-ip":"10.0.0.4/32",
+    "dst-ip":"10.0.0.6/32",
+    "priority":"0",    "ingress-port":"2",
+    "actions":"set-src-ip=10.0.0.5,set-src-mac=00:00:00:00:00:04,output=3"
+    },
+"rule7" : {
+    "switch":"00:00:00:00:00:00:00:01",
+    "name":"rule1-7",
+    "priority":"0",
+    "active":"true",
+    "ether-type":"0x800",
+    "src-ip":"10.0.0.5/32",
+    "dst-ip":"10.0.0.6/32",
+    "ingress-port":"2",
+    "actions":"set-dst-ip=10.0.0.1,set-dst-mac=00:00:00:00:00:01,output=1"
+    },
+"rule8" : {
+    "switch":"00:00:00:00:00:00:00:01",
+    "name":"rule8",
+    "priority":"0",
+    "active":"true",
+    "ether-type":"0x806",
+    "src-ip":"10.0.0.5/32",
+    "dst-ip":"10.0.0.6/32",
+    "ingress-port":"2",
+    "actions":"set-dst-ip=10.0.0.1,set-dst-mac=00:00:00:00:00:01,output=1"
+    }
+}
