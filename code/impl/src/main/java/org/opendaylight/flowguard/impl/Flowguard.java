@@ -207,10 +207,9 @@ public class Flowguard {
                 for(Flow flow : flowList){
                     LOG.info("Flow found with ID: {}, outport: {}, Match: {}", flow.getId(), flow.getOutPort(), flow.getMatch().getLayer3Match());
                 }
-                FlowRuleNode rn = new FlowRuleNode();
-                String nodeID = node.getId().getValue();
 
-                List<FlowRuleNode> list = rn.addruletable(flowList);
+                String nodeID = node.getId().getValue();
+                List<FlowRuleNode> list = FlowRuleNode.addruletable(flowList);
                 writeToConflictRegistry(nodeID, list);
 
                 this.flowStorage.put(nodeID, list);

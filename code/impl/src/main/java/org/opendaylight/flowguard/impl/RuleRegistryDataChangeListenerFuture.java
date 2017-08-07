@@ -138,7 +138,7 @@ public class RuleRegistryDataChangeListenerFuture extends AbstractFuture<RuleReg
                     dataObject = entry.getValue();
                     if (dataObject instanceof Flow) {
                         LOG.info("Node {} Flow {} ", node.firstKeyOf(Node.class).getId().getValue(), ((Flow)dataObject).getFlowName());
-                        sg.staticEntryModified(node.firstKeyOf(Node.class).getId().getValue(), ((Flow)dataObject).getFlowName(), ((Flow)dataObject));
+                        sg.staticEntryModified(node.firstKeyOf(Node.class).getId().getValue(), ((Flow)dataObject));
                     }
                 }
                 break;

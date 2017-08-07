@@ -35,11 +35,11 @@ public class FlowInfo {
         System.out.println("<<<<< current_HeaderObject >>>>>");
         HeaderObject.printHeaderObject(flowinfo.current_ho);
         System.out.println("current_switch_info = "+flowinfo.current_switch_dpid+
-                " / "+flowinfo.current_ingress_port.toString());
+                " / "+flowinfo.current_ingress_port);
         System.out.println("<<<<< next_HeaderObject >>>>>");
         HeaderObject.printHeaderObject(flowinfo.next_ho);
         System.out.println("next_switch_info = " + flowinfo.next_switch_dpid+
-                " / "+flowinfo.next_ingress_port.toString());
+                " / "+flowinfo.next_ingress_port);
     }
 
 
@@ -57,7 +57,8 @@ public class FlowInfo {
         newflow.next_ingress_port = new String(sample.next_ingress_port);
         newflow.next_switch_dpid = new String(sample.next_switch_dpid);
         newflow.rule_node_name = new String(sample.rule_node_name);
-        newflow.candidate_rule = new String(sample.candidate_rule);
+        if(sample.candidate_rule != null)
+            newflow.candidate_rule = new String(sample.candidate_rule);
         if(sample.target != null){
             newflow.target = new TopologyStruct();
             newflow.target.dpid = sample.target.dpid;

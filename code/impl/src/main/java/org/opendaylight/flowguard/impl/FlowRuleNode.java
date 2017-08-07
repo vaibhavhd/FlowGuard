@@ -62,7 +62,7 @@ public class FlowRuleNode {
     public String in_port;
     public String dl_src;
     public String dl_dst;
-    public int dl_type;
+    public int dl_type = 0;
     public int nw_src_prefix = 0;
     public int nw_src_maskbits = 0;
     public int nw_dst_prefix =0;
@@ -105,15 +105,7 @@ public class FlowRuleNode {
     private static final int IPV4_ADDRESS_LENGTH = 32;
     private static final String DEFAULT_ARBITRARY_BIT_MASK = "255.255.255.255";
 
-    /*
-     * Spec:
-     * A  zero-length  OpenFlow  match  (one  with  no  OXM  TLVs)  matches  every  packet.
-     * Match  fields  that should be wildcarded are omitted from the OpenFlow match.
-     *
-     * Algorithm:
-     *
-     */
-    public List<FlowRuleNode> addruletable(List<Flow> flowList){
+    public static List<FlowRuleNode> addruletable(List<Flow> flowList){
 
         List<FlowRuleNode> ruletable = new ArrayList<FlowRuleNode>();
         Iterator<Flow> itr = flowList.listIterator();//keys.iterator();
@@ -121,151 +113,9 @@ public class FlowRuleNode {
         while(itr.hasNext()){
             Flow flow = itr.next();//row.get(key.toString());
             FlowRuleNode instance = new FlowRuleNode();
-
+            instance  = buildFlowInstance(instance, flow);
             //instance.switch_name = ;
-            instance.rule_name = flow.getFlowName();//key.toString();
-            if(flow.getMatch().getInPort() != null)
-             {
-                instance.in_port = flow.getMatch().getInPort().getValue();//.substring(beginIndex); // It should ne inport or physical input port??
-            }
-            if(flow.getMatch().getVlanMatch() != null) {
-                instance.vlan = flow.getMatch().getVlanMatch().getVlanId().getVlanId().getValue();
-            }
-
-            // Extract L2 details
-            if(flow.getMatch().getEthernetMatch() != null) {
-                if(flow.getMatch().getEthernetMatch().getEthernetSource() != null) {
-                    instance.dl_src = 	flow.getMatch().getEthernetMatch().getEthernetSource().getAddress().getValue();
-                }
-                if(flow.getMatch().getEthernetMatch().getEthernetDestination() != null) {
-                    instance.dl_dst = 	flow.getMatch().getEthernetMatch().getEthernetDestination().getAddress().getValue();
-                }
-                if(flow.getMatch().getEthernetMatch().getEthernetType() != null) {
-                    instance.dl_type = flow.getMatch().getEthernetMatch().getEthernetType().getType().getValue().intValue();
-                }
-            }
-
-            // Extract L3 details
-            Layer3Match l3Match = flow.getMatch().getLayer3Match();
-            // TODO Handle other L3Match cases: ARP, Ipv6
-            if(l3Match != null) {
-                if(l3Match instanceof Ipv4Match){
-                    Ipv4Prefix src = ((Ipv4Match)flow.getMatch().getLayer3Match()).getIpv4Source();
-                    Ipv4Prefix dst = ((Ipv4Match)flow.getMatch().getLayer3Match()).getIpv4Destination();
-                    instance.nw_src_prefix = calculateIpfromPrefix(src);
-                    instance.nw_src_maskbits = calculateMaskfromPrefix(src);
-                    instance.nw_dst_prefix = calculateIpfromPrefix(dst);
-                    instance.nw_dst_maskbits = calculateMaskfromPrefix(dst);
-                }
-                else if (l3Match instanceof Ipv4MatchArbitraryBitMask){
-                    Ipv4Address addr = ((Ipv4MatchArbitraryBitMask)flow.getMatch().getLayer3Match()).getIpv4SourceAddressNoMask();
-                    DottedQuad mask = ((Ipv4MatchArbitraryBitMask)flow.getMatch().getLayer3Match()).getIpv4SourceArbitraryBitmask();
-                    Ipv4Prefix src = createPrefix(addr, convertArbitraryMaskToByteArray(mask));
-                    instance.nw_src_prefix = calculateIpfromPrefix(src);
-                    instance.nw_src_maskbits = calculateMaskfromPrefix(src);
-
-                    addr = ((Ipv4MatchArbitraryBitMask)flow.getMatch().getLayer3Match()).getIpv4DestinationAddressNoMask();
-                    mask = ((Ipv4MatchArbitraryBitMask)flow.getMatch().getLayer3Match()).getIpv4DestinationArbitraryBitmask();
-                    Ipv4Prefix dst = createPrefix(addr, convertArbitraryMaskToByteArray(mask));
-                    instance.nw_dst_prefix = calculateIpfromPrefix(dst);
-                    instance.nw_dst_maskbits = calculateMaskfromPrefix(dst);
-                }
-            }
-
-            // Extract L4 details
-            // TODO Previois implementation worng? src is taken from dest!!
-            Layer4Match l4Match = flow.getMatch().getLayer4Match();
-            if(l4Match != null) {
-                if(l4Match instanceof TcpMatch) {
-                    instance.tp_src = ((TcpMatch)l4Match).getTcpSourcePort().getValue();
-                    instance.tp_dst = ((TcpMatch)l4Match).getTcpDestinationPort().getValue();
-                }
-                else if (l4Match instanceof UdpMatch) {
-                    instance.udp_src = ((UdpMatch)l4Match).getUdpSourcePort().getValue();
-                    instance.udp_dst = ((UdpMatch)l4Match).getUdpDestinationPort().getValue();
-                }
-            }
-            if(flow.getMatch().getIpMatch() != null) {
-                instance.nw_proto = flow.getMatch().getIpMatch().getIpProtocol();
-            }
-
-            instance.priority = flow.getPriority();
-            instance.flow_info = new FlowInfo();
-            instance.flow_info.flow_history = new ArrayList<FlowInfo>();
-
-            if(flow.getInstructions() != null) {
-                List<Instruction> instList = flow.getInstructions().getInstruction();
-                //TODO Many more instructions and actions to be checked and implemeted :Openflow 1.3
-                for(Instruction i : instList) {
-                    org.opendaylight.yang.gen.v1.urn.opendaylight.flow.types.rev131026.instruction.Instruction instruction = i.getInstruction();
-
-                    if(instruction instanceof Meter){
-                        // Optional
-                    }
-                    else if(instruction instanceof ApplyActions) {
-                        // Optional
-                    }
-                    else if(instruction instanceof ClearActions) {
-                        // Optional
-                    }
-                    else if(instruction instanceof WriteActions) {
-                        // Required
-                        List<Action> action = ((WriteActions)i.getInstruction()).getAction();
-                        for(Action a : action) {
-                            if(a.getAction() instanceof OutputAction) {
-                                instance.action_out_port = ((OutputAction)(a.getAction())).getOutputNodeConnector().getValue();
-                            }
-                            else if(a.getAction() instanceof SetField){
-                                instance.action_dl_src = ((SetField)(a.getAction())).getEthernetMatch().getEthernetSource().getAddress().getValue();
-                                instance.action_dl_dst = ((SetField)(a.getAction())).getEthernetMatch().getEthernetDestination().getAddress().getValue();
-
-                                l3Match = ((SetField)(a.getAction())).getLayer3Match();
-                                // TODO Handle other L3Match cases: ARP, Ipv6
-                                if(l3Match instanceof Ipv4Match){
-                                    Ipv4Prefix src  = ((Ipv4Match)flow.getMatch().getLayer3Match()).getIpv4Source();
-                                    Ipv4Prefix dst = ((Ipv4Match)flow.getMatch().getLayer3Match()).getIpv4Destination();
-                                    instance.action_nw_src_prefix = calculateIpfromPrefix(src);
-                                    instance.action_nw_src_maskbits = calculateMaskfromPrefix(src);
-                                    instance.action_nw_dst_prefix = calculateIpfromPrefix(dst);
-                                    instance.action_nw_dst_maskbits = calculateMaskfromPrefix(dst);
-                                }
-                                else if (l3Match instanceof Ipv4MatchArbitraryBitMask){
-                                    Ipv4Address addr = ((Ipv4MatchArbitraryBitMask)flow.getMatch().getLayer3Match()).getIpv4SourceAddressNoMask();
-                                    DottedQuad mask = ((Ipv4MatchArbitraryBitMask)flow.getMatch().getLayer3Match()).getIpv4SourceArbitraryBitmask();
-                                    Ipv4Prefix src = createPrefix(addr, convertArbitraryMaskToByteArray(mask));
-
-                                    addr = ((Ipv4MatchArbitraryBitMask)flow.getMatch().getLayer3Match()).getIpv4DestinationAddressNoMask();
-                                    mask = ((Ipv4MatchArbitraryBitMask)flow.getMatch().getLayer3Match()).getIpv4DestinationArbitraryBitmask();
-                                    Ipv4Prefix dst = createPrefix(addr, convertArbitraryMaskToByteArray(mask));
-                                    instance.action_nw_src_prefix = calculateIpfromPrefix(src);
-                                    instance.action_nw_src_maskbits = calculateMaskfromPrefix(src);
-                                    instance.action_nw_dst_prefix = calculateIpfromPrefix(dst);
-                                    instance.action_nw_dst_maskbits = calculateMaskfromPrefix(dst);
-                                }
-                            }
-                            else if(a.getAction() instanceof SetVlanIdAction){
-                                // TODO Check what is assigned
-                                instance.action_vlan = ((SetField)(a.getAction())).getVlanMatch().getVlanId().getVlanId().getValue();
-                            }
-                        }
-                    }
-                    else if(instruction instanceof GoToTable) {
-                        // Required
-                    }
-                    else {
-                        // Error when a flow contains a packet with invalid instruction.
-                    }
-                }
-            } else { // The Instruction Field is not set - default instruction for OVS = DROP the packet.
-                /* TODO: Make changes as per the spec:
-                 * Spec 1.3.5: The output action in the action set is executed last. If both an output action and a group action are
-                 * specified in an action set, the output action is ignored and the group action takes precedence. If no
-                 * output action and no group action were specified in an action set, the packet is dropped. If no group
-                 * action is specified and the output action references a non-existent port, the packet is dropped.
-                 */
-                instance.actionDrop = true;
-            }
-            /* Store the rules in a ruletable list in descending order */
+                        /* Store the rules in a ruletable list in descending order */
             int i = 0;
             for(i = 0; i < ruletable.size(); i++){
                 if (ruletable.get(i) != null && ruletable.get(i).priority <= instance.priority) {
@@ -282,12 +132,40 @@ public class FlowRuleNode {
         return ruletable;
     }
 
-    public static List<FlowRuleNode> addFlowRuleNode(List<FlowRuleNode> ruletable, String flowname, Flow flow){
+    public static List<FlowRuleNode> addFlowRuleNode(List<FlowRuleNode> ruletable, Flow flow){
 
         FlowRuleNode instance = new FlowRuleNode();
 
-        //instance.switch_name = ;
+        instance  = buildFlowInstance(instance, flow);
+        int i = 0;
+        int ruletable_size = 0;
+        if(ruletable != null) {
+            ruletable_size = ruletable.size();
+        }
+        for(i = 0; i < ruletable_size; i++){
+            if (ruletable.get(i) != null && ruletable.get(i).priority <= instance.priority) {
+                break;
+            }
+        }
+        if(i <= ruletable_size){
+            if(ruletable == null) {
+                ruletable = new ArrayList<FlowRuleNode>();
+            }
+            ruletable.add(i, instance);
+        } else {
+            ruletable.add(instance);
+        }
+        ruletable = FlowRuleNode.computedependency(ruletable);
+        return ruletable;
+    }
+
+    private static FlowRuleNode buildFlowInstance(FlowRuleNode instance, Flow flow) {
         instance.rule_name = flow.getFlowName();//key.toString();
+        /*
+         * Spec:
+         * A  zero-length  OpenFlow  match  (one  with  no  OXM  TLVs)  matches  every  packet.
+         * Match  fields  that should be wildcarded are omitted from the OpenFlow match.         *
+         */
         if(flow.getMatch().getInPort() != null)
          {
             instance.in_port = flow.getMatch().getInPort().getValue();//.substring(beginIndex); // It should ne inport or physical input port??
@@ -354,8 +232,6 @@ public class FlowRuleNode {
         }
 
         instance.priority = flow.getPriority();
-        instance.flow_info = new FlowInfo();
-        instance.flow_info.flow_history = new ArrayList<FlowInfo>();
 
         if(flow.getInstructions() != null) {
             List<Instruction> instList = flow.getInstructions().getInstruction();
@@ -376,7 +252,13 @@ public class FlowRuleNode {
                     // Required
                     List<Action> action = ((WriteActions)i.getInstruction()).getAction();
                     for(Action a : action) {
+                        // TODO: If there are multiple same actions, the fields will be overwritten.
+                        // Ideally, the actions are applied in order
+                        //a.getOrder();
                         if(a.getAction() instanceof OutputAction) {
+                            /* if(instance.action_out_port != null) {
+                                // Add the action in the list in the order
+                            }*/
                             instance.action_out_port = ((OutputAction)(a.getAction())).getOutputNodeConnector().getValue();
                         }
                         else if(a.getAction() instanceof SetField){
@@ -420,35 +302,18 @@ public class FlowRuleNode {
                     // Error when a flow contains a packet with invalid instruction.
                 }
             }
-        } else { // The Instruction Field is not set - default instruction for OVS = DROP the packet.
-            /* TODO: Make changes as per the spec:
-             * Spec 1.3.5: The output action in the action set is executed last. If both an output action and a group action are
-             * specified in an action set, the output action is ignored and the group action takes precedence. If no
-             * output action and no group action were specified in an action set, the packet is dropped. If no group
-             * action is specified and the output action references a non-existent port, the packet is dropped.
+        }
+
+        if (instance.action_out_port == null) {
+            /* Spec 1.3.5:
+             * Packets whose action sets have no output action and no group action should be dropped.
+             * This result could come from empty instruction sets or empty action buckets in the
+             * processing pipeline (see 5.10), or after executing a Clear-Actions instruction.
              */
             instance.actionDrop = true;
         }
-        int i = 0;
-        int ruletable_size = 0;
-        if(ruletable != null) {
-            ruletable_size = ruletable.size();
-        }
-        for(i = 0; i < ruletable_size; i++){
-            if (ruletable.get(i) != null && ruletable.get(i).priority <= instance.priority) {
-                break;
-            }
-        }
-        if(i <= ruletable_size){
-            if(ruletable == null) {
-                ruletable = new ArrayList<FlowRuleNode>();
-            }
-            ruletable.add(i, instance);
-        } else {
-            ruletable.add(instance);
-        }
-        ruletable = FlowRuleNode.computedependency(ruletable);
-        return ruletable;
+
+        return instance;
     }
 
     public static List<FlowRuleNode> deleteFlowRuleNode(List<FlowRuleNode> ruletable, String rulename){
@@ -619,12 +484,24 @@ public class FlowRuleNode {
     }
 
     /*
+     * Calculation of flow path space. Space is defined by a set of source(IP+Port+Proto) and dest(IP+Port)
+     * The incoming space has been set before propagation. The outgoing space may "shift" as the setfield
+     * operations take place. The processing flow is a technique of flowing(moving a packet) along the
+     * plumbing graph and updating the address space accordingly.
      *
      * @param flowRuleNode Existing IPv4 Flow with matching DPID and InPort as the new sample
      * @param inputFlow The flow which is being added/modified/deleted
+     * @return The ruleNode(with the new flowinfo(with flow_history)) responsible for the propagation.
      */
     public static FlowRuleNode computeFlow(FlowRuleNode flowRuleNode, FlowInfo inputflow){
-
+        /*
+         * Using a copy of a packet is necessary as:
+         * Spec v1.3.5:
+         * If the list of actions contains an output action, a "copy" of the packet is forwarded in its
+         * current state to the desired port. If the output action references an non-existent port,
+         * the copy of the packet is dropped.
+         * IMP: The action set of the packet is unchanged by the execution of the list of actions.
+         */
         FlowInfo processingflow = FlowInfo.valueCopy(inputflow);
         //processingflow inputflow to processing flow
         processingflow.rule_node_name = flowRuleNode.rule_name;
@@ -651,7 +528,12 @@ public class FlowRuleNode {
                         processingflow.current_ho.nw_dst_prefix, processingflow.current_ho.nw_dst_maskbits)) {
             if(matchIPAddress(flowRuleNode.nw_src_prefix, flowRuleNode.nw_src_maskbits,
                     processingflow.current_ho.nw_src_prefix, processingflow.current_ho.nw_src_maskbits)){
+                System.out.println("Proecessing flow matched the IP of the Flow rule");
+                if(flowRuleNode.actionDrop) {
+                    //The flow rule has no output action; drop the packet
+                    // TODO return;
 
+                }
                 if(flowRuleNode.action_nw_dst_prefix==0){
                     /*
                      * When the instructions are not set, follow the natural course of action,
@@ -923,6 +805,8 @@ public class FlowRuleNode {
                 //FlowRuleNode.action_dl_src.toString();
 
                 //add flow information in the flow history
+                if (processingflow.flow_history == null)
+                    processingflow.flow_history =new ArrayList<FlowInfo>();
                 processingflow.flow_history.add(processingflow);
                 flowRuleNode.flow_info = processingflow;
             }
@@ -932,12 +816,17 @@ public class FlowRuleNode {
             }
         } else{
             //just return FlowRuleNode without any changes
+            System.out.printf("%d %d %d %d  ", flowRuleNode.nw_dst_prefix, flowRuleNode.nw_dst_maskbits,
+            processingflow.current_ho.nw_dst_prefix, processingflow.current_ho.nw_dst_maskbits);
+            System.out.println("Sample did not match the IP in Flow");
         }
 
         return flowRuleNode;
     }
 
-    private static boolean isWildcarded(Object matchObj) {
+    /* All helper functions below this line */
+
+    static boolean isWildcarded(Object matchObj) {
         return matchObj == null ? true : false;
     }
 
@@ -961,22 +850,23 @@ public class FlowRuleNode {
     }
 
     public static boolean matchIPAddress(int ip1, int prefix1, int ip2, int prefix2) {
-        boolean matched = true;
         int maskbits = 0;
         int range;
+
         //set maskbits as a lower integer to check overlaps
         maskbits = (prefix1 > prefix2) ? prefix2 : prefix1;
         range = 32 - maskbits;
 
-        if(range == 0){
+        if (range == 0) {
             // The prefix length for both IPs is 32.
             return (ip1 == ip2);
-        }
-        else {
+        } else if (range == 32) {
+            // Wildcarded match
+            return true;
+        }else {
             // Right shift the IP bits to remove the wildcarded range set by prefix
-            ip1 = ip1 >> maskbits;
-            ip2 = ip2 >> maskbits;
-            // TODO Leftshit to return back to normal is required???
+            ip1 = ip1 >> 32;
+            ip2 = ip2 >> 32;
             return (ip1 == ip2);
         }
     }
