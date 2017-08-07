@@ -2,7 +2,7 @@
 import json
 import sys
 import os
-from pprint import pprint
+#from pprint import pprint
 
 def split_at_n_delimeter(str,delimeter,n):
     result = str.split(delimeter)
@@ -55,33 +55,38 @@ def set_field_actions(set_src_ip,set_src_mac,set_dst_ip,set_dst_mac):
 	if ((set_src_ip != "" and set_src_mac != "") and (set_dst_ip != "" and set_dst_mac != "")):
 		result = {
 			"ipv4-source":str(set_src_ip + "/32"),
-			"ethernet-source": {
-				"address":set_src_mac
-			},
 			"ipv4-destination":str(set_dst_ip + "/32"),
-			"ethernet-destination": {
-				"address":set_dst_mac
+			"ethernet-match": {
+				"ethernet-source": {
+					"address":set_src_mac
+				},
+				"ethernet-destination": {
+					"address": set_dst_mac
+				}
 			}
 		}
 	elif set_src_ip != "" and set_src_mac != "":
 		result = {
 			"ipv4-source":str(set_src_ip + "/32"),
-			"ethernet-source": {
-				"address":set_src_mac
+			"ethernet-match": {
+				"ethernet-source": {
+					"address":set_src_mac
+				}
 			}
 		}
 	#case 2 if dst ip and dst mac exist
 	elif set_dst_ip != "" and set_dst_mac != "":
 		result = {
 			"ipv4-destination":str(set_dst_ip + "/32"),
-			"ethernet-destination": {
-				"address":set_dst_mac
+			"ethernet-match": {
+				"ethernet-destination": {
+					"address":set_dst_mac
+				}
 			}
 		}
 	#case 3 if both of the cases above exist
-	else: #((src_ip != "" and src_mac != "") and (dst_ip != "" and dst_mac != "")):
-		print "SOMETHING"
-		
+	#else: #((src_ip != "" and src_mac != "") and (dst_ip != "" and dst_mac != "")):
+	#	print "DEBUGGING ", set_src_ip, set_src_mac, set_dst_ip, set_dst_mac	
 		
 	#else:
 	#	print "No set actions"
@@ -135,6 +140,8 @@ def convert_flow_rule(rule):
 	in_port = checkKey('ingress-port', rule)
 	src_ip = checkKey('src-ip', rule)
 	dst_ip = checkKey('dst-ip', rule)
+
+
 	if checkActionExits(rule['actions']):
 		set_src_ip, set_src_mac, set_dst_ip, set_dst_mac, output = process_actions(rule['actions'])
 
@@ -148,9 +155,9 @@ def convert_flow_rule(rule):
 		"flow-name":rule['name'],
 		"priority":"0",
 		"match": {
-			"ipv4-destination": dst_ip,			### putting actual address here
+			"ipv4-destination": str(dst_ip + "/32") if "/32" not in dst_ip else dst_ip  ,			### putting actual address here
 			"in-port": openflowID + ":" + in_port,
-			"ipv4-source":src_ip,
+			"ipv4-source":str(src_ip + "/32") if "/32" not in src_ip else src_ip,
 			"ethernet-match": {
 				"ethernet-type": {
 					"type": str(ether_type)
