@@ -1,0 +1,379 @@
+{
+    "nodes": [
+        {
+            "dpid": "openflow:1", 
+            "flow": [
+                {
+                    "barrier": "true", 
+                    "flow-name": "flow1-8", 
+                    "hard-timeout": "0", 
+                    "id": "flow1-8", 
+                    "idle-timeout": "0", 
+                    "instructions": {
+                        "instruction": [
+                            {
+                                "order": "0", 
+                                "write-actions": {
+                                    "action": [
+                                        {
+                                            "order": "0", 
+                                            "set-field": {
+                                                "ethernet-destination": {
+                                                    "address": "00:00:00:00:00:01"
+                                                }, 
+                                                "ipv4-destination": "10.0.0.1/32"
+                                            }
+                                        }, 
+                                        {
+                                            "order": "0", 
+                                            "output-action": {
+                                                "output-node-connector": "openflow:1:1"
+                                            }
+                                        }
+                                    ]
+                                }
+                            }
+                        ]
+                    }, 
+                    "match": {
+                        "ethernet-match": {
+                            "ethernet-type": {
+                                "type": "2054"
+                            }
+                        }, 
+                        "in-port": "openflow:1:2", 
+                        "ipv4-destination": "10.0.0.6/32", 
+                        "ipv4-source": "10.0.0.5/32"
+                    }, 
+                    "priority": "0", 
+                    "table_id": "0"
+                }, 
+                {
+                    "barrier": "true", 
+                    "flow-name": "flow1-4", 
+                    "hard-timeout": "0", 
+                    "id": "flow1-4", 
+                    "idle-timeout": "0", 
+                    "instructions": {
+                        "instruction": [
+                            {
+                                "order": "0", 
+                                "write-actions": {
+                                    "action": [
+                                        {
+                                            "order": "0", 
+                                            "set-field": {
+                                                "ethernet-destination": {
+                                                    "address": "00:00:00:00:00:04"
+                                                }, 
+                                                "ipv4-destination": "10.0.0.4/32"
+                                            }
+                                        }, 
+                                        {
+                                            "order": "0", 
+                                            "output-action": {
+                                                "output-node-connector": "openflow:1:2"
+                                            }
+                                        }
+                                    ]
+                                }
+                            }
+                        ]
+                    }, 
+                    "match": {
+                        "ethernet-match": {
+                            "ethernet-type": {
+                                "type": "2054"
+                            }
+                        }, 
+                        "in-port": "openflow:1:1", 
+                        "ipv4-destination": "10.0.0.5/32", 
+                        "ipv4-source": "10.0.0.6/32"
+                    }, 
+                    "priority": "0", 
+                    "table_id": "0"
+                }, 
+                {
+                    "barrier": "true", 
+                    "flow-name": "flow1-7", 
+                    "hard-timeout": "0", 
+                    "id": "flow1-7", 
+                    "idle-timeout": "0", 
+                    "instructions": {
+                        "instruction": [
+                            {
+                                "order": "0", 
+                                "write-actions": {
+                                    "action": [
+                                        {
+                                            "order": "0", 
+                                            "set-field": {
+                                                "ethernet-destination": {
+                                                    "address": "00:00:00:00:00:01"
+                                                }, 
+                                                "ipv4-destination": "10.0.0.1/32"
+                                            }
+                                        }, 
+                                        {
+                                            "order": "0", 
+                                            "output-action": {
+                                                "output-node-connector": "openflow:1:1"
+                                            }
+                                        }
+                                    ]
+                                }
+                            }
+                        ]
+                    }, 
+                    "match": {
+                        "ethernet-match": {
+                            "ethernet-type": {
+                                "type": "2048"
+                            }
+                        }, 
+                        "in-port": "openflow:1:2", 
+                        "ipv4-destination": "10.0.0.6/32", 
+                        "ipv4-source": "10.0.0.5/32"
+                    }, 
+                    "priority": "0", 
+                    "table_id": "0"
+                }, 
+                {
+                    "barrier": "true", 
+                    "flow-name": "flow1-3", 
+                    "hard-timeout": "0", 
+                    "id": "flow1-3", 
+                    "idle-timeout": "0", 
+                    "instructions": {
+                        "instruction": [
+                            {
+                                "order": "0", 
+                                "write-actions": {
+                                    "action": [
+                                        {
+                                            "order": "0", 
+                                            "set-field": {
+                                                "ethernet-destination": {
+                                                    "address": "00:00:00:00:00:04"
+                                                }, 
+                                                "ipv4-destination": "10.0.0.4/32"
+                                            }
+                                        }, 
+                                        {
+                                            "order": "0", 
+                                            "output-action": {
+                                                "output-node-connector": "openflow:1:2"
+                                            }
+                                        }
+                                    ]
+                                }
+                            }
+                        ]
+                    }, 
+                    "match": {
+                        "ethernet-match": {
+                            "ethernet-type": {
+                                "type": "2048"
+                            }
+                        }, 
+                        "in-port": "openflow:1:1", 
+                        "ipv4-destination": "10.0.0.5/32", 
+                        "ipv4-source": "10.0.0.6/32"
+                    }, 
+                    "priority": "0", 
+                    "table_id": "0"
+                }
+            ]
+        }, 
+        {
+            "dpid": "openflow:2", 
+            "flow": [
+                {
+                    "barrier": "true", 
+                    "flow-name": "flow1-1", 
+                    "hard-timeout": "0", 
+                    "id": "flow1-1", 
+                    "idle-timeout": "0", 
+                    "instructions": {
+                        "instruction": [
+                            {
+                                "order": "0", 
+                                "write-actions": {
+                                    "action": [
+                                        {
+                                            "order": "0", 
+                                            "set-field": {
+                                                "ethernet-source": {
+                                                    "address": "00:00:00:00:00:01"
+                                                }, 
+                                                "ipv4-source": "10.0.0.6/32"
+                                            }
+                                        }, 
+                                        {
+                                            "order": "0", 
+                                            "output-action": {
+                                                "output-node-connector": "openflow:2:3"
+                                            }
+                                        }
+                                    ]
+                                }
+                            }
+                        ]
+                    }, 
+                    "match": {
+                        "ethernet-match": {
+                            "ethernet-type": {
+                                "type": "2048"
+                            }
+                        }, 
+                        "in-port": "openflow:2:1", 
+                        "ipv4-destination": "10.0.0.5/32", 
+                        "ipv4-source": "10.0.0.1/32"
+                    }, 
+                    "priority": "0", 
+                    "table_id": "0"
+                }, 
+                {
+                    "barrier": "true", 
+                    "flow-name": "flow1-2", 
+                    "hard-timeout": "0", 
+                    "id": "flow1-2", 
+                    "idle-timeout": "0", 
+                    "instructions": {
+                        "instruction": [
+                            {
+                                "order": "0", 
+                                "write-actions": {
+                                    "action": [
+                                        {
+                                            "order": "0", 
+                                            "set-field": {
+                                                "ethernet-source": {
+                                                    "address": "00:00:00:00:00:01"
+                                                }, 
+                                                "ipv4-source": "10.0.0.6/32"
+                                            }
+                                        }, 
+                                        {
+                                            "order": "0", 
+                                            "output-action": {
+                                                "output-node-connector": "openflow:2:3"
+                                            }
+                                        }
+                                    ]
+                                }
+                            }
+                        ]
+                    }, 
+                    "match": {
+                        "ethernet-match": {
+                            "ethernet-type": {
+                                "type": "2054"
+                            }
+                        }, 
+                        "in-port": "openflow:2:1", 
+                        "ipv4-destination": "10.0.0.5/32", 
+                        "ipv4-source": "10.0.0.1/32"
+                    }, 
+                    "priority": "0", 
+                    "table_id": "0"
+                }
+            ]
+        }, 
+        {
+            "dpid": "openflow:3", 
+            "flow": [
+                {
+                    "barrier": "true", 
+                    "flow-name": "flow1-5", 
+                    "hard-timeout": "0", 
+                    "id": "flow1-5", 
+                    "idle-timeout": "0", 
+                    "instructions": {
+                        "instruction": [
+                            {
+                                "order": "0", 
+                                "write-actions": {
+                                    "action": [
+                                        {
+                                            "order": "0", 
+                                            "set-field": {
+                                                "ethernet-source": {
+                                                    "address": "00:00:00:00:00:04"
+                                                }, 
+                                                "ipv4-source": "10.0.0.5/32"
+                                            }
+                                        }, 
+                                        {
+                                            "order": "0", 
+                                            "output-action": {
+                                                "output-node-connector": "openflow:3:3"
+                                            }
+                                        }
+                                    ]
+                                }
+                            }
+                        ]
+                    }, 
+                    "match": {
+                        "ethernet-match": {
+                            "ethernet-type": {
+                                "type": "2048"
+                            }
+                        }, 
+                        "in-port": "openflow:3:2", 
+                        "ipv4-destination": "10.0.0.6/32", 
+                        "ipv4-source": "10.0.0.4/32"
+                    }, 
+                    "priority": "0", 
+                    "table_id": "0"
+                }, 
+                {
+                    "barrier": "true", 
+                    "flow-name": "flow1-6", 
+                    "hard-timeout": "0", 
+                    "id": "flow1-6", 
+                    "idle-timeout": "0", 
+                    "instructions": {
+                        "instruction": [
+                            {
+                                "order": "0", 
+                                "write-actions": {
+                                    "action": [
+                                        {
+                                            "order": "0", 
+                                            "set-field": {
+                                                "ethernet-source": {
+                                                    "address": "00:00:00:00:00:04"
+                                                }, 
+                                                "ipv4-source": "10.0.0.5/32"
+                                            }
+                                        }, 
+                                        {
+                                            "order": "0", 
+                                            "output-action": {
+                                                "output-node-connector": "openflow:3:3"
+                                            }
+                                        }
+                                    ]
+                                }
+                            }
+                        ]
+                    }, 
+                    "match": {
+                        "ethernet-match": {
+                            "ethernet-type": {
+                                "type": "2054"
+                            }
+                        }, 
+                        "in-port": "openflow:3:2", 
+                        "ipv4-destination": "10.0.0.6/32", 
+                        "ipv4-source": "10.0.0.4/32"
+                    }, 
+                    "priority": "0", 
+                    "table_id": "0"
+                }
+            ]
+        }
+    ]
+}

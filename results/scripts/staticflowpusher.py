@@ -76,6 +76,7 @@ def _prepare_post(cntl, method, flowss, template=None):
     with open('flowRemovingflows.json') as data_file:
         data = json.load(data_file)
         nodes = data["nodes"]
+        reqs = []
         for node in (nodes):
             dev_id = node["dpid"]
             flows = node["flow"]
@@ -84,13 +85,15 @@ def _prepare_post(cntl, method, flowss, template=None):
                 #flow["id"] = ip
                 #flow["match"]["ipv4-destination"] = '%s/32' % str(netaddr.IPAddress(ip))
                 flow_list.append(flow)
-    body = {"flow": flow_list}
-    print json.dumps(body, indent =4)
-    url = 'http://' + cntl + ':8181' + odl_node_url + dev_id + '/table/0'
-    req_data = json.dumps(body)
-    req = requests.Request(method, url, headers={'Content-Type': 'application/json'},
-                           data=req_data, auth=('admin', 'admin'))
-    return req
+            body = {"flow": flow_list}
+            print json.dumps(body, indent =4)
+            url = 'http://' + cntl + ':8181' + odl_node_url + dev_id + '/table/0'
+            req_data = json.dumps(body)
+            req = requests.Request(method, url, headers={'Content-Type': 'application/json'},
+                data=req_data, auth=('admin', 'admin'))
+            reqs.append(req)
+            flow_list = []
+    return reqs
 
 
 def _prepare_delete(cntl, method, flows, template=None):
@@ -158,14 +161,16 @@ def _wt_request_sender(thread_id, preparefnc, inqueue=None, exitevent=None, cont
             continue
         req = preparefnc(cntl, method, flowlist, template=template)
         # prep = ses.prepare_request(req)
-        prep = req.prepare()
-        try:
-            rsp = ses.send(prep, timeout=5)
-        except requests.exceptions.Timeout:
-            counter[99] += 1
-            continue
-        counter[rsp.status_code] += 1
-        print rsp.content
+        for i in range(len(req)):
+            prep = req[i].prepare()
+            try:
+                rsp = ses.send(prep, timeout=5)
+            except requests.exceptions.Timeout:
+                counter[99] += 1
+                continue
+            counter[rsp.status_code] += 1
+            print rsp.content
+
     res = {}
     for i, v in enumerate(counter):
         if v > 0:

@@ -140,7 +140,7 @@ def convert_flow_rule(rule):
 
 	# parse switch id
 	flow_rule = {
-		"table-id":"0",
+		"table_id":"0",
 		"hard-timeout":"0",
 		"barrier":"true",
 		"idle-timeout":"0",
