@@ -8,6 +8,8 @@
 package org.opendaylight.flowguard.impl;
 
 import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
@@ -114,7 +116,7 @@ public class Flowguard {
             // TODO Auto-generated catch block
             e.printStackTrace();
         }
-
+        
         for(FwruleRegistryEntry entry : entries) {
             FirewallRule rule = new FirewallRule();
 
@@ -127,19 +129,41 @@ public class Flowguard {
             arr = parseIP(entry.getDestinationIpAddress());
             rule.nw_dst_prefix = arr[0];
             rule.nw_dst_maskbits = arr[1];
-
+            
+            rule.priority = entry.getPriority(); //get priority of the firewall rule
+            
             rule.tp_src = Short.parseShort(entry.getSourcePort());
             rule.tp_dst = Short.parseShort(entry.getDestinationPort());
             rule.action = (entry.getAction() == Action.Allow) ? FirewallRule.FirewallAction.ALLOW
                     : FirewallRule.FirewallAction.DENY;
             rule.in_port = new String(entry.getInPort());
             rule.dpid = entry.getNode();
-
+            
             ruleStorage.add(rule);
-
             LOG.info("Rule for switch: {} addded to the list: id:{} ", rule.dpid, rule.ruleid);
         }
+        //quickSort(ruleStorage,0,ruleStorage.size()-1);
+        Collections.sort(ruleStorage, new Comparator<FirewallRule>()
+        		{
+        			public int compare(FirewallRule rule1,FirewallRule rule2) {
+        				int priority1 = rule1.priority;
+        				int priority2 = rule2.priority;
+        				return priority2 - priority1;
+        			}
+        		});
+        /*
+        for(FirewallRule rule:ruleStorage){
+        	System.out.println("Priority of rule "+ rule.priority);
+        }
+        */
+        for(int i = 0; i < ruleStorage.size();i++)
+        	System.out.println("Priority of rule " + ruleStorage.get(i).priority + "\trule ID " + ruleStorage.get(i).ruleid);
+        
+        System.out.println("Done with import static rules");
     }
+    
+    
+    
 
     private int[] parseIP(String address) {
         int[] arr = new int[2];
