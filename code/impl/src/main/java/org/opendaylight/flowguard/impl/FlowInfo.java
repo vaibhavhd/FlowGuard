@@ -10,6 +10,7 @@ package org.opendaylight.flowguard.impl;
 
 
 import java.util.ArrayList;
+import java.util.List;
 
 import org.opendaylight.yang.gen.v1.urn.ietf.params.xml.ns.yang.ietf.inet.types.rev130715.Uri;
 import org.opendaylight.yang.gen.v1.urn.opendaylight.inventory.rev130819.NodeConnectorId;
@@ -18,7 +19,8 @@ import org.opendaylight.yang.gen.v1.urn.opendaylight.inventory.rev130819.NodeCon
 public class FlowInfo {
     public int flow_index = 0;
     public String firewall_ruldid;
-    public boolean is_finished = false;
+    /* Do not convert this to premitive type boolean */
+    public Boolean is_finished = new Boolean(false);
     public HeaderObject current_ho; //input header objects
     public HeaderObject next_ho; //output header objects
     public String next_switch_dpid; //next switch id to propagate
@@ -56,7 +58,7 @@ public class FlowInfo {
         newflow.current_switch_dpid = new String(sample.current_switch_dpid);
         newflow.next_ingress_port = new String(sample.next_ingress_port);
         newflow.next_switch_dpid = new String(sample.next_switch_dpid);
-        newflow.rule_node_name = new String(sample.rule_node_name);
+        newflow.rule_node_name = sample.rule_node_name;
         if(sample.candidate_rule != null)
             newflow.candidate_rule = new String(sample.candidate_rule);
         if(sample.target != null){

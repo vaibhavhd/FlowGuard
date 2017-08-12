@@ -205,7 +205,8 @@ public class Flowguard {
 
                 /* Iterate through the list of flows */
                 for(Flow flow : flowList){
-                    LOG.info("Flow found with ID: {}, outport: {}, Match: {}", flow.getId(), flow.getOutPort(), flow.getMatch().getLayer3Match());
+                    LOG.info("Flow found with ID: {}, outport: {}, Instructions: {}", flow.getId().getValue()
+                            , flow.getOutPort(), flow.getInstructions());
                 }
 
                 String nodeID = node.getId().getValue();
