@@ -17,15 +17,12 @@ import org.opendaylight.controller.md.sal.binding.api.DataBroker;
 import org.opendaylight.controller.md.sal.binding.api.WriteTransaction;
 import org.opendaylight.controller.md.sal.common.api.data.LogicalDatastoreType;
 import org.opendaylight.controller.md.sal.common.api.data.TransactionCommitFailedException;
-import org.opendaylight.yang.gen.v1.urn.opendaylight.params.xml.ns.yang.flowguard.rev170505.AddDynamicFwruleInput;
-import org.opendaylight.yang.gen.v1.urn.opendaylight.params.xml.ns.yang.flowguard.rev170505.AddDynamicFwruleOutput;
-import org.opendaylight.yang.gen.v1.urn.opendaylight.params.xml.ns.yang.flowguard.rev170505.AddDynamicFwruleOutputBuilder;
+import org.opendaylight.yang.gen.v1.urn.opendaylight.params.xml.ns.yang.flowguard.rev170505.AddFwruleInput;
+import org.opendaylight.yang.gen.v1.urn.opendaylight.params.xml.ns.yang.flowguard.rev170505.AddFwruleOutput;
+import org.opendaylight.yang.gen.v1.urn.opendaylight.params.xml.ns.yang.flowguard.rev170505.AddFwruleOutputBuilder;
 import org.opendaylight.yang.gen.v1.urn.opendaylight.params.xml.ns.yang.flowguard.rev170505.AddRuleInput;
 import org.opendaylight.yang.gen.v1.urn.opendaylight.params.xml.ns.yang.flowguard.rev170505.AddRuleOutput;
 import org.opendaylight.yang.gen.v1.urn.opendaylight.params.xml.ns.yang.flowguard.rev170505.AddRuleOutputBuilder;
-import org.opendaylight.yang.gen.v1.urn.opendaylight.params.xml.ns.yang.flowguard.rev170505.AddStaticFwruleInput;
-import org.opendaylight.yang.gen.v1.urn.opendaylight.params.xml.ns.yang.flowguard.rev170505.AddStaticFwruleOutput;
-import org.opendaylight.yang.gen.v1.urn.opendaylight.params.xml.ns.yang.flowguard.rev170505.AddStaticFwruleOutputBuilder;
 import org.opendaylight.yang.gen.v1.urn.opendaylight.params.xml.ns.yang.flowguard.rev170505.ConflictInfo.Action;
 import org.opendaylight.yang.gen.v1.urn.opendaylight.params.xml.ns.yang.flowguard.rev170505.ConflictInfo.Protocol;
 import org.opendaylight.yang.gen.v1.urn.opendaylight.params.xml.ns.yang.flowguard.rev170505.ConflictInfoRegistry;
@@ -64,7 +61,7 @@ public class FlowguardImpl implements FlowguardService  {
     private DataBroker db;
     public ShiftedGraph sg;
     public Flowguard fg;
-    private FirewallRuleParser static_rule_parser;
+    //private FirewallRuleParser static_rule_parser;
 
     public FlowguardImpl(DataBroker db) {
         this.db = db;
@@ -98,25 +95,15 @@ public class FlowguardImpl implements FlowguardService  {
      * RPC for Adding dynamic rules
      */
     @Override
-    public Future<RpcResult<AddDynamicFwruleOutput>> addDynamicFwrule(AddDynamicFwruleInput input) {
+    public Future<RpcResult<AddFwruleOutput>> addFwrule(AddFwruleInput input) {
         LOG.info("Preparing to add DYNAMIC firewall rule");
-        AddDynamicFwruleOutput output =
-            new AddDynamicFwruleOutputBuilder().setGreeting("Added dynamic firewall rule").build();
-        writeToGreetingRegistry(input, output);
+        AddFwruleOutput output =
+            new AddFwruleOutputBuilder().setGreeting("Added dynamic firewall rule").build();
+        writeToFwRuleRegistry(input, output);
         return RpcResultBuilder.success(output).buildFuture();
     }
 
-    /**
-     * RPC for adding static rules
-     */
-    @Override
-    public Future<RpcResult<AddStaticFwruleOutput>> addStaticFwrule(AddStaticFwruleInput input) {
-        LOG.info("Preparing to add STATIC firewall rule");
-        static_rule_parser = new FirewallRuleParser(db,input.getFilePath());
-        static_rule_parser.start();
-        AddStaticFwruleOutput output = new AddStaticFwruleOutputBuilder().setGreeting("Added static firewall rule(s)").build();
-        return  RpcResultBuilder.success(output).buildFuture();
-    }
+
     /**
      * RPC for fetching existing conflicts
      */
@@ -184,13 +171,14 @@ public class FlowguardImpl implements FlowguardService  {
         return iid;
     }
 
-    private void writeToGreetingRegistry(AddDynamicFwruleInput input, AddDynamicFwruleOutput output) {
+    private void writeToFwRuleRegistry(AddFwruleInput input, AddFwruleOutput output) {
         WriteTransaction transaction = db.newWriteOnlyTransaction();
         InstanceIdentifier<FwruleRegistryEntry> iid = toInstanceIdentifier(input);
         FwruleRegistryEntry rule = new FwruleRegistryEntryBuilder()
                 .setNode(input.getNode())
                 .setRuleId(input.getRuleId())
                 .setInPort(input.getInPort())
+                .setPriority(input.getPriority())
                 .setSourceIpAddress(input.getSourceIpAddress())
                 .setDestinationIpAddress(input.getDestinationIpAddress())
                 .setSourcePort(input.getSourcePort())
@@ -200,12 +188,12 @@ public class FlowguardImpl implements FlowguardService  {
         transaction.put(LogicalDatastoreType.CONFIGURATION, iid, rule);
         CheckedFuture<Void, TransactionCommitFailedException> future = transaction.submit();
         Futures.addCallback(future, new LoggingFuturesCallBack<Void>("Failed to write greeting to greeting registry", LOG));
-        LOG.info("\n*****************");
-        LOG.info("Added DYNAMIC Firewall Rule");
-        LOG.info("*****************");
+        LOG.info("\nAdded Firewall Rule");
         LOG.info("*****************");
         LOG.info("input rule_id {}", input.getRuleId());
         LOG.info("input node {}", input.getNode());
+        LOG.info("input inport {}",input.getInPort());
+        LOG.info("input priority {}",input.getPriority());
         LOG.info("input src ip {} ", input.getSourceIpAddress());
         LOG.info("input dst ip {} ", input.getDestinationIpAddress());
         LOG.info("input src port {}", input.getSourcePort());
@@ -214,7 +202,7 @@ public class FlowguardImpl implements FlowguardService  {
         LOG.info("*****************\n");
     }
 
-    private InstanceIdentifier<FwruleRegistryEntry> toInstanceIdentifier(AddDynamicFwruleInput input) {
+    private InstanceIdentifier<FwruleRegistryEntry> toInstanceIdentifier(AddFwruleInput input) {
         InstanceIdentifier<FwruleRegistryEntry> iid = InstanceIdentifier.create(FwruleRegistry.class)
             .child(FwruleRegistryEntry.class, new FwruleRegistryEntryKey(input.getRuleId()));
         return iid;

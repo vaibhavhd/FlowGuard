@@ -21,7 +21,12 @@ module flowguard {
         leaf inPort {
            type string;
         }
-
+        leaf priority {
+            type uint16;
+            config true;
+            mandatory true;
+            description "Priority of the FW rule";
+         }
         leaf sourceIpAddress {
           type string;
           config true;
@@ -56,10 +61,10 @@ module flowguard {
 
         leaf action {
             type enumeration {
-              enum "block" {
+              enum "deny" {
                 value 1;
                 description
-                    "Block = 1";
+                    "Deny = 1";
               }
               enum "allow" {
                 value 2;
@@ -301,20 +306,7 @@ module flowguard {
         }
     }
 
-    rpc add-static-fwrule {
-        input {
-            leaf filePath {
-                type string;
-              }
-        }
-        output {
-            leaf greeting {
-                type string;
-            }
-        }
-    }
-
-    rpc add-dynamic-fwrule {
+    rpc add-fwrule {
         input {
             uses flowguard:fwrule;
         }
