@@ -3,6 +3,7 @@ import json
 import requests
 import httplib2
 import sys
+import argparse 
 from pathlib import Path
 from requests.auth import HTTPBasicAuth
 
@@ -66,6 +67,14 @@ def pushStaticRules(http,filePath):
     print resp
     
 
+def msg(name=None):
+    return '''flowguard.py
+         [-r, add static firewall rules]
+         [-f, add static flow rules]
+         [-i, start Flowguard]
+         [-a, Init the flow and firewall rules, and start the Flowguard]
+        '''
+
 
 def startFlowguard(http):
     url = 'http://127.0.0.1:8181/restconf/operations/flowguard:flowguard-control'
@@ -81,21 +90,32 @@ def startFlowguard(http):
     print resp
 
 def main():
-
-    if len(sys.argv) != 2:
-	print "Usage: ./flowguard.py /path/to/file/with/static/FW/rules"
-	sys.exit()
-    filePath = sys.argv[1];
-    if not ((Path(filePath)).is_file()):
-	print "Error: File "+ sys.argv[1] +" does not exist"
-	sys.exit();
+    print "\n"
+    parser = argparse.ArgumentParser(description='### Flowguard startup and management utility ###', usage=msg())
+    parser.add_argument("-r", "--addRules",   dest = "rulesPath", help='add static firewall rules')
+    parser.add_argument("-f", "--addFlows", dest = "flowsPath", help='add static flow rules')
+    parser.add_argument("-i", "--startFlowguard", action = "store_true", help = 'start Flowguard')
+    parser.add_argument("-a", "--all", dest = "paths", help = 'Install firewall and flow rules, and start Flowguard')
 
     h = httplib2.Http(".cache")
     h.add_credentials('admin', 'admin')
-    #Push the list of Firewall Rules
-    pushStaticRules(h, filePath)
-    #Enable Flowguard
-    startFlowguard(h)
+    
+    args = parser.parse_args() 
+    if args.rulesPath != None:
+	if not ((Path(args.rulesPath)).is_file()):
+		print "Error: File "+ args.rulesPath +" does not exist"
+		sys.exit();
+	#Push the list of Firewall Rules
+	pushStaticRules(h, args.rulesPath)
+    elif args.flowsPath != None:
+	if not ((Path(flowsPath)).is_file()):
+		print "Error: File "+ rulesPath +" does not exist"
+		sys.exit();
+	#Push the list of Flow Rules
+	#pushStaticFlows(h, filePath)
+    elif args.startFlowguard == True:
+	#Enable Flowguard
+    	startFlowguard(h)
 
 if __name__ == "__main__":
 	main()
