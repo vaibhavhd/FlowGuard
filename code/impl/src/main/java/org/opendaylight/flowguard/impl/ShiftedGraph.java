@@ -519,20 +519,22 @@ public class ShiftedGraph {
                     System.out.println("Flow reached to the Destination " + targetdpid + " . No installed flows in switch: " + SWITCHDPID);
                     this.printFlowInfo(sample, true);
                     sample.is_finished = true;
+                    flowinfo.is_finished = true;
                     return;
                 }else{
                 	System.out.println("DEBUG1 NO FLOW FOR: SWITCHDPID=" + SWITCHDPID + "\n sample dpid:" + sample.next_switch_dpid + "target dpid:" + targetdpid  );
                     System.out.println("Flow is not reachable to target: " +targetdpid + "Node: " + SWITCHDPID + " has no flows!!!");
                     this.printFlowInfo(sample, false);
                     sample.is_finished = true;
+                    flowinfo.is_finished = true;
                     return;
                 }
 
-                if(sample.is_finished == true){
+                if(sample.is_finished){
                     System.out.println("Sample address space is covered is entire overlapped by existing Flow"
                             + "\n Propagation stopped at " + sample.rule_node_name + " !!!");
+                    flowinfo.is_finished = true;
                     this.printFlowInfo(sample, false);
-                    sample.is_finished = true;
                     return;
                 }
                 /* Flows have not reached the destination switch */
@@ -570,6 +572,13 @@ public class ShiftedGraph {
                                  * Propagate all the matching flows with the respective index in the flow table
                                  *  */
                                 this.propagateFlow(sample_clone, target, i);
+                                if (sample_clone.is_finished) {
+                                	sample.is_finished = true;
+                                	flowinfo.is_finished = true;
+                                    System.out.println("Propagation finished already! Returning...");
+                                    return;
+                                }
+                                
                         }
                     }
                 }
@@ -607,10 +616,11 @@ public class ShiftedGraph {
                             //System.out.println("Number of actions in the rule: "+flowRule.actionList.size());
                             if(flowRule.actionList == null) {
                                 flowRule = FlowRuleNode.computeFlow(flowRule, sample, null);
-                                sample = flowRule.flow_info;
-                                if(sample.is_finished) {
+                                if(flowRule.flow_info.is_finished) {
+                                	sample.is_finished = true;
+                                	flowinfo.is_finished = true;
+                                	sample = flowRule.flow_info;
                                     System.out.println("Flow has been dropped by the tablemiss entry");
-                                    sample.is_finished = true;
                                     this.printFlowInfo(sample, false);
                                     return;
                                 }
@@ -636,6 +646,7 @@ public class ShiftedGraph {
                                     /* Reaching here would mean that the matching flow had been found */
                                     System.out.println("Sample information before propagation:");
                                     System.out.println("Sample: "+sample.next_switch_dpid+" Port: "+sample.next_ingress_port);
+                                    FlowInfo old = sample;
                                     sample = flowRule.flow_info;
                                     System.out.println("Sample information after compute:");
                                     System.out.println("Sample: "+sample.next_switch_dpid+" Port: "+sample.next_ingress_port);
@@ -643,6 +654,8 @@ public class ShiftedGraph {
                                         System.out.println("Sample is not reachable: Packet drop by flow rule!");
                                         this.printFlowInfo(sample, false);
                                         sample.is_finished = true;
+                                        old.is_finished = true;
+                                        flowinfo.is_finished = true;
                                         return;
                                     } else {
                                         /* If the flow has not reached the destination, find the next node to hop and propagate */
@@ -656,6 +669,8 @@ public class ShiftedGraph {
                                             System.out.println("Flows are reached to the Destination!!!");
                                             this.printFlowInfo(sample, true);
                                             sample.is_finished = true;
+                                            old.is_finished = true;
+                                            flowinfo.is_finished = true;
                                             return;
                                         }
                                     }
@@ -671,7 +686,9 @@ public class ShiftedGraph {
                                     FlowInfo tempSample = this.findNextConnection(sample);
                                     if(tempSample == null) {
                                         /* The next connection to the port in the present switch is not a switch node */
-                                        System.out.println("Reached a host when searching for a node");
+                                        System.out.println("Reached a host(Or nothing) when searching for a node");
+                                        /* After every action packet, the original packet before action has to be sent */
+                                        sample = old;
                                         continue;
                                     } else {
                                         sample = tempSample;
@@ -680,8 +697,12 @@ public class ShiftedGraph {
                                     System.out.println("Node information after propagation:");
                                     System.out.println("Node: "+sample.next_switch_dpid+" Port: "+sample.next_ingress_port);
                                     propagateFlow(sample, target,0);
-                                    if(sample.is_finished)
+                                    if(sample.is_finished) {
+                                    	System.out.println("Should not reach here");
+                                    	flowinfo.is_finished = true;
+                                    	old.is_finished = true;
                                         return;
+                                    }
                                 }
                             }
                             break;
@@ -708,6 +729,7 @@ public class ShiftedGraph {
                                 System.out.println("NO FLOW FOR: SWITCHDPID=" + SWITCHDPID + "\n sample dpid:" + sample.next_switch_dpid + "target dpid:" + targetdpid  );
                                 this.printFlowInfo(sample, true);
                                 sample.is_finished = true;
+                                flowinfo.is_finished = true;
                                 return;
                             }
                             System.out.println("No rules in the next switch table matched: Flows are unreachable!!!");
@@ -720,6 +742,7 @@ public class ShiftedGraph {
 
                             this.printFlowInfo(sample, false);
                             sample.is_finished = true;
+                            flowinfo.is_finished = true;
                             return;
                         }
                         continue;

@@ -569,6 +569,7 @@ public class FlowRuleNode {
                     //The flow rule has no output action; drop the packet
                     System.out.println("Flow rule ACTION=DROP");
                     processingflow.is_finished = true;
+                    inputflow.is_finished = true;
                   //add flow information in the flow history
                     if (processingflow.flow_history == null)
                         processingflow.flow_history =new ArrayList<FlowInfo>();
@@ -677,6 +678,7 @@ public class FlowRuleNode {
                                         if(flowRuleNode.nw_src_maskbits >= processingflow.current_ho.diff.get(i).nw_src_maskbits){
                                             //full overlap : FlowRuleNode ip_range is in current_ho.diff.get(i)
                                             processingflow.is_finished = true;
+                                            inputflow.is_finished = true;
                                             break;
                                         }
                                     }
@@ -753,6 +755,7 @@ public class FlowRuleNode {
                                         if(processingflow.current_ho.nw_src_maskbits >= flowRuleNode.diff.get(i).nw_src_maskbits){
                                             //full overlap : current_ho ip_range is in FlowRuleNode.diff.get(i)
                                             processingflow.is_finished = true;
+                                            inputflow.is_finished = true;
                                             break;
                                         }
                                     }

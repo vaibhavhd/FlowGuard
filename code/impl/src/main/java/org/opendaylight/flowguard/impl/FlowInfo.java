@@ -20,7 +20,7 @@ public class FlowInfo {
     public int flow_index = 0;
     public String firewall_ruldid;
     /* Do not convert this to premitive type boolean */
-    public Boolean is_finished = new Boolean(false);
+    public boolean is_finished = false;
     public HeaderObject current_ho; //input header objects
     public HeaderObject next_ho; //output header objects
     public String next_switch_dpid; //next switch id to propagate
