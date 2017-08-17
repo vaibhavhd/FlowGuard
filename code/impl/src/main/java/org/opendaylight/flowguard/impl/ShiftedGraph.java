@@ -578,7 +578,7 @@ public class ShiftedGraph {
                                     System.out.println("Propagation finished already! Returning...");
                                     return;
                                 }
-                                
+
                         }
                     }
                 }
@@ -624,6 +624,7 @@ public class ShiftedGraph {
                                     this.printFlowInfo(sample, false);
                                     return;
                                 }
+                                sample = flowRule.flow_info;
                                 continue;
                             }
                             else {
@@ -688,7 +689,7 @@ public class ShiftedGraph {
                                         /* The next connection to the port in the present switch is not a switch node */
                                         System.out.println("Reached a host(Or nothing) when searching for a node");
                                         /* After every action packet, the original packet before action has to be sent */
-                                        sample = old;
+                                        //sample = old;
                                         continue;
                                     } else {
                                         sample = tempSample;
