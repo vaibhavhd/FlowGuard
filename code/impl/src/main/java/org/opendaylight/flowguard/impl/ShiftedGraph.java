@@ -38,14 +38,20 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.google.common.base.Optional;
+import com.google.common.base.Preconditions;
 import com.google.common.net.InetAddresses;
+import com.google.common.util.concurrent.CheckedFuture;
+import com.google.common.util.concurrent.Futures;
 
 import org.restlet.resource.Post;
 import org.restlet.resource.Resource;
 import org.restlet.resource.ServerResource;
 import org.opendaylight.controller.liblldp.EtherTypes;
+import org.opendaylight.controller.md.sal.binding.api.DataBroker;
 import org.opendaylight.controller.md.sal.binding.api.ReadTransaction;
+import org.opendaylight.controller.md.sal.binding.api.WriteTransaction;
 import org.opendaylight.controller.md.sal.common.api.data.LogicalDatastoreType;
+import org.opendaylight.controller.md.sal.common.api.data.TransactionCommitFailedException;
 
 /*
 import net.floodlightcontroller.core.IFloodlightProviderService;
@@ -67,16 +73,25 @@ import org.opendaylight.flowguard.packet.Ethernet;
 import org.opendaylight.flowguard.packet.IPv4;
 import org.opendaylight.yang.gen.v1.urn.ietf.params.xml.ns.yang.ietf.inet.types.rev130715.IpAddress;
 import org.opendaylight.yang.gen.v1.urn.ietf.params.xml.ns.yang.ietf.inet.types.rev130715.Ipv4Address;
+import org.opendaylight.yang.gen.v1.urn.ietf.params.xml.ns.yang.ietf.inet.types.rev130715.Ipv4Prefix;
+import org.opendaylight.yang.gen.v1.urn.ietf.params.xml.ns.yang.ietf.inet.types.rev130715.PortNumber;
 import org.opendaylight.yang.gen.v1.urn.ietf.params.xml.ns.yang.ietf.inet.types.rev130715.Uri;
 import org.opendaylight.yang.gen.v1.urn.opendaylight.address.tracker.rev140617.AddressCapableNodeConnector;
 import org.opendaylight.yang.gen.v1.urn.opendaylight.address.tracker.rev140617.address.node.connector.Addresses;
+import org.opendaylight.yang.gen.v1.urn.opendaylight.flow.inventory.rev130819.FlowCapableNode;
+import org.opendaylight.yang.gen.v1.urn.opendaylight.flow.inventory.rev130819.FlowId;
 import org.opendaylight.yang.gen.v1.urn.opendaylight.flow.inventory.rev130819.tables.Table;
+import org.opendaylight.yang.gen.v1.urn.opendaylight.flow.inventory.rev130819.tables.TableKey;
 import org.opendaylight.yang.gen.v1.urn.opendaylight.flow.inventory.rev130819.tables.table.Flow;
 import org.opendaylight.yang.gen.v1.urn.opendaylight.flow.inventory.rev130819.tables.table.FlowBuilder;
+import org.opendaylight.yang.gen.v1.urn.opendaylight.flow.inventory.rev130819.tables.table.FlowKey;
+import org.opendaylight.yang.gen.v1.urn.opendaylight.flow.types.rev131026.flow.MatchBuilder;
 import org.opendaylight.yang.gen.v1.urn.opendaylight.inventory.rev130819.NodeConnectorId;
+import org.opendaylight.yang.gen.v1.urn.opendaylight.inventory.rev130819.NodeId;
 import org.opendaylight.yang.gen.v1.urn.opendaylight.inventory.rev130819.Nodes;
 import org.opendaylight.yang.gen.v1.urn.opendaylight.inventory.rev130819.node.NodeConnector;
 import org.opendaylight.yang.gen.v1.urn.opendaylight.inventory.rev130819.nodes.Node;
+import org.opendaylight.yang.gen.v1.urn.opendaylight.inventory.rev130819.nodes.NodeKey;
 import org.opendaylight.yang.gen.v1.urn.opendaylight.model.match.types.rev131026.vlan.match.fields.VlanId;
 import org.opendaylight.yangtools.yang.binding.InstanceIdentifier;
 
@@ -107,12 +122,14 @@ public class ShiftedGraph {
     protected List<FirewallRule> rules; // protected by synchronized
     protected boolean enabled;
     protected int subnet_mask = IPv4.toIPv4Address("255.255.255.0");
+	private DataBroker db;
 
-    public ShiftedGraph(Flowguard firewall, ReadTransaction readTx, Map<String, List<FlowRuleNode>> flowStorage, Map<TopologyStruct, TopologyStruct> topologyStorage) {
+    public ShiftedGraph(Flowguard firewall, ReadTransaction readTx, Map<String, List<FlowRuleNode>> flowStorage, Map<TopologyStruct, TopologyStruct> topologyStorage, DataBroker db) {
         this.firewall = firewall;
     	this.readTx = readTx;
         this.FlowRuleNodes = flowStorage;
         this.topologyStorage = topologyStorage;
+        this.db = db;
     }
 
     public HeaderObject computeInverseFlow(FlowInfo flowinfo){
@@ -407,10 +424,57 @@ public class ShiftedGraph {
         String rulename = "resolution"+Integer.toString(this.resolution_index);
         this.resolution_index++;
         System.out.println("Flow rule to be added" + rulename);
+        
+        NodeId nodeId = new NodeId(dpid);
+        String destIP = IPv4.fromIPv4Address(ho.nw_dst_prefix)+"/"+Integer.toString(ho.nw_dst_maskbits);
+        String srcIP = IPv4.fromIPv4Address(ho.nw_src_prefix)+"/"+Integer.toString(ho.nw_src_maskbits);
+
+        PortNumber destPort = new PortNumber(Character.getNumericValue(port.charAt(port.length()-1))); 
+        // Creating match object
+        MatchBuilder matchBuilder = new MatchBuilder();
+        MatchUtils.createDstL3IPv4Match(matchBuilder, new Ipv4Prefix(destIP), new Ipv4Prefix(srcIP));
+        matchBuilder.setInPort(new NodeConnectorId(port));
+        /*
+         * Create Flow
+         */
+        String flowId = rulename;
+        FlowBuilder flowBuilder = new FlowBuilder();
+        flowBuilder.setMatch(matchBuilder.build());
+        flowBuilder.setId(new FlowId(flowId));
+        FlowKey key = new FlowKey(new FlowId(flowId));
+        flowBuilder.setBarrier(true);
+        flowBuilder.setTableId((short) 0);
+        flowBuilder.setKey(key);
+        flowBuilder.setPriority(32768);
+        flowBuilder.setFlowName(flowId);
+        flowBuilder.setHardTimeout(0);
+        flowBuilder.setIdleTimeout(0);
+
+        //FirewallRule rule = createFirewallRule(input.getNode(), input.getSourcePort());
+        //this.shiftedGraph.buildSourceProbeNode(rule);
+
+        /*
+         * Perform transaction to store rule.
+         * The instance identifier here provides location where the flow would be written in CONFIG database.
+         * Nodes -> Node -> "add" -> Table -> Flow -> build[flow]()
+         */
+        InstanceIdentifier<Flow> flowIID =
+            InstanceIdentifier.builder(Nodes.class).child(Node.class, new NodeKey(nodeId))
+                .augmentation(FlowCapableNode.class)
+                .child(Table.class, new TableKey(flowBuilder.getTableId()))
+                .child(Flow.class, flowBuilder.getKey())
+                .build();
+
+        Preconditions.checkNotNull(db);
+        WriteTransaction transaction = db.newWriteOnlyTransaction();
+        transaction.merge( LogicalDatastoreType.CONFIGURATION, flowIID, flowBuilder.build(),true);
+
+        CheckedFuture<Void, TransactionCommitFailedException> future = transaction.submit();
+        Futures.addCallback(future, new LoggingFuturesCallBack<Void>("Failed add firewall rule", LOG));
+
+        LOG.info("Added security rule with ip {} and port {} into node {}", destIP, destPort, dpid);
+
         /* TODO Push flow entry.put(StaticFlowEntryPusher.COLUMN_NAME, rulename);
-        entry.put(StaticFlowEntryPusher.COLUMN_SWITCH, dpid);
-        entry.put(StaticFlowEntryPusher.COLUMN_ACTIVE, Boolean.toString(true));
-        entry.put(StaticFlowEntryPusher.COLUMN_PRIORITY, "32767");
         entry.put(StaticFlowEntryPusher.COLUMN_NW_DST, IPv4.fromIPv4Address(ho.nw_dst_prefix)+"/"+Integer.toString(ho.nw_dst_maskbits));
         entry.put(StaticFlowEntryPusher.COLUMN_NW_SRC, IPv4.fromIPv4Address(ho.nw_src_prefix)+"/"+Integer.toString(ho.nw_src_maskbits));
         entry.put(StaticFlowEntryPusher.COLUMN_DL_TYPE, Short.toString(Ethernet.TYPE_IPv4));
@@ -542,46 +606,7 @@ public class ShiftedGraph {
                  * Index: index of the flow rule in a table. Set to 0 when a FW Rule is tested
                  * Counter:
                  */
-                int counter = 0;
-                if(index == 0){
-                    for(i = index; i < table_size; i++){
-                        // Check if the switch and port of the new flow rule are the same
-                        /* check for flow rule matching IP packet */
-                        System.out.println("sample ingress " + sample.next_ingress_port);
-                        System.out.println("ruleNode {}" + ruletable.get(i).rule_name);
-                        System.out.println(" Wildcarded {}" + FlowRuleNode.isWildcarded(ruletable.get(i).in_port));
-                        if (FlowRuleNode.isWildcarded(ruletable.get(i).in_port) || (sample.next_ingress_port.toString().equals(ruletable.get(i).in_port.toString()))
-                                && ruletable.get(i).dl_type == EtherTypes.IPv4.intValue() && ruletable.get(i).active == true) {
-                            counter++;
-                        }
-                        /* The rule has matched more than one flow(Same: Dpid, inport and ETH_TYPE per switch */
-                        if (counter >= 2
-                                && sample.next_ho.vlan == ruletable.get(i).vlan
-                                && FlowRuleNode.matchIPAddress(sample.next_ho.nw_dst_prefix, sample.next_ho.nw_dst_maskbits,
-                                        ruletable.get(i).nw_dst_prefix, ruletable.get(i).nw_dst_maskbits)
-                                && FlowRuleNode.matchIPAddress(sample.next_ho.nw_src_prefix, sample.next_ho.nw_src_maskbits,
-                                        ruletable.get(i).nw_src_prefix, ruletable.get(i).nw_src_maskbits)){
-                                FlowInfo sample_clone = new FlowInfo();
-                                sample_clone = FlowInfo.valueCopy(sample);
-                                this.current_flow_index++;
-                                sample_clone.flow_index = this.current_flow_index;
-                                /*
-                                 * If two or more flow rules match the sample flow, propagate the cloned sample
-                                 * from the matched index.
-                                 * Match criteria: Same: (DPID, INPORT, ETHTYPE, VLAN, Overlapping SRC DST)
-                                 * Propagate all the matching flows with the respective index in the flow table
-                                 *  */
-                                this.propagateFlow(sample_clone, target, i);
-                                if (sample_clone.is_finished) {
-                                	sample.is_finished = true;
-                                	flowinfo.is_finished = true;
-                                    System.out.println("Propagation finished already! Returning...");
-                                    return;
-                                }
-                                
-                        }
-                    }
-                }
+
 
                 /*  IMPORTANT TODO
                  *  Reached here when ((index==0) && (Rule matches just one flow)) || index != 0
@@ -697,7 +722,7 @@ public class ShiftedGraph {
                                     System.out.println("Node information after propagation:");
                                     System.out.println("Node: "+sample.next_switch_dpid+" Port: "+sample.next_ingress_port);
                                     propagateFlow(sample, target,0);
-                                    if(sample.is_finished) {
+                                    if(sample.is_finished) {	
                                     	System.out.println("Should not reach here");
                                     	flowinfo.is_finished = true;
                                     	old.is_finished = true;

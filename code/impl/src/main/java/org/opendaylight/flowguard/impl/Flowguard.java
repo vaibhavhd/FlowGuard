@@ -87,8 +87,8 @@ public class Flowguard {
         this.importStaticFlows();
         this.importStaticRules();
 
-        this.sg = new ShiftedGraph(this, this.readTx, this.flowStorage, this.topologyStorage);
-        RuleRegistryDataChangeListenerFuture future = new RuleRegistryDataChangeListenerFuture(this.db, this.sg);
+        this.sg = new ShiftedGraph(this, this.readTx, this.flowStorage, this.topologyStorage, this.db);
+        //RuleRegistryDataChangeListenerFuture future = new RuleRegistryDataChangeListenerFuture(this.db, this.sg);
         //Pull the FW Rules from a file.
         if(ruleStorage.size() != 0)
             sg.buildSourceProbeNode(this.ruleStorage);
