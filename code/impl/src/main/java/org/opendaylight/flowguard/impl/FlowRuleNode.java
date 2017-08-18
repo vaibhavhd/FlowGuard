@@ -214,23 +214,30 @@ public class FlowRuleNode {
             if (l3Match instanceof Ipv4Match){
                 Ipv4Prefix src = ((Ipv4Match)flow.getMatch().getLayer3Match()).getIpv4Source();
                 Ipv4Prefix dst = ((Ipv4Match)flow.getMatch().getLayer3Match()).getIpv4Destination();
-                instance.nw_src_prefix = calculateIpfromPrefix(src);
-                instance.nw_src_maskbits = calculateMaskfromPrefix(src);
-                instance.nw_dst_prefix = calculateIpfromPrefix(dst);
-                instance.nw_dst_maskbits = calculateMaskfromPrefix(dst);
+                if(src != null) {
+                    instance.nw_src_prefix = calculateIpfromPrefix(src);
+                    instance.nw_src_maskbits = calculateMaskfromPrefix(src);
+                }
+                if(dst != null) {
+                    instance.nw_dst_prefix = calculateIpfromPrefix(dst);
+                    instance.nw_dst_maskbits = calculateMaskfromPrefix(dst);
+                }
             }
             else if (l3Match instanceof Ipv4MatchArbitraryBitMask){
                 Ipv4Address addr = ((Ipv4MatchArbitraryBitMask)flow.getMatch().getLayer3Match()).getIpv4SourceAddressNoMask();
                 DottedQuad mask = ((Ipv4MatchArbitraryBitMask)flow.getMatch().getLayer3Match()).getIpv4SourceArbitraryBitmask();
                 Ipv4Prefix src = createPrefix(addr, convertArbitraryMaskToByteArray(mask));
-                instance.nw_src_prefix = calculateIpfromPrefix(src);
-                instance.nw_src_maskbits = calculateMaskfromPrefix(src);
-
+                if(src != null) {
+                    instance.nw_src_prefix = calculateIpfromPrefix(src);
+                    instance.nw_src_maskbits = calculateMaskfromPrefix(src);
+                }
                 addr = ((Ipv4MatchArbitraryBitMask)flow.getMatch().getLayer3Match()).getIpv4DestinationAddressNoMask();
                 mask = ((Ipv4MatchArbitraryBitMask)flow.getMatch().getLayer3Match()).getIpv4DestinationArbitraryBitmask();
                 Ipv4Prefix dst = createPrefix(addr, convertArbitraryMaskToByteArray(mask));
-                instance.nw_dst_prefix = calculateIpfromPrefix(dst);
-                instance.nw_dst_maskbits = calculateMaskfromPrefix(dst);
+                if(dst != null) {
+                    instance.nw_dst_prefix = calculateIpfromPrefix(dst);
+                    instance.nw_dst_maskbits = calculateMaskfromPrefix(dst);
+                }
             }
         }
 

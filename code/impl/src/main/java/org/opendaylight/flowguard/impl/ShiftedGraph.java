@@ -542,46 +542,7 @@ public class ShiftedGraph {
                  * Index: index of the flow rule in a table. Set to 0 when a FW Rule is tested
                  * Counter:
                  */
-                int counter = 0;
-                if(index == 0){
-                    for(i = index; i < table_size; i++){
-                        // Check if the switch and port of the new flow rule are the same
-                        /* check for flow rule matching IP packet */
-                        System.out.println("sample ingress " + sample.next_ingress_port);
-                        System.out.println("ruleNode {}" + ruletable.get(i).rule_name);
-                        System.out.println(" Wildcarded {}" + FlowRuleNode.isWildcarded(ruletable.get(i).in_port));
-                        if (FlowRuleNode.isWildcarded(ruletable.get(i).in_port) || (sample.next_ingress_port.toString().equals(ruletable.get(i).in_port.toString()))
-                                && ruletable.get(i).dl_type == EtherTypes.IPv4.intValue() && ruletable.get(i).active == true) {
-                            counter++;
-                        }
-                        /* The rule has matched more than one flow(Same: Dpid, inport and ETH_TYPE per switch */
-                        if (counter >= 2
-                                && sample.next_ho.vlan == ruletable.get(i).vlan
-                                && FlowRuleNode.matchIPAddress(sample.next_ho.nw_dst_prefix, sample.next_ho.nw_dst_maskbits,
-                                        ruletable.get(i).nw_dst_prefix, ruletable.get(i).nw_dst_maskbits)
-                                && FlowRuleNode.matchIPAddress(sample.next_ho.nw_src_prefix, sample.next_ho.nw_src_maskbits,
-                                        ruletable.get(i).nw_src_prefix, ruletable.get(i).nw_src_maskbits)){
-                                FlowInfo sample_clone = new FlowInfo();
-                                sample_clone = FlowInfo.valueCopy(sample);
-                                this.current_flow_index++;
-                                sample_clone.flow_index = this.current_flow_index;
-                                /*
-                                 * If two or more flow rules match the sample flow, propagate the cloned sample
-                                 * from the matched index.
-                                 * Match criteria: Same: (DPID, INPORT, ETHTYPE, VLAN, Overlapping SRC DST)
-                                 * Propagate all the matching flows with the respective index in the flow table
-                                 *  */
-                                this.propagateFlow(sample_clone, target, i);
-                                if (sample_clone.is_finished) {
-                                	sample.is_finished = true;
-                                	flowinfo.is_finished = true;
-                                    System.out.println("Propagation finished already! Returning...");
-                                    return;
-                                }
-
-                        }
-                    }
-                }
+               // TODO CODE REMOVED FOR INDEX == 0
 
                 /*  IMPORTANT TODO
                  *  Reached here when ((index==0) && (Rule matches just one flow)) || index != 0
@@ -629,6 +590,7 @@ public class ShiftedGraph {
                             }
                             else {
                                 for (ActionList actionNode : flowRule.actionList) {
+                                    FlowInfo old = sample;
                                     flowRule = FlowRuleNode.computeFlow(flowRule, sample, actionNode);
                                     /* Now sample should have some propagation history */
                                     if(flowRule.flow_info == null) {
@@ -647,7 +609,7 @@ public class ShiftedGraph {
                                     /* Reaching here would mean that the matching flow had been found */
                                     System.out.println("Sample information before propagation:");
                                     System.out.println("Sample: "+sample.next_switch_dpid+" Port: "+sample.next_ingress_port);
-                                    FlowInfo old = sample;
+
                                     sample = flowRule.flow_info;
                                     System.out.println("Sample information after compute:");
                                     System.out.println("Sample: "+sample.next_switch_dpid+" Port: "+sample.next_ingress_port);
@@ -687,9 +649,7 @@ public class ShiftedGraph {
                                     FlowInfo tempSample = this.findNextConnection(sample);
                                     if(tempSample == null) {
                                         /* The next connection to the port in the present switch is not a switch node */
-                                        System.out.println("Reached a host(Or nothing) when searching for a node");
-                                        /* After every action packet, the original packet before action has to be sent */
-                                        //sample = old;
+                                        System.out.println("Reached a host(or nothing) when searching for a node");
                                         continue;
                                     } else {
                                         sample = tempSample;
