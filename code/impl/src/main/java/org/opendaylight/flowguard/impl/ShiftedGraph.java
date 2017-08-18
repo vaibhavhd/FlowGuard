@@ -606,7 +606,7 @@ public class ShiftedGraph {
                  * Index: index of the flow rule in a table. Set to 0 when a FW Rule is tested
                  * Counter:
                  */
-
+                // TODO Propagation for inde=0 removed
 
                 /*  IMPORTANT TODO
                  *  Reached here when ((index==0) && (Rule matches just one flow)) || index != 0
@@ -649,6 +649,7 @@ public class ShiftedGraph {
                                     this.printFlowInfo(sample, false);
                                     return;
                                 }
+                                sample = flowRule.flow_info;
                                 continue;
                             }
                             else {
@@ -713,7 +714,7 @@ public class ShiftedGraph {
                                         /* The next connection to the port in the present switch is not a switch node */
                                         System.out.println("Reached a host(Or nothing) when searching for a node");
                                         /* After every action packet, the original packet before action has to be sent */
-                                        sample = old;
+                                        //sample = old;
                                         continue;
                                     } else {
                                         sample = tempSample;
