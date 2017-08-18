@@ -32,17 +32,17 @@ public class MatchUtils {
   public static final long VLANTAGGED_LONG = (long) 0x8100;
   public static final long MPLSUCAST_LONG = (long) 0x8847;
 
-  public static MatchBuilder createDstL3IPv4Match(MatchBuilder matchBuilder, Ipv4Prefix dstip) {
+  public static MatchBuilder createDstL3IPv4Match(MatchBuilder matchBuilder, Ipv4Prefix dstIp, Ipv4Prefix srcIp) {
 
     EthernetMatchBuilder eth = new EthernetMatchBuilder();
     EthernetTypeBuilder ethTypeBuilder = new EthernetTypeBuilder();
     ethTypeBuilder.setType(new EtherType(IPV4_LONG));
     eth.setEthernetType(ethTypeBuilder.build());
     matchBuilder.setEthernetMatch(eth.build());
-
+    
     Ipv4MatchBuilder ipv4match = new Ipv4MatchBuilder();
-    ipv4match.setIpv4Destination(dstip);
-
+    ipv4match.setIpv4Destination(dstIp);
+    ipv4match.setIpv4Source(srcIp);
     matchBuilder.setLayer3Match(ipv4match.build());
 
     return matchBuilder;

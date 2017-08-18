@@ -161,57 +161,6 @@ public class RuleRegistryDataChangeListenerFuture extends AbstractFuture<RuleReg
 
     }
 
-    private void addFlowRule(RuleRegistryEntry input) {
-
-        NodeId nodeId = new NodeId(input.getNode());
-
-        // Creating match object
-        MatchBuilder matchBuilder = new MatchBuilder();
-        MatchUtils.createDstL3IPv4Match(matchBuilder, new Ipv4Prefix(input.getDestinationIpAddress()));// getIpAddr()));
-        MatchUtils.createSetDstTcpMatch(matchBuilder, new PortNumber((input.getDestinationPort())));//getPort())));
-
-        /*
-         * Create Flow
-         */
-        String flowId = "New firewall rule" + input.getName();
-        FlowBuilder flowBuilder = new FlowBuilder();
-        flowBuilder.setMatch(matchBuilder.build());
-        flowBuilder.setId(new FlowId(flowId));
-        FlowKey key = new FlowKey(new FlowId(flowId));
-        flowBuilder.setBarrier(true);
-        flowBuilder.setTableId((short) 0);
-        flowBuilder.setKey(key);
-        flowBuilder.setPriority(32768);
-        flowBuilder.setFlowName(flowId);
-        flowBuilder.setHardTimeout(0);
-        flowBuilder.setIdleTimeout(0);
-
-        //FirewallRule rule = createFirewallRule(input.getNode(), input.getSourcePort());
-        //this.shiftedGraph.buildSourceProbeNode(rule);
-
-        /*
-         * Perform transaction to store rule.
-         * The instance identifier here provides location where the flow would be written in CONFIG database.
-         * Nodes -> Node -> "add" -> Table -> Flow -> build[flow]()
-         */
-        InstanceIdentifier<Flow> flowIID =
-                InstanceIdentifier.builder(Nodes.class).child(Node.class, new NodeKey(nodeId))
-                .augmentation(FlowCapableNode.class)
-                .child(Table.class, new TableKey(flowBuilder.getTableId()))
-                .child(Flow.class, flowBuilder.getKey())
-                .build();
-
-        Preconditions.checkNotNull(db);
-        WriteTransaction transaction = db.newWriteOnlyTransaction();
-        transaction.merge( LogicalDatastoreType.CONFIGURATION, flowIID, flowBuilder.build(),true);
-
-        CheckedFuture<Void, TransactionCommitFailedException> future = transaction.submit();
-        Futures.addCallback(future, new LoggingFuturesCallBack<Void>("Failed add firewall rule", LOG));
-
-        LOG.info("Added security rule with ip {} and port {} into node {}", input.getDestinationIpAddress(), input.getDestinationPort(),input.getNode());
-
-    }
-
     @Override
     public boolean cancel(boolean mayInterruptIfRunning) {
         quietClose();
