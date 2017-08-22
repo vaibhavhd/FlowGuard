@@ -1,4 +1,0 @@
-ruleid	dpid	in_port	nw_src_prefix	nw_dst_prefix	tp_src	tp_dst	action
-1	openflow:1	openflow:1:1	10.0.0.1/32	10.0.0.2/32	1	80	DENY
-2	openflow:2	openflow:2:1	10.0.0.2/32	10.0.0.1/32	1	80	DENY
-10	openflow:10	openflow:10:1	10.0.0.10/32	10.0.0.10/32	1	80	DENY

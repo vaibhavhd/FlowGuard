@@ -221,6 +221,13 @@ public class ShiftedGraph {
             }else{
                 this.resolution_method = 4;
             }
+            /* The header space of the blocking rule for the ingress switch is a combination of the
+             * source address of the violated space (S v ) and the destination address of the incoming
+             * space (S i P ), denoted as [P v s , P i d ]. The header space of the blocking rule for
+             * the egress switch is combined from the source address of the outgoing space (S o P )
+             * and the destination address of the violated space (S v ), denoted as [P o s , P v d ]
+             * Violated Space: Tracked space which should be denied and thus is a violation.
+             */
             //egress switch block
             this.addFlowEntry(flowinfo.flow_history.get(flowinfo.flow_history.size()-1).current_ho,
                     flowinfo.flow_history.get(flowinfo.flow_history.size()-1).current_switch_dpid,
@@ -403,6 +410,7 @@ public class ShiftedGraph {
         rule.priority = 32768;
         rule.dpid = dpid;
         rule.wildcard_dpid = false;
+        // TODO Handle wildcarded in_ports
         rule.in_port = new String(port);
         rule.wildcard_in_port = false;
         rule.wildcard_nw_src = false;
@@ -423,13 +431,14 @@ public class ShiftedGraph {
         Map<String, Object> entry = new HashMap<String, Object>();
         String rulename = "resolution"+Integer.toString(this.resolution_index);
         this.resolution_index++;
-        System.out.println("Flow rule to be added" + rulename);
+        System.out.printf("Adding a new rule(%s) to the node(%s) for inPort(%s)\n", rulename, dpid, port);
 
         NodeId nodeId = new NodeId(dpid);
         String destIP = IPv4.fromIPv4Address(ho.nw_dst_prefix)+"/"+Integer.toString(ho.nw_dst_maskbits);
         String srcIP = IPv4.fromIPv4Address(ho.nw_src_prefix)+"/"+Integer.toString(ho.nw_src_maskbits);
 
-        PortNumber destPort = new PortNumber(Character.getNumericValue(port.charAt(port.length()-1)));
+        System.out.printf("Rule: DENY source(%s) to dest(%s)\n", srcIP, destIP);
+
         // Creating match object
         MatchBuilder matchBuilder = new MatchBuilder();
         MatchUtils.createDstL3IPv4Match(matchBuilder, new Ipv4Prefix(destIP), new Ipv4Prefix(srcIP));
@@ -445,7 +454,7 @@ public class ShiftedGraph {
         flowBuilder.setBarrier(true);
         flowBuilder.setTableId((short) 0);
         flowBuilder.setKey(key);
-        flowBuilder.setPriority(32768);
+        flowBuilder.setPriority(32767);
         flowBuilder.setFlowName(flowId);
         flowBuilder.setHardTimeout(0);
         flowBuilder.setIdleTimeout(0);
@@ -472,7 +481,7 @@ public class ShiftedGraph {
         CheckedFuture<Void, TransactionCommitFailedException> future = transaction.submit();
         Futures.addCallback(future, new LoggingFuturesCallBack<Void>("Failed add firewall rule", LOG));
 
-        LOG.info("Added security rule with ip {} and port {} into node {}", destIP, destPort, dpid);
+        LOG.info("Added security rule with ip {} and port {} into node {}", destIP, port, dpid);
 
         /* TODO Push flow entry.put(StaticFlowEntryPusher.COLUMN_NAME, rulename);
         entry.put(StaticFlowEntryPusher.COLUMN_NW_DST, IPv4.fromIPv4Address(ho.nw_dst_prefix)+"/"+Integer.toString(ho.nw_dst_maskbits));
@@ -731,7 +740,7 @@ public class ShiftedGraph {
                                     }
                                 }
                             }
-                            break;
+                            //break;
                         } else {
                             // TODO unmatch_count++ ???
                             //  Link Layer Discovery Protocol (LLDP) comes here.

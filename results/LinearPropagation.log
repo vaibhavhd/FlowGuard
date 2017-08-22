@@ -1,27 +1,52 @@
 MININET RULES:
 
-mininet> dpctl dump-flows -O OpenFlow13
-*** s1 ------------------------------------------------------------------------
-OFPST_FLOW reply (OF1.3) (xid=0x2):
- cookie=0x2b00000000000001, duration=12.268s, table=0, n_packets=3, n_bytes=255, priority=100,dl_type=0x88cc actions=CONTROLLER:65535
- cookie=0x2b00000000000000, duration=6.289s, table=0, n_packets=18, n_bytes=1484, priority=2,in_port=2 actions=output:1
- cookie=0x2b00000000000001, duration=6.289s, table=0, n_packets=8, n_bytes=616, priority=2,in_port=1 actions=output:2,CONTROLLER:65535
- cookie=0x2b00000000000001, duration=12.268s, table=0, n_packets=9, n_bytes=722, priority=0 actions=drop
-*** s2 ------------------------------------------------------------------------
-OFPST_FLOW reply (OF1.3) (xid=0x2):
- cookie=0x2b00000000000000, duration=12.190s, table=0, n_packets=6, n_bytes=510, priority=100,dl_type=0x88cc actions=CONTROLLER:65535
- cookie=0x2b00000000000002, duration=6.290s, table=0, n_packets=8, n_bytes=672, priority=2,in_port=1 actions=output:3,output:2,CONTROLLER:65535
- cookie=0x2b00000000000003, duration=6.289s, table=0, n_packets=10, n_bytes=812, priority=2,in_port=3 actions=output:1,output:2
- cookie=0x2b00000000000004, duration=6.288s, table=0, n_packets=8, n_bytes=616, priority=2,in_port=2 actions=output:1,output:3
- cookie=0x2b00000000000000, duration=12.190s, table=0, n_packets=16, n_bytes=1284, priority=0 actions=drop
-*** s3 ------------------------------------------------------------------------
-OFPST_FLOW reply (OF1.3) (xid=0x2):
- cookie=0x2b00000000000002, duration=12.239s, table=0, n_packets=3, n_bytes=255, priority=100,dl_type=0x88cc actions=CONTROLLER:65535
- cookie=0x2b00000000000005, duration=6.287s, table=0, n_packets=16, n_bytes=1288, priority=2,in_port=2 actions=output:1
- cookie=0x2b00000000000006, duration=6.287s, table=0, n_packets=10, n_bytes=812, priority=2,in_port=1 actions=output:2,CONTROLLER:65535
- cookie=0x2b00000000000002, duration=12.239s, table=0, n_packets=7, n_bytes=638, priority=0 actions=drop
+Before FLOWGUARD
+	mininet> dpctl dump-flows -O OpenFlow13
+	*** s1 ------------------------------------------------------------------------
+	OFPST_FLOW reply (OF1.3) (xid=0x2):
+	 cookie=0x2b00000000000001, duration=12.268s, table=0, n_packets=3, n_bytes=255, priority=100,dl_type=0x88cc actions=CONTROLLER:65535
+	 cookie=0x2b00000000000000, duration=6.289s, table=0, n_packets=18, n_bytes=1484, priority=2,in_port=2 actions=output:1
+	 cookie=0x2b00000000000001, duration=6.289s, table=0, n_packets=8, n_bytes=616, priority=2,in_port=1 actions=output:2,CONTROLLER:65535
+	 cookie=0x2b00000000000001, duration=12.268s, table=0, n_packets=9, n_bytes=722, priority=0 actions=drop
+	*** s2 ------------------------------------------------------------------------
+	OFPST_FLOW reply (OF1.3) (xid=0x2):
+	 cookie=0x2b00000000000000, duration=12.190s, table=0, n_packets=6, n_bytes=510, priority=100,dl_type=0x88cc actions=CONTROLLER:65535
+	 cookie=0x2b00000000000002, duration=6.290s, table=0, n_packets=8, n_bytes=672, priority=2,in_port=1 actions=output:3,output:2,CONTROLLER:65535
+	 cookie=0x2b00000000000003, duration=6.289s, table=0, n_packets=10, n_bytes=812, priority=2,in_port=3 actions=output:1,output:2
+	 cookie=0x2b00000000000004, duration=6.288s, table=0, n_packets=8, n_bytes=616, priority=2,in_port=2 actions=output:1,output:3
+	 cookie=0x2b00000000000000, duration=12.190s, table=0, n_packets=16, n_bytes=1284, priority=0 actions=drop
+	*** s3 ------------------------------------------------------------------------
+	OFPST_FLOW reply (OF1.3) (xid=0x2):
+	 cookie=0x2b00000000000002, duration=12.239s, table=0, n_packets=3, n_bytes=255, priority=100,dl_type=0x88cc actions=CONTROLLER:65535
+	 cookie=0x2b00000000000005, duration=6.287s, table=0, n_packets=16, n_bytes=1288, priority=2,in_port=2 actions=output:1
+	 cookie=0x2b00000000000006, duration=6.287s, table=0, n_packets=10, n_bytes=812, priority=2,in_port=1 actions=output:2,CONTROLLER:65535
+	 cookie=0x2b00000000000002, duration=12.239s, table=0, n_packets=7, n_bytes=638, priority=0 actions=drop
 
-
+After Flowguard
+	mininet> dpctl dump-flows -O OpenFlow13
+	*** s1 ------------------------------------------------------------------------
+	OFPST_FLOW reply (OF1.3) (xid=0x2):
+	 cookie=0x0, duration=3.011s, table=0, n_packets=0, n_bytes=0, priority=32767,ip,in_port=1,nw_src=0.0.0.0/8,nw_dst=0.0.0.0/8 actions=drop
+	 cookie=0x0, duration=2.933s, table=0, n_packets=0, n_bytes=0, priority=32767,ip,in_port=2,nw_src=10.0.0.0/8,nw_dst=10.0.0.0/8 actions=drop
+	 cookie=0x2b00000000000006, duration=47.119s, table=0, n_packets=9, n_bytes=765, priority=100,dl_type=0x88cc actions=CONTROLLER:65535
+	 cookie=0x2b00000000000010, duration=41.485s, table=0, n_packets=22, n_bytes=1708, priority=2,in_port=2 actions=output:1
+	 cookie=0x2b00000000000011, duration=41.485s, table=0, n_packets=10, n_bytes=756, priority=2,in_port=1 actions=output:2,CONTROLLER:65535
+	 cookie=0x2b00000000000006, duration=47.119s, table=0, n_packets=10, n_bytes=532, priority=0 actions=drop
+	*** s2 ------------------------------------------------------------------------
+	OFPST_FLOW reply (OF1.3) (xid=0x2):
+	 cookie=0x0, duration=3.022s, table=0, n_packets=0, n_bytes=0, priority=32767,ip,in_port=2,nw_src=10.0.0.0/8,nw_dst=10.0.0.0/8 actions=drop
+	 cookie=0x2b00000000000008, duration=47.497s, table=0, n_packets=20, n_bytes=1700, priority=100,dl_type=0x88cc actions=CONTROLLER:65535
+	 cookie=0x2b00000000000012, duration=41.487s, table=0, n_packets=11, n_bytes=854, priority=2,in_port=1 actions=output:3,output:2,CONTROLLER:65535
+	 cookie=0x2b00000000000013, duration=41.487s, table=0, n_packets=11, n_bytes=854, priority=2,in_port=3 actions=output:1,output:2
+	 cookie=0x2b00000000000014, duration=41.487s, table=0, n_packets=10, n_bytes=756, priority=2,in_port=2 actions=output:1,output:3
+	 cookie=0x2b00000000000008, duration=47.497s, table=0, n_packets=6, n_bytes=420, priority=0 actions=drop
+	*** s3 ------------------------------------------------------------------------
+	OFPST_FLOW reply (OF1.3) (xid=0x2):
+	 cookie=0x0, duration=2.922s, table=0, n_packets=0, n_bytes=0, priority=32767,ip,in_port=1,nw_src=0.0.0.0/8,nw_dst=0.0.0.0/8 actions=drop
+	 cookie=0x2b00000000000007, duration=47.029s, table=0, n_packets=9, n_bytes=765, priority=100,dl_type=0x88cc actions=CONTROLLER:65535
+	 cookie=0x2b00000000000015, duration=41.490s, table=0, n_packets=21, n_bytes=1610, priority=2,in_port=2 actions=output:1
+	 cookie=0x2b00000000000016, duration=41.490s, table=0, n_packets=11, n_bytes=854, priority=2,in_port=1 actions=output:2,CONTROLLER:65535
+	 cookie=0x2b00000000000007, duration=47.029s, table=0, n_packets=4, n_bytes=280, priority=0 actions=drop
 
 
 Priority of rule 80	rule ID 4

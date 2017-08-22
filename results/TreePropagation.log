@@ -1,0 +1,738 @@
+MININET RULES:
+
+Before FLOWGUARD:
+mininet> dpctl dump-flows -O OpenFlow13
+	*** s1 ------------------------------------------------------------------------
+	OFPST_FLOW reply (OF1.3) (xid=0x2):
+	 cookie=0x2b00000000000004, duration=159.285s, table=0, n_packets=66, n_bytes=5610, priority=100,dl_type=0x88cc actions=CONTROLLER:65535
+	 cookie=0x2b00000000000009, duration=153.323s, table=0, n_packets=25, n_bytes=1946, priority=2,in_port=1 actions=output:2
+	 cookie=0x2b00000000000008, duration=153.320s, table=0, n_packets=27, n_bytes=2142, priority=2,in_port=2 actions=output:1
+	 cookie=0x2b00000000000004, duration=159.285s, table=0, n_packets=2, n_bytes=140, priority=0 actions=drop
+	*** s2 ------------------------------------------------------------------------
+	OFPST_FLOW reply (OF1.3) (xid=0x2):
+	 cookie=0x2b00000000000005, duration=159.333s, table=0, n_packets=33, n_bytes=2805, priority=100,dl_type=0x88cc actions=CONTROLLER:65535
+	 cookie=0x2a00000000000004, duration=152.873s, table=0, n_packets=6, n_bytes=588, idle_timeout=600, hard_timeout=300, priority=10,dl_src=00:00:00:00:00:02,dl_dst=00:00:00:00:00:01 actions=output:1
+	 cookie=0x2a00000000000005, duration=152.867s, table=0, n_packets=4, n_bytes=392, idle_timeout=600, hard_timeout=300, priority=10,dl_src=00:00:00:00:00:01,dl_dst=00:00:00:00:00:02 actions=output:2
+	 cookie=0x2b0000000000000a, duration=153.323s, table=0, n_packets=9, n_bytes=658, priority=2,in_port=1 actions=output:3,output:2,CONTROLLER:65535
+	 cookie=0x2b0000000000000b, duration=153.323s, table=0, n_packets=27, n_bytes=2142, priority=2,in_port=3 actions=output:1,output:2
+	 cookie=0x2b0000000000000c, duration=153.323s, table=0, n_packets=10, n_bytes=700, priority=2,in_port=2 actions=output:1,output:3,CONTROLLER:65535
+	 cookie=0x2b00000000000005, duration=159.333s, table=0, n_packets=11, n_bytes=602, priority=0 actions=drop
+	*** s3 ------------------------------------------------------------------------
+	OFPST_FLOW reply (OF1.3) (xid=0x2):
+	 cookie=0x2b00000000000003, duration=159.248s, table=0, n_packets=33, n_bytes=2805, priority=100,dl_type=0x88cc actions=CONTROLLER:65535
+	 cookie=0x2a00000000000006, duration=152.858s, table=0, n_packets=3, n_bytes=238, idle_timeout=600, hard_timeout=300, priority=10,dl_src=00:00:00:00:00:03,dl_dst=00:00:00:00:00:04 actions=output:2
+	 cookie=0x2a00000000000007, duration=152.852s, table=0, n_packets=3, n_bytes=238, idle_timeout=600, hard_timeout=300, priority=10,dl_src=00:00:00:00:00:04,dl_dst=00:00:00:00:00:03 actions=output:1
+	 cookie=0x2b0000000000000d, duration=153.325s, table=0, n_packets=25, n_bytes=1946, priority=2,in_port=3 actions=output:2,output:1
+	 cookie=0x2b0000000000000f, duration=153.324s, table=0, n_packets=13, n_bytes=1050, priority=2,in_port=1 actions=output:3,output:2,CONTROLLER:65535
+	 cookie=0x2b0000000000000e, duration=153.324s, table=0, n_packets=14, n_bytes=1092, priority=2,in_port=2 actions=output:3,output:1,CONTROLLER:65535
+	 cookie=0x2b00000000000003, duration=159.248s, table=0, n_packets=3, n_bytes=210, priority=0 actions=drop
+
+After FLOWGUARD:
+mininet> dpctl dump-flows -O OpenFlow13
+	*** s1 ------------------------------------------------------------------------
+	OFPST_FLOW reply (OF1.3) (xid=0x2):
+	 cookie=0x2b00000000000001, duration=311.946s, table=0, n_packets=126, n_bytes=10710, priority=100,dl_type=0x88cc actions=CONTROLLER:65535
+	 cookie=0x2b00000000000000, duration=305.961s, table=0, n_packets=35, n_bytes=2478, priority=2,in_port=2 actions=output:1
+	 cookie=0x2b00000000000001, duration=305.961s, table=0, n_packets=33, n_bytes=2282, priority=2,in_port=1 actions=output:2
+	 cookie=0x2b00000000000001, duration=311.946s, table=0, n_packets=2, n_bytes=140, priority=0 actions=drop
+	*** s2 ------------------------------------------------------------------------
+	OFPST_FLOW reply (OF1.3) (xid=0x2):
+	 cookie=0x0, duration=40.568s, table=0, n_packets=0, n_bytes=0, priority=32767,ip,in_port=1,nw_src=10.0.0.0/8,nw_dst=10.0.0.0/8 actions=drop
+	 cookie=0x0, duration=40.568s, table=0, n_packets=0, n_bytes=0, priority=32767,ip,in_port=1,nw_src=0.0.0.0/8,nw_dst=0.0.0.0/8 actions=drop
+	 cookie=0x0, duration=40.547s, table=0, n_packets=0, n_bytes=0, priority=32767,ip,in_port=2,nw_src=0.0.0.0/8,nw_dst=0.0.0.0/8 actions=drop
+	 cookie=0x0, duration=40.543s, table=0, n_packets=0, n_bytes=0, priority=32767,ip,in_port=2,nw_src=10.0.0.0/8,nw_dst=10.0.0.0/8 actions=drop
+	 cookie=0x2b00000000000002, duration=311.621s, table=0, n_packets=63, n_bytes=5355, priority=100,dl_type=0x88cc actions=CONTROLLER:65535
+	 cookie=0x2b00000000000002, duration=305.963s, table=0, n_packets=13, n_bytes=826, priority=2,in_port=1 actions=output:3,output:2,CONTROLLER:65535
+	 cookie=0x2b00000000000003, duration=305.963s, table=0, n_packets=35, n_bytes=2478, priority=2,in_port=3 actions=output:1,output:2
+	 cookie=0x2b00000000000004, duration=305.962s, table=0, n_packets=14, n_bytes=868, priority=2,in_port=2 actions=output:1,output:3,CONTROLLER:65535
+	 cookie=0x2b00000000000002, duration=311.621s, table=0, n_packets=9, n_bytes=462, priority=0 actions=drop
+	*** s3 ------------------------------------------------------------------------
+	OFPST_FLOW reply (OF1.3) (xid=0x2):
+	 cookie=0x0, duration=40.539s, table=0, n_packets=0, n_bytes=0, priority=32767,ip,in_port=1,nw_src=0.0.0.0/8,nw_dst=0.0.0.0/8 actions=drop
+	 cookie=0x2b00000000000000, duration=311.869s, table=0, n_packets=63, n_bytes=5355, priority=100,dl_type=0x88cc actions=CONTROLLER:65535
+	 cookie=0x2b00000000000005, duration=305.962s, table=0, n_packets=33, n_bytes=2282, priority=2,in_port=3 actions=output:2,output:1
+	 cookie=0x2b00000000000006, duration=305.961s, table=0, n_packets=18, n_bytes=1260, priority=2,in_port=2 actions=output:3,output:1,CONTROLLER:65535
+	 cookie=0x2b00000000000007, duration=305.956s, table=0, n_packets=17, n_bytes=1218, priority=2,in_port=1 actions=output:3,output:2,CONTROLLER:65535
+	 cookie=0x2b00000000000000, duration=311.869s, table=0, n_packets=3, n_bytes=210, priority=0 actions=drop
+
+
+opendaylight-user@root>topoIdentifier KeyedInstanceIdentifier{targetType=interface org.opendaylight.yang.gen.v1.urn.tbd.params.xml.ns.yang.network.topology.rev131021.network.topology.Topology, path=[org.opendaylight.yang.gen.v1.urn.tbd.params.xml.ns.yang.network.topology.rev131021.NetworkTopology, org.opendaylight.yang.gen.v1.urn.tbd.params.xml.ns.yang.network.topology.rev131021.network.topology.Topology[key=TopologyKey [_topologyId=Uri [_value=flow:1]]]]}
+Priority of rule 80	rule ID 4
+Priority of rule 50	rule ID 1
+Priority of rule 40	rule ID 3
+Priority of rule 30	rule ID 2
+Priority of rule 5	rule ID 5
+Done with import static rules
+
+Rule: 4 | source node: openflow:3 | probe node: openflow:2
+<<<<<<<<<<<<<<<<<<<<Starting to propagate sample. Flow Index:1>>>>>>>>>>>>>>>>>>>>
+Propagating to target dpid: openflow:2 port: openflow:2:1
+Start Index 0
+RuleTable info: In_port null Priority: 100
+Sample packet info: openflow:3:1
+Found a rule with same/wildcarded next ingress port
+Unrecognized Ethernet Type: 35020
+RuleTable info: In_port null Priority: 10
+Sample packet info: openflow:3:1
+Found a rule with same/wildcarded next ingress port
+ETH_TYPE matched/wildcarded: 0
+Processing flow matched the IP of the Flow rule
+Sample information before propagation:
+Sample: openflow:3 Port: openflow:3:1
+Sample information after compute:
+Sample: openflow:3 Port: 1
+Reached a host(or nothing) when searching for a node
+RuleTable info: In_port null Priority: 10
+Sample packet info: openflow:3:1
+Found a rule with same/wildcarded next ingress port
+ETH_TYPE matched/wildcarded: 0
+Processing flow matched the IP of the Flow rule
+Sample information before propagation:
+Sample: openflow:3 Port: openflow:3:1
+Sample information after compute:
+Sample: openflow:3 Port: 2
+Reached a host(or nothing) when searching for a node
+RuleTable info: In_port openflow:3:1 Priority: 2
+Sample packet info: openflow:3:2
+RuleTable info: In_port openflow:3:2 Priority: 2
+Sample packet info: openflow:3:2
+Found a rule with same/wildcarded next ingress port
+ETH_TYPE matched/wildcarded: 0
+Processing flow matched the IP of the Flow rule
+Sample information before propagation:
+Sample: openflow:3 Port: openflow:3:2
+Sample information after compute:
+Sample: openflow:3 Port: 3
+openflow:3 / openflow:3:3 <--> openflow:1/ openflow:1:2
+Node information after propagation:
+Node: openflow:1 Port: openflow:1:2
+Propagating to target dpid: openflow:2 port: openflow:2:1
+Start Index 0
+RuleTable info: In_port null Priority: 100
+Sample packet info: openflow:1:2
+Found a rule with same/wildcarded next ingress port
+Unrecognized Ethernet Type: 35020
+RuleTable info: In_port openflow:1:1 Priority: 2
+Sample packet info: openflow:1:2
+RuleTable info: In_port openflow:1:2 Priority: 2
+Sample packet info: openflow:1:2
+Found a rule with same/wildcarded next ingress port
+ETH_TYPE matched/wildcarded: 0
+Processing flow matched the IP of the Flow rule
+Sample information before propagation:
+Sample: openflow:1 Port: openflow:1:2
+Sample information after compute:
+Sample: openflow:1 Port: 1
+openflow:1 / openflow:1:1 <--> openflow:2/ openflow:2:3
+Node information after propagation:
+Node: openflow:2 Port: openflow:2:3
+Propagating to target dpid: openflow:2 port: openflow:2:1
+Start Index 0
+RuleTable info: In_port null Priority: 100
+Sample packet info: openflow:2:3
+Found a rule with same/wildcarded next ingress port
+Unrecognized Ethernet Type: 35020
+RuleTable info: In_port null Priority: 10
+Sample packet info: openflow:2:3
+Found a rule with same/wildcarded next ingress port
+ETH_TYPE matched/wildcarded: 0
+Processing flow matched the IP of the Flow rule
+Sample information before propagation:
+Sample: openflow:2 Port: openflow:2:3
+Sample information after compute:
+Sample: openflow:2 Port: 2
+Reached a host(or nothing) when searching for a node
+RuleTable info: In_port null Priority: 10
+Sample packet info: openflow:2:2
+Found a rule with same/wildcarded next ingress port
+ETH_TYPE matched/wildcarded: 0
+Processing flow matched the IP of the Flow rule
+Sample information before propagation:
+Sample: openflow:2 Port: openflow:2:2
+Sample information after compute:
+Sample: openflow:2 Port: 1
+Flows are reached to the Destination!!!
+<<<<< current_HeaderObject >>>>>
+{ vlan = 0, src_IP = /10.0.0.0/8, dst_IP = /10.0.0.0/8 }
+current_switch_info = openflow:2 / openflow:2:2
+<<<<< next_HeaderObject >>>>>
+{ vlan = 0, src_IP = /10.0.0.0/8, dst_IP = /10.0.0.0/8 }
+next_switch_info = openflow:2 / openflow:2:1
+*************** This is 1 th flow ***************
+*************** Firewall RuleID : 4 ***************
+-----------------------------------------------------------------------------------
+(((flow_history : this is 0 th visits.)))
+Applied FlowRuleNode Name : SourceNode
+<<<<< current_HeaderObject >>>>>
+{ vlan = 0, src_IP = /10.0.0.0/8, dst_IP = /10.0.0.0/8 }
+current_switch_info = openflow:3 / openflow:3:1
+<<<<< next_HeaderObject >>>>>
+{ vlan = 0, src_IP = /10.0.0.0/8, dst_IP = /10.0.0.0/8 }
+next_switch_info = openflow:3 / openflow:3:1
+-----------------------------------------------------------------------------------
+-----------------------------------------------------------------------------------
+(((flow_history : this is 1 th visits.)))
+Applied FlowRuleNode Name : #UF$TABLE*0-8
+<<<<< current_HeaderObject >>>>>
+{ vlan = 0, src_IP = /10.0.0.0/8, dst_IP = /10.0.0.0/8 }
+current_switch_info = openflow:3 / openflow:3:1
+<<<<< next_HeaderObject >>>>>
+{ vlan = 0, src_IP = /10.0.0.0/8, dst_IP = /10.0.0.0/8 }
+next_switch_info = openflow:3 / openflow:3:1
+-----------------------------------------------------------------------------------
+-----------------------------------------------------------------------------------
+(((flow_history : this is 2 th visits.)))
+Applied FlowRuleNode Name : #UF$TABLE*0-7
+<<<<< current_HeaderObject >>>>>
+{ vlan = 0, src_IP = /10.0.0.0/8, dst_IP = /10.0.0.0/8 }
+current_switch_info = openflow:3 / openflow:3:1
+<<<<< next_HeaderObject >>>>>
+{ vlan = 0, src_IP = /10.0.0.0/8, dst_IP = /10.0.0.0/8 }
+next_switch_info = openflow:3 / openflow:3:2
+-----------------------------------------------------------------------------------
+-----------------------------------------------------------------------------------
+(((flow_history : this is 3 th visits.)))
+Applied FlowRuleNode Name : #UF$TABLE*0-10
+<<<<< current_HeaderObject >>>>>
+{ vlan = 0, src_IP = /10.0.0.0/8, dst_IP = /10.0.0.0/8 }
+current_switch_info = openflow:3 / openflow:3:2
+<<<<< next_HeaderObject >>>>>
+{ vlan = 0, src_IP = /10.0.0.0/8, dst_IP = /10.0.0.0/8 }
+next_switch_info = openflow:1 / openflow:1:2
+-----------------------------------------------------------------------------------
+-----------------------------------------------------------------------------------
+(((flow_history : this is 4 th visits.)))
+Applied FlowRuleNode Name : #UF$TABLE*0-12
+<<<<< current_HeaderObject >>>>>
+{ vlan = 0, src_IP = /10.0.0.0/8, dst_IP = /10.0.0.0/8 }
+current_switch_info = openflow:1 / openflow:1:2
+<<<<< next_HeaderObject >>>>>
+{ vlan = 0, src_IP = /10.0.0.0/8, dst_IP = /10.0.0.0/8 }
+next_switch_info = openflow:2 / openflow:2:3
+-----------------------------------------------------------------------------------
+-----------------------------------------------------------------------------------
+(((flow_history : this is 5 th visits.)))
+Applied FlowRuleNode Name : #UF$TABLE*0-15
+<<<<< current_HeaderObject >>>>>
+{ vlan = 0, src_IP = /10.0.0.0/8, dst_IP = /10.0.0.0/8 }
+current_switch_info = openflow:2 / openflow:2:3
+<<<<< next_HeaderObject >>>>>
+{ vlan = 0, src_IP = /10.0.0.0/8, dst_IP = /10.0.0.0/8 }
+next_switch_info = openflow:2 / openflow:2:2
+-----------------------------------------------------------------------------------
+-----------------------------------------------------------------------------------
+(((flow_history : this is 6 th visits.)))
+Applied FlowRuleNode Name : #UF$TABLE*0-14
+<<<<< current_HeaderObject >>>>>
+{ vlan = 0, src_IP = /10.0.0.0/8, dst_IP = /10.0.0.0/8 }
+current_switch_info = openflow:2 / openflow:2:2
+<<<<< next_HeaderObject >>>>>
+{ vlan = 0, src_IP = /10.0.0.0/8, dst_IP = /10.0.0.0/8 }
+next_switch_info = openflow:2 / openflow:2:1
+-----------------------------------------------------------------------------------
+-----------------------------------------------------------------------------------
+<<< Inverse Flow Computation >>>
+{ vlan = 0, src_IP = /0.0.0.0/8, dst_IP = /0.0.0.0/8 }
+***********************************************************************************
+S4-Packet Blocking applied!!
+Adding a new rule(resolution0) to the node(openflow:2) for inPort(openflow:2:2)
+Rule: DENY source(10.0.0.0/8) to dest(10.0.0.0/8)
+Adding a new rule(resolution1) to the node(openflow:3) for inPort(openflow:3:1)
+Rule: DENY source(0.0.0.0/8) to dest(0.0.0.0/8)
+Should not reach here
+Should not reach here
+<<<<<<<<<<<<<<<<<<<<<<<<<<Finished propagation!>>>>>>>>>>>>>>>>>>>>>>>>>>
+
+Rule: 1 | source node: openflow:2 | probe node: openflow:2
+<<<<<<<<<<<<<<<<<<<<Starting to propagate sample. Flow Index:2>>>>>>>>>>>>>>>>>>>>
+Propagating to target dpid: openflow:2 port: openflow:2:2
+Start Index 0
+RuleTable info: In_port null Priority: 100
+Sample packet info: openflow:2:1
+Found a rule with same/wildcarded next ingress port
+Unrecognized Ethernet Type: 35020
+RuleTable info: In_port null Priority: 10
+Sample packet info: openflow:2:1
+Found a rule with same/wildcarded next ingress port
+ETH_TYPE matched/wildcarded: 0
+Processing flow matched the IP of the Flow rule
+Sample information before propagation:
+Sample: openflow:2 Port: openflow:2:1
+Sample information after compute:
+Sample: openflow:2 Port: 2
+Flows are reached to the Destination!!!
+<<<<< current_HeaderObject >>>>>
+{ vlan = 0, src_IP = /10.0.0.0/8, dst_IP = /10.0.0.0/8 }
+current_switch_info = openflow:2 / openflow:2:1
+<<<<< next_HeaderObject >>>>>
+{ vlan = 0, src_IP = /10.0.0.0/8, dst_IP = /10.0.0.0/8 }
+next_switch_info = openflow:2 / openflow:2:2
+*************** This is 2 th flow ***************
+*************** Firewall RuleID : 1 ***************
+-----------------------------------------------------------------------------------
+(((flow_history : this is 0 th visits.)))
+Applied FlowRuleNode Name : SourceNode
+<<<<< current_HeaderObject >>>>>
+{ vlan = 0, src_IP = /10.0.0.0/8, dst_IP = /10.0.0.0/8 }
+current_switch_info = openflow:2 / openflow:2:1
+<<<<< next_HeaderObject >>>>>
+{ vlan = 0, src_IP = /10.0.0.0/8, dst_IP = /10.0.0.0/8 }
+next_switch_info = openflow:2 / openflow:2:1
+-----------------------------------------------------------------------------------
+-----------------------------------------------------------------------------------
+(((flow_history : this is 1 th visits.)))
+Applied FlowRuleNode Name : #UF$TABLE*0-15
+<<<<< current_HeaderObject >>>>>
+{ vlan = 0, src_IP = /10.0.0.0/8, dst_IP = /10.0.0.0/8 }
+current_switch_info = openflow:2 / openflow:2:1
+<<<<< next_HeaderObject >>>>>
+{ vlan = 0, src_IP = /10.0.0.0/8, dst_IP = /10.0.0.0/8 }
+next_switch_info = openflow:2 / openflow:2:2
+-----------------------------------------------------------------------------------
+-----------------------------------------------------------------------------------
+<<< Inverse Flow Computation >>>
+{ vlan = 0, src_IP = /0.0.0.0/8, dst_IP = /0.0.0.0/8 }
+***********************************************************************************
+S4-Packet Blocking applied!!
+Adding a new rule(resolution2) to the node(openflow:2) for inPort(openflow:2:1)
+Rule: DENY source(10.0.0.0/8) to dest(10.0.0.0/8)
+Adding a new rule(resolution3) to the node(openflow:2) for inPort(openflow:2:1)
+Rule: DENY source(0.0.0.0/8) to dest(0.0.0.0/8)
+<<<<<<<<<<<<<<<<<<<<<<<<<<Finished propagation!>>>>>>>>>>>>>>>>>>>>>>>>>>
+
+Rule: 3 | source node: openflow:3 | probe node: openflow:2
+<<<<<<<<<<<<<<<<<<<<Starting to propagate sample. Flow Index:3>>>>>>>>>>>>>>>>>>>>
+Propagating to target dpid: openflow:2 port: openflow:2:1
+Start Index 0
+RuleTable info: In_port null Priority: 100
+Sample packet info: openflow:3:1
+Found a rule with same/wildcarded next ingress port
+Unrecognized Ethernet Type: 35020
+RuleTable info: In_port null Priority: 10
+Sample packet info: openflow:3:1
+Found a rule with same/wildcarded next ingress port
+ETH_TYPE matched/wildcarded: 0
+Processing flow matched the IP of the Flow rule
+Sample information before propagation:
+Sample: openflow:3 Port: openflow:3:1
+Sample information after compute:
+Sample: openflow:3 Port: 1
+Reached a host(or nothing) when searching for a node
+RuleTable info: In_port null Priority: 10
+Sample packet info: openflow:3:1
+Found a rule with same/wildcarded next ingress port
+ETH_TYPE matched/wildcarded: 0
+Processing flow matched the IP of the Flow rule
+Sample information before propagation:
+Sample: openflow:3 Port: openflow:3:1
+Sample information after compute:
+Sample: openflow:3 Port: 2
+Reached a host(or nothing) when searching for a node
+RuleTable info: In_port openflow:3:1 Priority: 2
+Sample packet info: openflow:3:2
+RuleTable info: In_port openflow:3:2 Priority: 2
+Sample packet info: openflow:3:2
+Found a rule with same/wildcarded next ingress port
+ETH_TYPE matched/wildcarded: 0
+Processing flow matched the IP of the Flow rule
+Sample information before propagation:
+Sample: openflow:3 Port: openflow:3:2
+Sample information after compute:
+Sample: openflow:3 Port: 3
+openflow:3 / openflow:3:3 <--> openflow:1/ openflow:1:2
+Node information after propagation:
+Node: openflow:1 Port: openflow:1:2
+Propagating to target dpid: openflow:2 port: openflow:2:1
+Start Index 0
+RuleTable info: In_port null Priority: 100
+Sample packet info: openflow:1:2
+Found a rule with same/wildcarded next ingress port
+Unrecognized Ethernet Type: 35020
+RuleTable info: In_port openflow:1:1 Priority: 2
+Sample packet info: openflow:1:2
+RuleTable info: In_port openflow:1:2 Priority: 2
+Sample packet info: openflow:1:2
+Found a rule with same/wildcarded next ingress port
+ETH_TYPE matched/wildcarded: 0
+Processing flow matched the IP of the Flow rule
+Sample information before propagation:
+Sample: openflow:1 Port: openflow:1:2
+Sample information after compute:
+Sample: openflow:1 Port: 1
+openflow:1 / openflow:1:1 <--> openflow:2/ openflow:2:3
+Node information after propagation:
+Node: openflow:2 Port: openflow:2:3
+Propagating to target dpid: openflow:2 port: openflow:2:1
+Start Index 0
+RuleTable info: In_port null Priority: 100
+Sample packet info: openflow:2:3
+Found a rule with same/wildcarded next ingress port
+Unrecognized Ethernet Type: 35020
+RuleTable info: In_port null Priority: 10
+Sample packet info: openflow:2:3
+Found a rule with same/wildcarded next ingress port
+ETH_TYPE matched/wildcarded: 0
+Processing flow matched the IP of the Flow rule
+Sample information before propagation:
+Sample: openflow:2 Port: openflow:2:3
+Sample information after compute:
+Sample: openflow:2 Port: 2
+Reached a host(or nothing) when searching for a node
+RuleTable info: In_port null Priority: 10
+Sample packet info: openflow:2:2
+Found a rule with same/wildcarded next ingress port
+ETH_TYPE matched/wildcarded: 0
+Processing flow matched the IP of the Flow rule
+Sample information before propagation:
+Sample: openflow:2 Port: openflow:2:2
+Sample information after compute:
+Sample: openflow:2 Port: 1
+Flows are reached to the Destination!!!
+<<<<< current_HeaderObject >>>>>
+{ vlan = 0, src_IP = /10.0.0.0/8, dst_IP = /10.0.0.0/8 }
+current_switch_info = openflow:2 / openflow:2:2
+<<<<< next_HeaderObject >>>>>
+{ vlan = 0, src_IP = /10.0.0.0/8, dst_IP = /10.0.0.0/8 }
+next_switch_info = openflow:2 / openflow:2:1
+*************** This is 3 th flow ***************
+*************** Firewall RuleID : 3 ***************
+-----------------------------------------------------------------------------------
+(((flow_history : this is 0 th visits.)))
+Applied FlowRuleNode Name : SourceNode
+<<<<< current_HeaderObject >>>>>
+{ vlan = 0, src_IP = /10.0.0.0/8, dst_IP = /10.0.0.0/8 }
+current_switch_info = openflow:3 / openflow:3:1
+<<<<< next_HeaderObject >>>>>
+{ vlan = 0, src_IP = /10.0.0.0/8, dst_IP = /10.0.0.0/8 }
+next_switch_info = openflow:3 / openflow:3:1
+-----------------------------------------------------------------------------------
+-----------------------------------------------------------------------------------
+(((flow_history : this is 1 th visits.)))
+Applied FlowRuleNode Name : #UF$TABLE*0-8
+<<<<< current_HeaderObject >>>>>
+{ vlan = 0, src_IP = /10.0.0.0/8, dst_IP = /10.0.0.0/8 }
+current_switch_info = openflow:3 / openflow:3:1
+<<<<< next_HeaderObject >>>>>
+{ vlan = 0, src_IP = /10.0.0.0/8, dst_IP = /10.0.0.0/8 }
+next_switch_info = openflow:3 / openflow:3:1
+-----------------------------------------------------------------------------------
+-----------------------------------------------------------------------------------
+(((flow_history : this is 2 th visits.)))
+Applied FlowRuleNode Name : #UF$TABLE*0-7
+<<<<< current_HeaderObject >>>>>
+{ vlan = 0, src_IP = /10.0.0.0/8, dst_IP = /10.0.0.0/8 }
+current_switch_info = openflow:3 / openflow:3:1
+<<<<< next_HeaderObject >>>>>
+{ vlan = 0, src_IP = /10.0.0.0/8, dst_IP = /10.0.0.0/8 }
+next_switch_info = openflow:3 / openflow:3:2
+-----------------------------------------------------------------------------------
+-----------------------------------------------------------------------------------
+(((flow_history : this is 3 th visits.)))
+Applied FlowRuleNode Name : #UF$TABLE*0-10
+<<<<< current_HeaderObject >>>>>
+{ vlan = 0, src_IP = /10.0.0.0/8, dst_IP = /10.0.0.0/8 }
+current_switch_info = openflow:3 / openflow:3:2
+<<<<< next_HeaderObject >>>>>
+{ vlan = 0, src_IP = /10.0.0.0/8, dst_IP = /10.0.0.0/8 }
+next_switch_info = openflow:1 / openflow:1:2
+-----------------------------------------------------------------------------------
+-----------------------------------------------------------------------------------
+(((flow_history : this is 4 th visits.)))
+Applied FlowRuleNode Name : #UF$TABLE*0-12
+<<<<< current_HeaderObject >>>>>
+{ vlan = 0, src_IP = /10.0.0.0/8, dst_IP = /10.0.0.0/8 }
+current_switch_info = openflow:1 / openflow:1:2
+<<<<< next_HeaderObject >>>>>
+{ vlan = 0, src_IP = /10.0.0.0/8, dst_IP = /10.0.0.0/8 }
+next_switch_info = openflow:2 / openflow:2:3
+-----------------------------------------------------------------------------------
+-----------------------------------------------------------------------------------
+(((flow_history : this is 5 th visits.)))
+Applied FlowRuleNode Name : #UF$TABLE*0-15
+<<<<< current_HeaderObject >>>>>
+{ vlan = 0, src_IP = /10.0.0.0/8, dst_IP = /10.0.0.0/8 }
+current_switch_info = openflow:2 / openflow:2:3
+<<<<< next_HeaderObject >>>>>
+{ vlan = 0, src_IP = /10.0.0.0/8, dst_IP = /10.0.0.0/8 }
+next_switch_info = openflow:2 / openflow:2:2
+-----------------------------------------------------------------------------------
+-----------------------------------------------------------------------------------
+(((flow_history : this is 6 th visits.)))
+Applied FlowRuleNode Name : #UF$TABLE*0-14
+<<<<< current_HeaderObject >>>>>
+{ vlan = 0, src_IP = /10.0.0.0/8, dst_IP = /10.0.0.0/8 }
+current_switch_info = openflow:2 / openflow:2:2
+<<<<< next_HeaderObject >>>>>
+{ vlan = 0, src_IP = /10.0.0.0/8, dst_IP = /10.0.0.0/8 }
+next_switch_info = openflow:2 / openflow:2:1
+-----------------------------------------------------------------------------------
+-----------------------------------------------------------------------------------
+<<< Inverse Flow Computation >>>
+{ vlan = 0, src_IP = /0.0.0.0/8, dst_IP = /0.0.0.0/8 }
+***********************************************************************************
+S4-Packet Blocking applied!!
+Adding a new rule(resolution4) to the node(openflow:2) for inPort(openflow:2:2)
+Rule: DENY source(10.0.0.0/8) to dest(10.0.0.0/8)
+Adding a new rule(resolution5) to the node(openflow:3) for inPort(openflow:3:1)
+Rule: DENY source(0.0.0.0/8) to dest(0.0.0.0/8)
+Should not reach here
+Should not reach here
+<<<<<<<<<<<<<<<<<<<<<<<<<<Finished propagation!>>>>>>>>>>>>>>>>>>>>>>>>>>
+
+Rule: 2 | source node: openflow:2 | probe node: openflow:2
+<<<<<<<<<<<<<<<<<<<<Starting to propagate sample. Flow Index:4>>>>>>>>>>>>>>>>>>>>
+Propagating to target dpid: openflow:2 port: openflow:2:1
+Start Index 0
+RuleTable info: In_port null Priority: 100
+Sample packet info: openflow:2:2
+Found a rule with same/wildcarded next ingress port
+Unrecognized Ethernet Type: 35020
+RuleTable info: In_port null Priority: 10
+Sample packet info: openflow:2:2
+Found a rule with same/wildcarded next ingress port
+ETH_TYPE matched/wildcarded: 0
+Processing flow matched the IP of the Flow rule
+Sample information before propagation:
+Sample: openflow:2 Port: openflow:2:2
+Sample information after compute:
+Sample: openflow:2 Port: 2
+Reached a host(or nothing) when searching for a node
+RuleTable info: In_port null Priority: 10
+Sample packet info: openflow:2:2
+Found a rule with same/wildcarded next ingress port
+ETH_TYPE matched/wildcarded: 0
+Processing flow matched the IP of the Flow rule
+Sample information before propagation:
+Sample: openflow:2 Port: openflow:2:2
+Sample information after compute:
+Sample: openflow:2 Port: 1
+Flows are reached to the Destination!!!
+<<<<< current_HeaderObject >>>>>
+{ vlan = 0, src_IP = /10.0.0.0/8, dst_IP = /10.0.0.0/8 }
+current_switch_info = openflow:2 / openflow:2:2
+<<<<< next_HeaderObject >>>>>
+{ vlan = 0, src_IP = /10.0.0.0/8, dst_IP = /10.0.0.0/8 }
+next_switch_info = openflow:2 / openflow:2:1
+*************** This is 4 th flow ***************
+*************** Firewall RuleID : 2 ***************
+-----------------------------------------------------------------------------------
+(((flow_history : this is 0 th visits.)))
+Applied FlowRuleNode Name : SourceNode
+<<<<< current_HeaderObject >>>>>
+{ vlan = 0, src_IP = /10.0.0.0/8, dst_IP = /10.0.0.0/8 }
+current_switch_info = openflow:2 / openflow:2:2
+<<<<< next_HeaderObject >>>>>
+{ vlan = 0, src_IP = /10.0.0.0/8, dst_IP = /10.0.0.0/8 }
+next_switch_info = openflow:2 / openflow:2:2
+-----------------------------------------------------------------------------------
+-----------------------------------------------------------------------------------
+(((flow_history : this is 1 th visits.)))
+Applied FlowRuleNode Name : #UF$TABLE*0-15
+<<<<< current_HeaderObject >>>>>
+{ vlan = 0, src_IP = /10.0.0.0/8, dst_IP = /10.0.0.0/8 }
+current_switch_info = openflow:2 / openflow:2:2
+<<<<< next_HeaderObject >>>>>
+{ vlan = 0, src_IP = /10.0.0.0/8, dst_IP = /10.0.0.0/8 }
+next_switch_info = openflow:2 / openflow:2:2
+-----------------------------------------------------------------------------------
+-----------------------------------------------------------------------------------
+(((flow_history : this is 2 th visits.)))
+Applied FlowRuleNode Name : #UF$TABLE*0-14
+<<<<< current_HeaderObject >>>>>
+{ vlan = 0, src_IP = /10.0.0.0/8, dst_IP = /10.0.0.0/8 }
+current_switch_info = openflow:2 / openflow:2:2
+<<<<< next_HeaderObject >>>>>
+{ vlan = 0, src_IP = /10.0.0.0/8, dst_IP = /10.0.0.0/8 }
+next_switch_info = openflow:2 / openflow:2:1
+-----------------------------------------------------------------------------------
+-----------------------------------------------------------------------------------
+<<< Inverse Flow Computation >>>
+{ vlan = 0, src_IP = /0.0.0.0/8, dst_IP = /0.0.0.0/8 }
+***********************************************************************************
+S4-Packet Blocking applied!!
+Adding a new rule(resolution6) to the node(openflow:2) for inPort(openflow:2:2)
+Rule: DENY source(10.0.0.0/8) to dest(10.0.0.0/8)
+Adding a new rule(resolution7) to the node(openflow:2) for inPort(openflow:2:2)
+Rule: DENY source(0.0.0.0/8) to dest(0.0.0.0/8)
+<<<<<<<<<<<<<<<<<<<<<<<<<<Finished propagation!>>>>>>>>>>>>>>>>>>>>>>>>>>
+
+Rule: 5 | source node: openflow:3 | probe node: openflow:2
+<<<<<<<<<<<<<<<<<<<<Starting to propagate sample. Flow Index:5>>>>>>>>>>>>>>>>>>>>
+Propagating to target dpid: openflow:2 port: openflow:2:1
+Start Index 0
+RuleTable info: In_port null Priority: 100
+Sample packet info: openflow:3:1
+Found a rule with same/wildcarded next ingress port
+Unrecognized Ethernet Type: 35020
+RuleTable info: In_port null Priority: 10
+Sample packet info: openflow:3:1
+Found a rule with same/wildcarded next ingress port
+ETH_TYPE matched/wildcarded: 0
+Processing flow matched the IP of the Flow rule
+Sample information before propagation:
+Sample: openflow:3 Port: openflow:3:1
+Sample information after compute:
+Sample: openflow:3 Port: 1
+Reached a host(or nothing) when searching for a node
+RuleTable info: In_port null Priority: 10
+Sample packet info: openflow:3:1
+Found a rule with same/wildcarded next ingress port
+ETH_TYPE matched/wildcarded: 0
+Processing flow matched the IP of the Flow rule
+Sample information before propagation:
+Sample: openflow:3 Port: openflow:3:1
+Sample information after compute:
+Sample: openflow:3 Port: 2
+Reached a host(or nothing) when searching for a node
+RuleTable info: In_port openflow:3:1 Priority: 2
+Sample packet info: openflow:3:2
+RuleTable info: In_port openflow:3:2 Priority: 2
+Sample packet info: openflow:3:2
+Found a rule with same/wildcarded next ingress port
+ETH_TYPE matched/wildcarded: 0
+Processing flow matched the IP of the Flow rule
+Sample information before propagation:
+Sample: openflow:3 Port: openflow:3:2
+Sample information after compute:
+Sample: openflow:3 Port: 3
+openflow:3 / openflow:3:3 <--> openflow:1/ openflow:1:2
+Node information after propagation:
+Node: openflow:1 Port: openflow:1:2
+Propagating to target dpid: openflow:2 port: openflow:2:1
+Start Index 0
+RuleTable info: In_port null Priority: 100
+Sample packet info: openflow:1:2
+Found a rule with same/wildcarded next ingress port
+Unrecognized Ethernet Type: 35020
+RuleTable info: In_port openflow:1:1 Priority: 2
+Sample packet info: openflow:1:2
+RuleTable info: In_port openflow:1:2 Priority: 2
+Sample packet info: openflow:1:2
+Found a rule with same/wildcarded next ingress port
+ETH_TYPE matched/wildcarded: 0
+Processing flow matched the IP of the Flow rule
+Sample information before propagation:
+Sample: openflow:1 Port: openflow:1:2
+Sample information after compute:
+Sample: openflow:1 Port: 1
+openflow:1 / openflow:1:1 <--> openflow:2/ openflow:2:3
+Node information after propagation:
+Node: openflow:2 Port: openflow:2:3
+Propagating to target dpid: openflow:2 port: openflow:2:1
+Start Index 0
+RuleTable info: In_port null Priority: 100
+Sample packet info: openflow:2:3
+Found a rule with same/wildcarded next ingress port
+Unrecognized Ethernet Type: 35020
+RuleTable info: In_port null Priority: 10
+Sample packet info: openflow:2:3
+Found a rule with same/wildcarded next ingress port
+ETH_TYPE matched/wildcarded: 0
+Processing flow matched the IP of the Flow rule
+Sample information before propagation:
+Sample: openflow:2 Port: openflow:2:3
+Sample information after compute:
+Sample: openflow:2 Port: 2
+Reached a host(or nothing) when searching for a node
+RuleTable info: In_port null Priority: 10
+Sample packet info: openflow:2:2
+Found a rule with same/wildcarded next ingress port
+ETH_TYPE matched/wildcarded: 0
+Processing flow matched the IP of the Flow rule
+Sample information before propagation:
+Sample: openflow:2 Port: openflow:2:2
+Sample information after compute:
+Sample: openflow:2 Port: 1
+Flows are reached to the Destination!!!
+<<<<< current_HeaderObject >>>>>
+{ vlan = 0, src_IP = /10.0.0.0/8, dst_IP = /10.0.0.0/8 }
+current_switch_info = openflow:2 / openflow:2:2
+<<<<< next_HeaderObject >>>>>
+{ vlan = 0, src_IP = /10.0.0.0/8, dst_IP = /10.0.0.0/8 }
+next_switch_info = openflow:2 / openflow:2:1
+*************** This is 5 th flow ***************
+*************** Firewall RuleID : 5 ***************
+-----------------------------------------------------------------------------------
+(((flow_history : this is 0 th visits.)))
+Applied FlowRuleNode Name : SourceNode
+<<<<< current_HeaderObject >>>>>
+{ vlan = 0, src_IP = /10.0.0.0/8, dst_IP = /10.0.0.0/8 }
+current_switch_info = openflow:3 / openflow:3:1
+<<<<< next_HeaderObject >>>>>
+{ vlan = 0, src_IP = /10.0.0.0/8, dst_IP = /10.0.0.0/8 }
+next_switch_info = openflow:3 / openflow:3:1
+-----------------------------------------------------------------------------------
+-----------------------------------------------------------------------------------
+(((flow_history : this is 1 th visits.)))
+Applied FlowRuleNode Name : #UF$TABLE*0-8
+<<<<< current_HeaderObject >>>>>
+{ vlan = 0, src_IP = /10.0.0.0/8, dst_IP = /10.0.0.0/8 }
+current_switch_info = openflow:3 / openflow:3:1
+<<<<< next_HeaderObject >>>>>
+{ vlan = 0, src_IP = /10.0.0.0/8, dst_IP = /10.0.0.0/8 }
+next_switch_info = openflow:3 / openflow:3:1
+-----------------------------------------------------------------------------------
+-----------------------------------------------------------------------------------
+(((flow_history : this is 2 th visits.)))
+Applied FlowRuleNode Name : #UF$TABLE*0-7
+<<<<< current_HeaderObject >>>>>
+{ vlan = 0, src_IP = /10.0.0.0/8, dst_IP = /10.0.0.0/8 }
+current_switch_info = openflow:3 / openflow:3:1
+<<<<< next_HeaderObject >>>>>
+{ vlan = 0, src_IP = /10.0.0.0/8, dst_IP = /10.0.0.0/8 }
+next_switch_info = openflow:3 / openflow:3:2
+-----------------------------------------------------------------------------------
+-----------------------------------------------------------------------------------
+(((flow_history : this is 3 th visits.)))
+Applied FlowRuleNode Name : #UF$TABLE*0-10
+<<<<< current_HeaderObject >>>>>
+{ vlan = 0, src_IP = /10.0.0.0/8, dst_IP = /10.0.0.0/8 }
+current_switch_info = openflow:3 / openflow:3:2
+<<<<< next_HeaderObject >>>>>
+{ vlan = 0, src_IP = /10.0.0.0/8, dst_IP = /10.0.0.0/8 }
+next_switch_info = openflow:1 / openflow:1:2
+-----------------------------------------------------------------------------------
+-----------------------------------------------------------------------------------
+(((flow_history : this is 4 th visits.)))
+Applied FlowRuleNode Name : #UF$TABLE*0-12
+<<<<< current_HeaderObject >>>>>
+{ vlan = 0, src_IP = /10.0.0.0/8, dst_IP = /10.0.0.0/8 }
+current_switch_info = openflow:1 / openflow:1:2
+<<<<< next_HeaderObject >>>>>
+{ vlan = 0, src_IP = /10.0.0.0/8, dst_IP = /10.0.0.0/8 }
+next_switch_info = openflow:2 / openflow:2:3
+-----------------------------------------------------------------------------------
+-----------------------------------------------------------------------------------
+(((flow_history : this is 5 th visits.)))
+Applied FlowRuleNode Name : #UF$TABLE*0-15
+<<<<< current_HeaderObject >>>>>
+{ vlan = 0, src_IP = /10.0.0.0/8, dst_IP = /10.0.0.0/8 }
+current_switch_info = openflow:2 / openflow:2:3
+<<<<< next_HeaderObject >>>>>
+{ vlan = 0, src_IP = /10.0.0.0/8, dst_IP = /10.0.0.0/8 }
+next_switch_info = openflow:2 / openflow:2:2
+-----------------------------------------------------------------------------------
+-----------------------------------------------------------------------------------
+(((flow_history : this is 6 th visits.)))
+Applied FlowRuleNode Name : #UF$TABLE*0-14
+<<<<< current_HeaderObject >>>>>
+{ vlan = 0, src_IP = /10.0.0.0/8, dst_IP = /10.0.0.0/8 }
+current_switch_info = openflow:2 / openflow:2:2
+<<<<< next_HeaderObject >>>>>
+{ vlan = 0, src_IP = /10.0.0.0/8, dst_IP = /10.0.0.0/8 }
+next_switch_info = openflow:2 / openflow:2:1
+-----------------------------------------------------------------------------------
+-----------------------------------------------------------------------------------
+<<< Inverse Flow Computation >>>
+{ vlan = 0, src_IP = /0.0.0.0/8, dst_IP = /0.0.0.0/8 }
+***********************************************************************************
+S4-Packet Blocking applied!!
+Adding a new rule(resolution8) to the node(openflow:2) for inPort(openflow:2:2)
+Rule: DENY source(10.0.0.0/8) to dest(10.0.0.0/8)
+Adding a new rule(resolution9) to the node(openflow:3) for inPort(openflow:3:1)
+Rule: DENY source(0.0.0.0/8) to dest(0.0.0.0/8)
+Should not reach here
+Should not reach here
+<<<<<<<<<<<<<<<<<<<<<<<<<<Finished propagation!>>>>>>>>>>>>>>>>>>>>>>>>>>
+
+
