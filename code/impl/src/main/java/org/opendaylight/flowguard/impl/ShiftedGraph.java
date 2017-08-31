@@ -24,16 +24,6 @@ import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutionException;
 
-//import org.openflow.protocol.OFFlowMod;
-/*import org.openflow.protocol.OFMatch;
-import org.openflow.protocol.OFPort;
-import org.openflow.protocol.action.OFAction;
-import org.openflow.protocol.action.OFActionOutput;
-import org.openflow.protocol.action.OFActionStripVirtualLan;
-import org.openflow.protocol.action.OFActionType;
-import org.openflow.protocol.action.OFActionVirtualLanIdentifier;
-import org.openflow.util.HexString;
-*/
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -41,6 +31,7 @@ import com.google.common.base.Optional;
 import com.google.common.base.Preconditions;
 import com.google.common.net.InetAddresses;
 import com.google.common.util.concurrent.CheckedFuture;
+import com.google.common.util.concurrent.FutureCallback;
 import com.google.common.util.concurrent.Futures;
 
 import org.restlet.resource.Post;
@@ -52,20 +43,6 @@ import org.opendaylight.controller.md.sal.binding.api.ReadTransaction;
 import org.opendaylight.controller.md.sal.binding.api.WriteTransaction;
 import org.opendaylight.controller.md.sal.common.api.data.LogicalDatastoreType;
 import org.opendaylight.controller.md.sal.common.api.data.TransactionCommitFailedException;
-
-/*
-import net.floodlightcontroller.core.IFloodlightProviderService;
-import net.floodlightcontroller.devicemanager.IDevice;
-import net.floodlightcontroller.devicemanager.IDeviceService;
-import net.floodlightcontroller.devicemanager.SwitchPort;
-
-
-import net.floodlightcontroller.restserver.IRestApiService;
-import net.floodlightcontroller.storage.IResultSet;
-import net.floodlightcontroller.storage.IStorageSourceService;
-import net.floodlightcontroller.storage.StorageException;
-import net.floodlightcontroller.staticflowentry.*;
-*/
 
 import org.opendaylight.flowguard.impl.FirewallRule.FirewallAction;
 import org.opendaylight.flowguard.impl.FlowRuleNode.ActionList;
@@ -167,6 +144,7 @@ public class ShiftedGraph {
 
                 int flow_ipint = ho.nw_dst_prefix >> rule_iprng;
                 flow_ipint = flow_ipint << rule_iprng;
+
                 ho.nw_dst_prefix = rule_ipint + (ho.nw_dst_prefix - flow_ipint);
             }
             if(rn.nw_src_maskbits == 32){
@@ -178,6 +156,7 @@ public class ShiftedGraph {
 
                 int flow_ipint = ho.nw_src_prefix >> rule_iprng;
                 flow_ipint = flow_ipint << rule_iprng;
+
                 ho.nw_src_prefix = rule_ipint + (ho.nw_src_prefix - flow_ipint);
             }
         }
@@ -233,9 +212,15 @@ public class ShiftedGraph {
                     flowinfo.flow_history.get(flowinfo.flow_history.size()-1).current_switch_dpid,
                     flowinfo.flow_history.get(flowinfo.flow_history.size()-1).current_ingress_port);
             //ingress switch block
-            this.addFlowEntry(ho, flowinfo.flow_history.get(1).current_switch_dpid, flowinfo.flow_history.get(1).current_ingress_port);
+            // TODO This is workaround. HO has been changed. Check Inverseflow
+            ho = flowinfo.flow_history.get(0).current_ho;
+
+            this.addFlowEntry(ho, flowinfo.flow_history.get(0).current_switch_dpid, flowinfo.flow_history.get(0).current_ingress_port);
             //this is method 4(partial violation) : add firewall rule and add new flow entry for packet bloacking
-            this.addFirewallRule(ho, flowinfo.flow_history.get(1).current_switch_dpid, flowinfo.flow_history.get(1).current_ingress_port);
+            this.addFirewallRule(ho, flowinfo.flow_history.get(0).current_switch_dpid, flowinfo.flow_history.get(0).current_ingress_port);
+        }
+        else {
+
         }
         return ho;
     }
@@ -251,34 +236,37 @@ public class ShiftedGraph {
 
         if(FlowRuleNode.matchIPAddress(frule.nw_dst_prefix, frule.nw_dst_maskbits, flowinfo.next_ho.nw_dst_prefix, flowinfo.next_ho.nw_dst_maskbits)){
             //for example : substring of FlowRuleNode looks like 'flow1', 'flow2' and so on
-            String keyword = flowinfo.rule_node_name.substring(0, 5);
-            for(int i=1;i < flowinfo.flow_history.size();i++){
+            String keyword = flowinfo.rule_node_name;//.substring(0, 5);
+            /*for(int i=1;i < flowinfo.flow_history.size();i++){
                 if(keyword.equals(flowinfo.flow_history.get(i).rule_node_name.substring(0,5))){
                     continue;
                 }else{
                     return false;
                 }
-            }
+            }*/
             //flow removing should be considered
             System.out.println("S3-Flow Removing applied!!");
             this.resolution_method = 3;
             Set<String> set = this.FlowRuleNodes.keySet();
             Iterator<String> itr = set.iterator();
+            /* Iterate through all the switches  to find a metching flow. TODO: Switch can be known beforehand */
             while(itr.hasNext()){
                 Object key = itr.next();
                 List<FlowRuleNode> ruletable = this.FlowRuleNodes.get(key.toString());
                 int size = ruletable.size();
                 for(int i = size-1; i >= 0; i--){
                 	if(ruletable.get(i) != null)
-                    if(keyword.equals(ruletable.get(i).rule_name.substring(0,5))){
+                    if(keyword.equals(ruletable.get(i).rule_name)){
+                        this.delFlowEntry(key.toString(), ruletable.get(i));
                         // TODO this.storageSource.deleteRowAsync(STATICENTRY_TABLE_NAME, ruletable.get(i).rule_name);
+                        return true; // TODO Shoud it delete in other tables and switches too?
                     }
                 }
             }
-            return true;
         }
         return false;
     }
+
     public void flowtagging(FlowInfo flowinfo){
         if(flowinfo.flow_history == null) {
             return;
@@ -428,6 +416,7 @@ public class ShiftedGraph {
     }
 
     public void addFlowEntry(HeaderObject ho, String dpid, String port){
+        // TODO Add to the plumbing graph too
         Map<String, Object> entry = new HashMap<String, Object>();
         String rulename = "resolution"+Integer.toString(this.resolution_index);
         this.resolution_index++;
@@ -483,26 +472,35 @@ public class ShiftedGraph {
 
         LOG.info("Added security rule with ip {} and port {} into node {}", destIP, port, dpid);
 
-        /* TODO Push flow entry.put(StaticFlowEntryPusher.COLUMN_NAME, rulename);
-        entry.put(StaticFlowEntryPusher.COLUMN_NW_DST, IPv4.fromIPv4Address(ho.nw_dst_prefix)+"/"+Integer.toString(ho.nw_dst_maskbits));
-        entry.put(StaticFlowEntryPusher.COLUMN_NW_SRC, IPv4.fromIPv4Address(ho.nw_src_prefix)+"/"+Integer.toString(ho.nw_src_maskbits));
-        entry.put(StaticFlowEntryPusher.COLUMN_DL_TYPE, Short.toString(Ethernet.TYPE_IPv4));
-        entry.put(StaticFlowEntryPusher.COLUMN_IN_PORT, Short.toString(port));
-        entry.put(StaticFlowEntryPusher.COLUMN_ACTIONS, "output= "); */
-        /*
-        OFFlowMod flowmod = new OFFlowMod();
-        List<OFAction> actions = new LinkedList<OFAction>();
-        OFActionOutput action = new OFActionOutput();
-        action.setMaxLength((short) Short.MAX_VALUE);
-        short output_port = OFPort.OFPP_NONE.getValue();
-        actions.add(action);
-        flowmod.setActions(actions);
+    }
 
-        this.resolution_index++;
-        Map<String, Object> fmMap = StaticFlowEntries.flowModToStorageEntry(flowmod, dpid, rulename);
-        */
-        //this.storageSource.insertRowAsync(STATICENTRY_TABLE_NAME, entry);
+    private void delFlowEntry(String dpid, FlowRuleNode flowRuleNode) {
+        // TODO Auto-generated method stub
+        NodeId nodeId = new NodeId(dpid);
+        InstanceIdentifier<Flow> flowIID =
+                InstanceIdentifier.builder(Nodes.class).child(Node.class, new NodeKey(nodeId))
+                    .augmentation(FlowCapableNode.class)
+                    .child(Table.class, new TableKey((short) 0))
+                    .child(Flow.class, new FlowKey(new FlowId(flowRuleNode.rule_name)))
+                    .build();
+        Preconditions.checkNotNull(db);
+        WriteTransaction transaction = db.newWriteOnlyTransaction();
+        transaction.delete(LogicalDatastoreType.OPERATIONAL, flowIID);
+        CheckedFuture<Void, TransactionCommitFailedException> future = transaction.submit();
 
+        Futures.addCallback( future, new FutureCallback<Void>() {
+            @Override
+            public void onSuccess( final Void result ) {
+                LOG.info("Delete Toaster commit result: {}", result );
+            }
+            @Override
+            public void onFailure( final Throwable t ) {
+                LOG.info("Delete of Toaster failed", t );
+            }
+        } );
+        // TODO Delete from the plumbing graph too
+        System.out.println("Deleted Flow rule " +flowRuleNode.rule_name+ " of switch: "+dpid);
+        LOG.info("Deleted Flow rule");
     }
 
     public void printFlowInfo(FlowInfo flowinfo, boolean inverseflow){
@@ -866,19 +864,20 @@ public class ShiftedGraph {
                 sample.flow_index = this.current_flow_index;
                 sample.rule_node_name = "SourceNode";
                 sample.current_ho = new HeaderObject();
-                sample.current_ho.nw_dst_prefix = 167772160;
-                sample.current_ho.nw_dst_maskbits = 8;
-                sample.current_ho.nw_src_prefix = 167772160;
-                sample.current_ho.nw_src_maskbits = 8;
+                sample.current_ho.nw_dst_prefix = firewall_rules.get(i).nw_dst_prefix;
+                sample.current_ho.nw_dst_maskbits = firewall_rules.get(i).nw_dst_maskbits;
+                sample.current_ho.nw_src_prefix = firewall_rules.get(i).nw_src_prefix;//167772160;
+                sample.current_ho.nw_src_maskbits = firewall_rules.get(i).nw_src_maskbits;
                 sample.current_switch_dpid = source.dpid;
                 sample.current_ingress_port = new String(source.port);
                 sample.next_switch_dpid = source.dpid;
                 sample.next_ingress_port = new String(source.port);
+                // TODO Work on next_ho
                 sample.next_ho = new HeaderObject();
-                sample.next_ho.nw_dst_prefix = 167772160;//IP=10.0.0.0
-                sample.next_ho.nw_dst_maskbits = 8;
-                sample.next_ho.nw_src_prefix = 167772160;
-                sample.next_ho.nw_src_maskbits = 8;
+                sample.next_ho.nw_dst_prefix = firewall_rules.get(i).nw_dst_prefix;
+                sample.next_ho.nw_dst_maskbits = firewall_rules.get(i).nw_dst_maskbits;
+                sample.next_ho.nw_src_prefix = firewall_rules.get(i).nw_src_prefix;
+                sample.next_ho.nw_src_maskbits = firewall_rules.get(i).nw_src_maskbits;
                 sample.target = new TopologyStruct();
                 sample.target.dpid = probe.dpid;
                 sample.target.port = probe.port;
@@ -888,7 +887,7 @@ public class ShiftedGraph {
                 value.put(sample, probe);
                 this.SourceProbeNodeStorage.put(Integer.toString(firewall_rules.get(i).ruleid), value);
                 long start = System.nanoTime();
-                System.out.print("<<<<<<<<<<<<<<<<<<<<");
+                System.out.print("\n<<<<<<<<<<<<<<<<<<<<");
                 System.out.print("Starting to propagate sample. Flow Index:" + this.current_flow_index);
                 System.out.println(">>>>>>>>>>>>>>>>>>>>");
                 this.propagateFlow(sample, probe, 0);
@@ -896,19 +895,7 @@ public class ShiftedGraph {
                 System.out.print("Finished propagation!");
                 System.out.println(">>>>>>>>>>>>>>>>>>>>>>>>>>");
 
-/*                long end = System.nanoTime();
-                try {
-                    File f = new File(this.RESULT_PATH);
-                    FileWriter fw = new FileWriter(f, true);
-                    BufferedWriter bw = new BufferedWriter(fw);
-
-                    bw.write("buildSourceProbeNode time(micro seconds) : " + ( end - start )/1000 +"\n");
-                    bw.flush();
-                    fw.close();
-                } catch (IOException e) {
-                    e.printStackTrace();
-                }
-*/            } else {
+           } else {
                 continue;
             }
         }
@@ -1101,17 +1088,7 @@ public class ShiftedGraph {
         }
         long start = System.nanoTime();
         ruletable = FlowRuleNode.addFlowRuleNode(ruletable, newFlow);
-        /*long end = System.nanoTime();
-        try {
-            File f = new File(this.RESULT_PATH);
-            FileWriter fw = new FileWriter(f, true);
-            BufferedWriter bw = new BufferedWriter(fw);
-            bw.write("staticEntryModified addFlowRuleNode time(micro seconds) : " + ( end - start )/1000 +"\n");
-            bw.flush();
-            fw.close();
-        } catch (IOException e) {
-            e.printStackTrace();
-        }*/
+
         this.FlowRuleNodes.put(dpid, ruletable);
 
         if(newrule){
@@ -1212,18 +1189,7 @@ public class ShiftedGraph {
                     }
                 }
             }
-        }/*
-        end = System.nanoTime();
-        try {
-            File f = new File(this.RESULT_PATH);
-            FileWriter fw = new FileWriter(f, true);
-            BufferedWriter bw = new BufferedWriter(fw);
-            bw.write("staticEntryModified addFlowRuleNode time(micro seconds) : " + ( end - start )/1000 +"\n");
-            bw.flush();
-            fw.close();
-        } catch (IOException e) {
-            e.printStackTrace();
-        }*/
+        }
     }
 
     public boolean findRulename(String rulename){
@@ -1291,17 +1257,6 @@ public class ShiftedGraph {
                 }
             }
         }
-        long end = System.nanoTime();
-/*        try {
-            File f = new File(this.RESULT_PATH);
-            FileWriter fw = new FileWriter(f, true);
-            BufferedWriter bw = new BufferedWriter(fw);
-            bw.write("staticEntryDeleted time(micro seconds) : " + ( end - start )/1000 +"\n");
-            bw.flush();
-            fw.close();
-        } catch (IOException e) {
-            e.printStackTrace();
-        }*/
     }
 
 }

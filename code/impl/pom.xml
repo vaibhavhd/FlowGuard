@@ -39,7 +39,7 @@ and is available at http://www.eclipse.org/legal/epl-v10.html
           <artifactId>openflowplugin-api</artifactId>
           <version>${openflowplugin.version}</version>
     </dependency>
-	
+
 	<dependency>
       <groupId>org.opendaylight.l2switch.addresstracker</groupId>
       <artifactId>addresstracker-model</artifactId>

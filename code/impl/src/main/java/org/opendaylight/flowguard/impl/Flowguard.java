@@ -116,7 +116,7 @@ public class Flowguard {
             // TODO Auto-generated catch block
             e.printStackTrace();
         }
-        
+
         for(FwruleRegistryEntry entry : entries) {
             FirewallRule rule = new FirewallRule();
 
@@ -129,16 +129,16 @@ public class Flowguard {
             arr = parseIP(entry.getDestinationIpAddress());
             rule.nw_dst_prefix = arr[0];
             rule.nw_dst_maskbits = arr[1];
-            
+
             rule.priority = entry.getPriority(); //get priority of the firewall rule
-            
+
             rule.tp_src = Short.parseShort(entry.getSourcePort());
             rule.tp_dst = Short.parseShort(entry.getDestinationPort());
             rule.action = (entry.getAction() == Action.Allow) ? FirewallRule.FirewallAction.ALLOW
                     : FirewallRule.FirewallAction.DENY;
             rule.in_port = new String(entry.getInPort());
             rule.dpid = entry.getNode();
-            
+
             ruleStorage.add(rule);
             LOG.info("Rule for switch: {} addded to the list: id:{} ", rule.dpid, rule.ruleid);
         }
@@ -158,12 +158,12 @@ public class Flowguard {
         */
         for(int i = 0; i < ruleStorage.size();i++)
         	System.out.println("Priority of rule " + ruleStorage.get(i).priority + "\trule ID " + ruleStorage.get(i).ruleid);
-        
+
         System.out.println("Done with import static rules");
     }
-    
-    
-    
+
+
+
 
     private int[] parseIP(String address) {
         int[] arr = new int[2];
@@ -183,6 +183,12 @@ public class Flowguard {
 
     private void buildTopology() {
         List<Link> linkList = getAllLinks();
+        /* linklist will be null if the nodes are not connected with each other
+         * This can be the case when ODL fails to install the default flows in
+         * the nw.
+         */
+        if( linkList == null)
+            return;
         for (Link link : linkList) {
         	String destId = link.getDestination().getDestNode().getValue();
         	String srcId = link.getSource().getSourceNode().getValue();
@@ -214,6 +220,9 @@ public class Flowguard {
 
             /* Retrieve all the switches in the operational data tree */
             optNodes = readTx.read(LogicalDatastoreType.OPERATIONAL, nodesIdentifier).get();
+            /* If there are no operational nodes in the network - return*/
+            if(optNodes == null)
+                return;
             nodeList = optNodes.get().getNode();
             LOG.info("No. of detected nodes: {}", nodeList.size());
 
@@ -235,7 +244,7 @@ public class Flowguard {
 
                 String nodeID = node.getId().getValue();
                 List<FlowRuleNode> list = FlowRuleNode.addruletable(flowList);
-                writeToConflictRegistry(nodeID, list);
+                //writeToConflictRegistry(nodeID, list);
 
                 this.flowStorage.put(nodeID, list);
                 LOG.info("{} flows added for switch {}", this.flowStorage.get(node.getId().getValue()).size(), node.getId().getValue());
