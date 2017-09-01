@@ -21,6 +21,7 @@ public class FlowInfo {
     public String firewall_ruldid;
     /* Do not convert this to premitive type boolean */
     public boolean is_finished = false;
+    public HeaderObject ruleHO;
     public HeaderObject current_ho; //input header objects
     public HeaderObject next_ho; //output header objects
     public String next_switch_dpid; //next switch id to propagate
@@ -51,6 +52,7 @@ public class FlowInfo {
          * and not premitive data types. Pointing to same instance of object is not copying.
          */
         FlowInfo newflow = new FlowInfo();
+        newflow.ruleHO = sample.ruleHO;
         newflow.firewall_ruldid = new String(sample.firewall_ruldid);
         newflow.flow_index = sample.flow_index;
         newflow.is_finished = sample.is_finished;
@@ -131,6 +133,7 @@ public class FlowInfo {
             }
         }
         k = k-1;
+        newflow.ruleHO = sample.ruleHO;
         newflow.firewall_ruldid = sample.firewall_ruldid;
         newflow.flow_index = sample.flow_history.get(k).flow_index;
         newflow.is_finished = sample.flow_history.get(k).is_finished;

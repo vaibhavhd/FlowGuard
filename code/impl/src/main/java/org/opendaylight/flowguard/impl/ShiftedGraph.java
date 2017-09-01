@@ -165,7 +165,7 @@ public class ShiftedGraph {
         HeaderObject.printHeaderObject(ho);
         System.out.println("***********************************************************************************");
         //this is method 3(entire violation) : flow removing in the case of entire violation
-        if(this.checkflowremoving(flowinfo, ho) == false){
+        if(true || this.checkflowremoving(flowinfo, ho) == false){
             this.flowtagging(flowinfo);
 
             if(flowinfo.candidate_rule != null && false){
@@ -208,22 +208,37 @@ public class ShiftedGraph {
              * Violated Space: Tracked space which should be denied and thus is a violation.
              */
             //egress switch block
+
+            if(checkDirectFlowPath(flowinfo.flow_history.get(flowinfo.flow_history.size()-1).current_ho)) {
+                /* If flow path is a direct flow path, install the immediate firewall rule corresponding
+                 * to the firewall denied rule in only ingress switch.
+                 */
+                System.out.println("Direct Flow Path Violation!");
+                this.addFlowEntry(flowinfo.ruleHO, flowinfo.flow_history.get(1).current_switch_dpid,
+                        flowinfo.flow_history.get(1).current_ingress_port);
+                return ho;
+            }
             this.addFlowEntry(flowinfo.flow_history.get(flowinfo.flow_history.size()-1).current_ho,
                     flowinfo.flow_history.get(flowinfo.flow_history.size()-1).current_switch_dpid,
                     flowinfo.flow_history.get(flowinfo.flow_history.size()-1).current_ingress_port);
             //ingress switch block
             // TODO This is workaround. HO has been changed. Check Inverseflow
-            ho = flowinfo.flow_history.get(0).current_ho;
+            ho = flowinfo.flow_history.get(1).current_ho;
 
-            this.addFlowEntry(ho, flowinfo.flow_history.get(0).current_switch_dpid, flowinfo.flow_history.get(0).current_ingress_port);
+            this.addFlowEntry(ho, flowinfo.flow_history.get(1).current_switch_dpid, flowinfo.flow_history.get(1).current_ingress_port);
             //this is method 4(partial violation) : add firewall rule and add new flow entry for packet bloacking
-            this.addFirewallRule(ho, flowinfo.flow_history.get(0).current_switch_dpid, flowinfo.flow_history.get(0).current_ingress_port);
+            this.addFirewallRule(ho, flowinfo.flow_history.get(1).current_switch_dpid, flowinfo.flow_history.get(1).current_ingress_port);
         }
-        else {
 
-        }
         return ho;
     }
+    private boolean checkDirectFlowPath(HeaderObject current_ho) {
+        if(current_ho.nw_dst_prefix == 0 && current_ho.nw_src_prefix == 0) {
+            return true;
+        }
+        return false;
+    }
+
     public boolean checkflowremoving(FlowInfo flowinfo, HeaderObject ho){
         FirewallRule frule = new FirewallRule();
         if(this.firewall.ruleStorage != null){
@@ -246,21 +261,21 @@ public class ShiftedGraph {
             }*/
             //flow removing should be considered
             System.out.println("S3-Flow Removing applied!!");
+            System.out.println("Removing flow rule from node: " + flowinfo.next_switch_dpid);
             this.resolution_method = 3;
-            Set<String> set = this.FlowRuleNodes.keySet();
-            Iterator<String> itr = set.iterator();
-            /* Iterate through all the switches  to find a metching flow. TODO: Switch can be known beforehand */
-            while(itr.hasNext()){
-                Object key = itr.next();
-                List<FlowRuleNode> ruletable = this.FlowRuleNodes.get(key.toString());
-                int size = ruletable.size();
-                for(int i = size-1; i >= 0; i--){
-                	if(ruletable.get(i) != null)
-                    if(keyword.equals(ruletable.get(i).rule_name)){
-                        this.delFlowEntry(key.toString(), ruletable.get(i));
-                        // TODO this.storageSource.deleteRowAsync(STATICENTRY_TABLE_NAME, ruletable.get(i).rule_name);
-                        return true; // TODO Shoud it delete in other tables and switches too?
-                    }
+
+            List<FlowRuleNode> ruletable = this.FlowRuleNodes.get(flowinfo.next_switch_dpid);
+            int size = ruletable.size();
+            for(int i = size-1; i >= 0; i--){
+            	if(ruletable.get(i) != null)
+                if(keyword.equals(ruletable.get(i).rule_name)){
+                    this.delFlowEntry(flowinfo.next_switch_dpid, ruletable.get(i));
+                    return true; // TODO Shoud it delete in other tables and switches too?
+                    /*
+                     * Proposed Solution: Using this strategy, all rules associated with a flow
+                     * path, which entirely violates the firewall policy, are removed
+                     * from the network switches.
+                     */
                 }
             }
         }
@@ -859,25 +874,30 @@ public class ShiftedGraph {
                         source.dpid, probe.dpid);
 
                 FlowInfo sample = new FlowInfo();
+                sample.ruleHO = new HeaderObject();
+                sample.ruleHO.nw_src_prefix = firewall_rules.get(i).nw_src_prefix;
+                sample.ruleHO.nw_src_maskbits = firewall_rules.get(i).nw_src_maskbits;
+                sample.ruleHO.nw_dst_prefix = firewall_rules.get(i).nw_dst_prefix;
+                sample.ruleHO.nw_dst_maskbits = firewall_rules.get(i).nw_dst_maskbits;
                 sample.firewall_ruldid = Integer.toString(firewall_rules.get(i).ruleid);
                 this.current_flow_index++;
                 sample.flow_index = this.current_flow_index;
                 sample.rule_node_name = "SourceNode";
                 sample.current_ho = new HeaderObject();
-                sample.current_ho.nw_dst_prefix = firewall_rules.get(i).nw_dst_prefix;
-                sample.current_ho.nw_dst_maskbits = firewall_rules.get(i).nw_dst_maskbits;
-                sample.current_ho.nw_src_prefix = firewall_rules.get(i).nw_src_prefix;//167772160;
-                sample.current_ho.nw_src_maskbits = firewall_rules.get(i).nw_src_maskbits;
+                sample.current_ho.nw_dst_prefix = 0;//firewall_rules.get(i).nw_dst_prefix;
+                sample.current_ho.nw_dst_maskbits = 0;//firewall_rules.get(i).nw_dst_maskbits;
+                sample.current_ho.nw_src_prefix = 0;//firewall_rules.get(i).nw_src_prefix;//167772160;
+                sample.current_ho.nw_src_maskbits = 0;//firewall_rules.get(i).nw_src_maskbits;
                 sample.current_switch_dpid = source.dpid;
                 sample.current_ingress_port = new String(source.port);
                 sample.next_switch_dpid = source.dpid;
                 sample.next_ingress_port = new String(source.port);
                 // TODO Work on next_ho
                 sample.next_ho = new HeaderObject();
-                sample.next_ho.nw_dst_prefix = firewall_rules.get(i).nw_dst_prefix;
-                sample.next_ho.nw_dst_maskbits = firewall_rules.get(i).nw_dst_maskbits;
-                sample.next_ho.nw_src_prefix = firewall_rules.get(i).nw_src_prefix;
-                sample.next_ho.nw_src_maskbits = firewall_rules.get(i).nw_src_maskbits;
+                sample.next_ho.nw_dst_prefix = 0;//firewall_rules.get(i).nw_dst_prefix;
+                sample.next_ho.nw_dst_maskbits = 0;//firewall_rules.get(i).nw_dst_maskbits;
+                sample.next_ho.nw_src_prefix = 0;//firewall_rules.get(i).nw_src_prefix;
+                sample.next_ho.nw_src_maskbits = 0;//firewall_rules.get(i).nw_src_maskbits;
                 sample.target = new TopologyStruct();
                 sample.target.dpid = probe.dpid;
                 sample.target.port = probe.port;
