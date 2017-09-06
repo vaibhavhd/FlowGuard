@@ -298,9 +298,9 @@ public class FlowRuleNode {
                         }
                         else if (a.getAction() instanceof SetFieldCase){
                             LOG.info("Set Field OutputAction");
-                           
+
                             //Check to see if set field ether source != null
-                            if(((SetFieldCase)(a.getAction())).getSetField().getEthernetMatch() != null){ 
+                            if(((SetFieldCase)(a.getAction())).getSetField().getEthernetMatch() != null){
                             	if(((SetFieldCase)(a.getAction())).getSetField().getEthernetMatch().getEthernetSource() != null) {
                             		node.action_dl_src = ((SetFieldCase)(a.getAction())).getSetField()
                                 			.getEthernetMatch().getEthernetSource().getAddress().getValue();
@@ -309,13 +309,13 @@ public class FlowRuleNode {
                             		node.action_dl_dst = ((SetFieldCase)(a.getAction())).getSetField()
                                      		.getEthernetMatch().getEthernetDestination().getAddress().getValue();
                             	}
-                            } 
-                            
+                            }
+
                             //Check to see if set field layer3 != null
                             if(((SetFieldCase)a.getAction()).getSetField().getLayer3Match() != null) {
                             	l3Match = ((SetFieldCase)a.getAction()).getSetField().getLayer3Match();
                             }
-                      
+
                             // TODO Handle other L3Match cases: ARP, Ipv6
                             if (l3Match instanceof Ipv4Match){
                                 Ipv4Prefix src  = ((Ipv4Match)flow.getMatch().getLayer3Match()).getIpv4Source();
@@ -353,10 +353,73 @@ public class FlowRuleNode {
                     LOG.info("Case: ClearAction");
                 }
                 else if (instruction instanceof WriteActionsCase) {
-                    // Required
-                    LOG.info("Case: WriteAction");
-                    List<Action> action = ((WriteActions)i.getInstruction()).getAction();
+                    // Optional
+                    LOG.info("Case: ApplyAction");
+                    List<Action> action = (((WriteActionsCase) instruction).getWriteActions()).getAction();
+                    ActionList node = instance.new ActionList();
+                    for (Action a : action) {
+                        if (a.getAction() instanceof OutputActionCase) {
+                            LOG.info("Setting the Output Action");
+                            node.action_out_port = ((OutputActionCase)(a.getAction())).getOutputAction()
+                                    .getOutputNodeConnector().getValue();
+                            instance.actionList.add(node);
+                            /* The set-field actions untill next output action have been populated in the actionList Object
+                             * This also takes care of the case where multiple actions are chained which modify same or
+                             * different header fields.
+                             */
+                            node = instance.new ActionList(node);
+                        }
+                        else if (a.getAction() instanceof SetFieldCase){
+                            LOG.info("Set Field OutputAction");
 
+                            //Check to see if set field ether source != null
+                            if(((SetFieldCase)(a.getAction())).getSetField().getEthernetMatch() != null){
+                                if(((SetFieldCase)(a.getAction())).getSetField().getEthernetMatch().getEthernetSource() != null) {
+                                    node.action_dl_src = ((SetFieldCase)(a.getAction())).getSetField()
+                                            .getEthernetMatch().getEthernetSource().getAddress().getValue();
+                                }
+                                if(((SetFieldCase)(a.getAction())).getSetField().getEthernetMatch().getEthernetDestination() != null) {
+                                    node.action_dl_dst = ((SetFieldCase)(a.getAction())).getSetField()
+                                            .getEthernetMatch().getEthernetDestination().getAddress().getValue();
+                                }
+                            }
+
+                            //Check to see if set field layer3 != null
+                            if(((SetFieldCase)a.getAction()).getSetField().getLayer3Match() != null) {
+                                l3Match = ((SetFieldCase)a.getAction()).getSetField().getLayer3Match();
+                            }
+
+                            // TODO Handle other L3Match cases: ARP, Ipv6
+                            if (l3Match instanceof Ipv4Match){
+                                Ipv4Prefix src  = ((Ipv4Match)flow.getMatch().getLayer3Match()).getIpv4Source();
+                                Ipv4Prefix dst = ((Ipv4Match)flow.getMatch().getLayer3Match()).getIpv4Destination();
+                                node.action_nw_src_prefix = calculateIpfromPrefix(src);
+                                node.action_nw_src_maskbits = calculateMaskfromPrefix(src);
+                                node.action_nw_dst_prefix = calculateIpfromPrefix(dst);
+                                node.action_nw_dst_maskbits = calculateMaskfromPrefix(dst);
+                            }
+                            else if (l3Match instanceof Ipv4MatchArbitraryBitMask){
+                                Ipv4Address addr = ((Ipv4MatchArbitraryBitMask)flow.getMatch().getLayer3Match()).getIpv4SourceAddressNoMask();
+                                DottedQuad mask = ((Ipv4MatchArbitraryBitMask)flow.getMatch().getLayer3Match()).getIpv4SourceArbitraryBitmask();
+                                Ipv4Prefix src = createPrefix(addr, convertArbitraryMaskToByteArray(mask));
+
+                                addr = ((Ipv4MatchArbitraryBitMask)flow.getMatch().getLayer3Match()).getIpv4DestinationAddressNoMask();
+                                mask = ((Ipv4MatchArbitraryBitMask)flow.getMatch().getLayer3Match()).getIpv4DestinationArbitraryBitmask();
+                                Ipv4Prefix dst = createPrefix(addr, convertArbitraryMaskToByteArray(mask));
+                                node.action_nw_src_prefix = calculateIpfromPrefix(src);
+                                node.action_nw_src_maskbits = calculateMaskfromPrefix(src);
+                                node.action_nw_dst_prefix = calculateIpfromPrefix(dst);
+                                node.action_nw_dst_maskbits = calculateMaskfromPrefix(dst);
+                            }
+                            instance.actionList.add(node);
+                        }
+                        else if(a.getAction() instanceof SetVlanIdActionCase){
+                            // TODO Check what is assigned
+                            //node.action_vlan = ((SetField)(a.getAction())).getVlanMatch().getVlanId().getVlanId().getValue();
+                            node.action_vlan = ((SetVlanIdActionCase)(a.getAction())).getSetVlanIdAction().getVlanId().getValue();
+                            instance.actionList.add(node);
+                        }
+                    }
                 }
                 else if(instruction instanceof GoToTableCase) {
                     // Required

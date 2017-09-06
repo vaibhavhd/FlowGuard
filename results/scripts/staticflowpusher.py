@@ -73,7 +73,7 @@ def _prepare_post(cntl, method, flowss, template=None):
         :returns req: http request object
     """
     flow_list = []
-    with open('flowRemovingflows.json') as data_file:
+    with open('data/flowRemovingflows.json') as data_file:
         data = json.load(data_file)
         nodes = data["nodes"]
         reqs = []

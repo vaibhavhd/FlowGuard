@@ -88,11 +88,11 @@ public class Flowguard {
         this.importStaticRules();
 
         this.sg = new ShiftedGraph(this, this.readTx, this.flowStorage, this.topologyStorage, this.db);
-        //RuleRegistryDataChangeListenerFuture future = new RuleRegistryDataChangeListenerFuture(this.db, this.sg);
         //Pull the FW Rules from a file.
         if(ruleStorage.size() != 0)
             sg.buildSourceProbeNode(this.ruleStorage);
-
+        /* After firewall rules are checked for violation, run listeners on any external flow modifications */
+        RuleRegistryDataChangeListenerFuture future = new RuleRegistryDataChangeListenerFuture(this.db, this.sg);
     }
 
     private void importStaticRules() {

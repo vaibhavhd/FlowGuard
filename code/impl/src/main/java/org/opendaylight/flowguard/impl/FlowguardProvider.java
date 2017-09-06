@@ -56,8 +56,7 @@ public class FlowguardProvider {
     public void init() {
         serviceRegistration = rpcProviderRegistry.addRpcImplementation(FlowguardService.class, new FlowguardImpl(dataBroker));
 
-        FWRuleRegistryDataChangeListenerFuture firewall_fureture = new FWRuleRegistryDataChangeListenerFuture(this.dataBroker);
-
+        FWRuleRegistryDataChangeListenerFuture firewall_future = new FWRuleRegistryDataChangeListenerFuture(this.dataBroker);
         LOG.info("FlowguardProvider Session Initiated");
 
     }

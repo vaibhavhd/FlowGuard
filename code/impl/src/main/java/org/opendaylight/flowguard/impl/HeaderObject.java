@@ -24,6 +24,10 @@ public class HeaderObject {
     public int nw_src_maskbits = 0;
     public int nw_dst_prefix = 0;
     public int nw_dst_maskbits = 0;
+    public int tcp_src = 0;
+    public int tcp_dst = 0;
+    public int udp_src = 0;
+    public int udp_dst = 0;
     public int vlan;
 	public List<HeaderObject> diff;
 

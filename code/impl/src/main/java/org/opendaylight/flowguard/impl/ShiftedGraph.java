@@ -1161,6 +1161,7 @@ public class ShiftedGraph {
                                 }
                                 FlowInfo fi2 = new FlowInfo();
                                 fi2 = FlowInfo.valueCopy2(fi);
+                                fi2.is_finished = false;
                                 this.current_flow_index++;
                                 fi2.flow_index = this.current_flow_index;
                                 fi2.candidate_rule = rulename;
@@ -1172,6 +1173,7 @@ public class ShiftedGraph {
                                     (j+1) == this.flowstorage.get(i).flow_history.size()){
                                 FlowInfo fi = new FlowInfo();
                                 fi = FlowInfo.valueCopy2(this.flowstorage.get(i));
+                                fi.is_finished = false;
                                 fi.candidate_rule = rulename;
                                 this.propagateFlow(fi, this.flowstorage.get(i).target, this.getRuleIndex(rulename));
                                 this.flowstorage.get(i).candidate_rule = null;
