@@ -872,49 +872,7 @@ public class ShiftedGraph {
                 }
                 System.out.printf("\nRule: %s | source node: %s | probe node: %s\n", firewall_rules.get(i).ruleid,
                         source.dpid, probe.dpid);
-
-                FlowInfo sample = new FlowInfo();
-                sample.ruleHO = new HeaderObject();
-                sample.ruleHO.nw_src_prefix = firewall_rules.get(i).nw_src_prefix;
-                sample.ruleHO.nw_src_maskbits = firewall_rules.get(i).nw_src_maskbits;
-                sample.ruleHO.nw_dst_prefix = firewall_rules.get(i).nw_dst_prefix;
-                sample.ruleHO.nw_dst_maskbits = firewall_rules.get(i).nw_dst_maskbits;
-                sample.firewall_ruldid = Integer.toString(firewall_rules.get(i).ruleid);
-                this.current_flow_index++;
-                sample.flow_index = this.current_flow_index;
-                sample.rule_node_name = "SourceNode";
-                sample.current_ho = new HeaderObject();
-                sample.current_ho.nw_dst_prefix = 0;//firewall_rules.get(i).nw_dst_prefix;
-                sample.current_ho.nw_dst_maskbits = 0;//firewall_rules.get(i).nw_dst_maskbits;
-                sample.current_ho.nw_src_prefix = 0;//firewall_rules.get(i).nw_src_prefix;//167772160;
-                sample.current_ho.nw_src_maskbits = 0;//firewall_rules.get(i).nw_src_maskbits;
-                sample.current_switch_dpid = source.dpid;
-                sample.current_ingress_port = new String(source.port);
-                sample.next_switch_dpid = source.dpid;
-                sample.next_ingress_port = new String(source.port);
-                // TODO Work on next_ho
-                sample.next_ho = new HeaderObject();
-                sample.next_ho.nw_dst_prefix = 0;//firewall_rules.get(i).nw_dst_prefix;
-                sample.next_ho.nw_dst_maskbits = 0;//firewall_rules.get(i).nw_dst_maskbits;
-                sample.next_ho.nw_src_prefix = 0;//firewall_rules.get(i).nw_src_prefix;
-                sample.next_ho.nw_src_maskbits = 0;//firewall_rules.get(i).nw_src_maskbits;
-                sample.target = new TopologyStruct();
-                sample.target.dpid = probe.dpid;
-                sample.target.port = probe.port;
-                sample.flow_history = new ArrayList<FlowInfo>();
-                sample.flow_history.add(sample);
-                Map<FlowInfo, TopologyStruct> value = new ConcurrentHashMap<FlowInfo, TopologyStruct>();
-                value.put(sample, probe);
-                this.SourceProbeNodeStorage.put(Integer.toString(firewall_rules.get(i).ruleid), value);
-                long start = System.nanoTime();
-                System.out.print("\n<<<<<<<<<<<<<<<<<<<<");
-                System.out.print("Starting to propagate sample. Flow Index:" + this.current_flow_index);
-                System.out.println(">>>>>>>>>>>>>>>>>>>>");
-                this.propagateFlow(sample, probe, 0);
-                System.out.print("<<<<<<<<<<<<<<<<<<<<<<<<<<");
-                System.out.print("Finished propagation!");
-                System.out.println(">>>>>>>>>>>>>>>>>>>>>>>>>>");
-
+                testSampleFlow(firewall_rules.get(i), source, probe);
            } else {
                 continue;
             }
@@ -923,59 +881,75 @@ public class ShiftedGraph {
     }
 
     public void buildSourceProbeNode(FirewallRule rule){
-        if(this.SourceProbeNodeStorage == null){
+
+        if(this.SourceProbeNodeStorage != null){
+            this.SourceProbeNodeStorage.clear();
+        } else {
             this.SourceProbeNodeStorage = new ConcurrentHashMap<String, Map<FlowInfo, TopologyStruct>>();
         }
 
-        if(rule.action == FirewallAction.DENY) { // && rule.dpid == -1){
-            /* Get a source switch node */
-            TopologyStruct source = this.findDpidPort(rule.nw_src_prefix);
-            if(source == null) {
-            	LOG.info("The source device in firewall rule is not found"
-            			+ "This situation has not been handlled yet!!");
-            	return;
-            }
-            /* Get destination switch node */
-            TopologyStruct probe = this.findDpidPort(rule.nw_dst_prefix);
-            if(probe == null) {
-            	LOG.info("The destination device in firewall rule is not found"
-            			+ "This situation has not been handlled yet!!");
-            	return;
-            }
-            FlowInfo sample = new FlowInfo();
-            sample.firewall_ruldid = Integer.toString(rule.ruleid);
-            this.current_flow_index++;
-            sample.flow_index = this.current_flow_index;
-            sample.rule_node_name = "SourceNode";
-            sample.current_ho = new HeaderObject();
-            sample.current_ho.nw_dst_prefix = 167772160; // IP = 10.0.0.0
-            sample.current_ho.nw_dst_maskbits = 8;
-            sample.current_ho.nw_src_prefix = 167772160;
-            sample.current_ho.vlan = -1;
-            sample.current_ho.nw_src_maskbits = 8;
-            sample.current_switch_dpid = source.dpid;
-            sample.current_ingress_port = new String(source.port);
-            sample.next_switch_dpid = source.dpid;
-            // TODO Current and next ingress ports are same!!
-            sample.next_ingress_port = new String(source.port);
-            sample.next_ho = new HeaderObject();
-            sample.next_ho.nw_dst_prefix = 167772160;
-            sample.next_ho.nw_dst_maskbits = 8;
-            sample.next_ho.nw_src_prefix = 167772160;
-            sample.next_ho.nw_src_maskbits = 8;
-            sample.next_ho.vlan = -1;
-            sample.target = new TopologyStruct();
-            sample.target.dpid = probe.dpid;
-            sample.target.port = probe.port;
-            sample.flow_history = new ArrayList<FlowInfo>();
-            sample.flow_history.add(sample);
-            Map<FlowInfo, TopologyStruct> value = new ConcurrentHashMap<FlowInfo, TopologyStruct>();
-            value.put(sample, probe);
+        if(rule.action == FirewallAction.DENY) {
+            TopologyStruct source = findDpidPort(rule.nw_src_prefix);
+            TopologyStruct probe = findDpidPort(rule.nw_dst_prefix);
 
-            /* Put the new flow in the topology map.*/
-            this.SourceProbeNodeStorage.put(Integer.toString(rule.ruleid), value);
-            this.propagateFlow(sample, probe, 0);
+            if(source == null) {
+                System.out.printf("Host %s not found in the network(no corresponding source node)\n",
+                        IPv4.fromIPv4Address(rule.nw_src_prefix));
+                return;
+            }
+            if(probe == null) {
+                System.out.printf("Host %s not found in the network(no corresponding probe node)\n",
+                        IPv4.fromIPv4Address(rule.nw_dst_prefix));
+                return;
+            }
+            System.out.printf("\nRule: %s | source node: %s | probe node: %s\n", rule.ruleid,
+                    source.dpid, probe.dpid);
+
+            testSampleFlow(rule, source, probe);
         }
+    }
+
+    private void testSampleFlow(FirewallRule firewallRule, TopologyStruct source, TopologyStruct probe) {
+        FlowInfo sample = new FlowInfo();
+        sample.ruleHO = new HeaderObject();
+        sample.ruleHO.nw_src_prefix = firewallRule.nw_src_prefix;
+        sample.ruleHO.nw_src_maskbits = firewallRule.nw_src_maskbits;
+        sample.ruleHO.nw_dst_prefix = firewallRule.nw_dst_prefix;
+        sample.ruleHO.nw_dst_maskbits = firewallRule.nw_dst_maskbits;
+        sample.firewall_ruldid = Integer.toString(firewallRule.ruleid);
+        this.current_flow_index++;
+        sample.flow_index = this.current_flow_index;
+        sample.rule_node_name = "SourceNode";
+        sample.current_ho = new HeaderObject();
+        sample.current_ho.nw_dst_prefix = 0;//firewall_rules.get(i).nw_dst_prefix;
+        sample.current_ho.nw_dst_maskbits = 0;//firewall_rules.get(i).nw_dst_maskbits;
+        sample.current_ho.nw_src_prefix = 0;//firewall_rules.get(i).nw_src_prefix;//167772160;
+        sample.current_ho.nw_src_maskbits = 0;//firewall_rules.get(i).nw_src_maskbits;
+        sample.current_switch_dpid = source.dpid;
+        sample.current_ingress_port = new String(source.port);
+        sample.next_switch_dpid = source.dpid;
+        sample.next_ingress_port = new String(source.port);
+        // TODO Work on next_ho
+        sample.next_ho = new HeaderObject();
+        sample.next_ho.nw_dst_prefix = 0;//firewall_rules.get(i).nw_dst_prefix;
+        sample.next_ho.nw_dst_maskbits = 0;//firewall_rules.get(i).nw_dst_maskbits;
+        sample.next_ho.nw_src_prefix = 0;//firewall_rules.get(i).nw_src_prefix;
+        sample.next_ho.nw_src_maskbits = 0;//firewall_rules.get(i).nw_src_maskbits;
+        sample.target = new TopologyStruct();
+        sample.target.dpid = probe.dpid;
+        sample.target.port = probe.port;
+        sample.flow_history = new ArrayList<FlowInfo>();
+        sample.flow_history.add(sample);
+        Map<FlowInfo, TopologyStruct> value = new ConcurrentHashMap<FlowInfo, TopologyStruct>();
+        value.put(sample, probe);
+        this.SourceProbeNodeStorage.put(Integer.toString(firewallRule.ruleid), value);
+        System.out.print("\n<<<<<<<<<<<<<<<<<<<<");
+        System.out.print("Starting to propagate sample. Flow Index:" + this.current_flow_index);
+        System.out.println(">>>>>>>>>>>>>>>>>>>>");
+        this.propagateFlow(sample, probe, 0);
+        System.out.print("<<<<<<<<<<<<<<<<<<<<<<<<<<");
+        System.out.print("Finished propagation!");
+        System.out.println(">>>>>>>>>>>>>>>>>>>>>>>>>>");
     }
 
     /* Find switch based on the IP from firewall rule */

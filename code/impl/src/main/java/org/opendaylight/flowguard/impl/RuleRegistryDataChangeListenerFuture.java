@@ -48,11 +48,9 @@ import org.opendaylight.yang.gen.v1.urn.opendaylight.inventory.rev130819.nodes.N
 import org.opendaylight.yang.gen.v1.urn.opendaylight.inventory.rev130819.nodes.NodeBuilder;
 import org.opendaylight.yang.gen.v1.urn.opendaylight.inventory.rev130819.nodes.NodeKey;
 import org.opendaylight.yang.gen.v1.urn.opendaylight.params.xml.ns.yang.flowguard.rev170505.FwruleRegistry;
-import org.opendaylight.yang.gen.v1.urn.opendaylight.params.xml.ns.yang.flowguard.rev170505.RuleRegistry;
 import org.opendaylight.yang.gen.v1.urn.opendaylight.params.xml.ns.yang.flowguard.rev170505.fwrule.registry.FwruleRegistryEntry;
 import org.opendaylight.yang.gen.v1.urn.opendaylight.params.xml.ns.yang.flowguard.rev170505.fwrule.registry.FwruleRegistryEntryBuilder;
 import org.opendaylight.yang.gen.v1.urn.opendaylight.params.xml.ns.yang.flowguard.rev170505.fwrule.registry.FwruleRegistryEntryKey;
-import org.opendaylight.yang.gen.v1.urn.opendaylight.params.xml.ns.yang.flowguard.rev170505.rule.registry.RuleRegistryEntry;
 import org.opendaylight.yangtools.concepts.ListenerRegistration;
 import org.opendaylight.yangtools.yang.binding.DataObject;
 import org.opendaylight.yangtools.yang.binding.InstanceIdentifier;
@@ -60,7 +58,7 @@ import org.opendaylight.yangtools.yang.binding.InstanceIdentifier.PathArgument;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-public class RuleRegistryDataChangeListenerFuture extends AbstractFuture<RuleRegistryEntry> implements DataChangeListener,AutoCloseable{
+public class RuleRegistryDataChangeListenerFuture implements DataChangeListener,AutoCloseable{
 
     DataBroker db;
     ShiftedGraph sg;
@@ -90,7 +88,7 @@ public class RuleRegistryDataChangeListenerFuture extends AbstractFuture<RuleReg
             /* Retrieve all the switches in the operational data tree */
             optNodes = readTx.read(LogicalDatastoreType.OPERATIONAL, nodesIdentifier).get();
             nodeList = optNodes.get().getNode();
-            LOG.info("No. of detected nodes: {}", nodeList.size());
+            LOG.info("No. of nodes to listen: {}", nodeList.size());
 
             /* Iterate through the list of nodes(switches) for flow tables per node */
             for(Node node : nodeList){
@@ -159,12 +157,6 @@ public class RuleRegistryDataChangeListenerFuture extends AbstractFuture<RuleReg
             }
         }
 
-    }
-
-    @Override
-    public boolean cancel(boolean mayInterruptIfRunning) {
-        quietClose();
-        return super.cancel(mayInterruptIfRunning);
     }
 
     private void quietClose() {

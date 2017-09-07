@@ -7,6 +7,7 @@
  */
 package org.opendaylight.flowguard.impl;
 
+import java.util.List;
 import java.util.Map;
 
 import org.opendaylight.controller.md.sal.binding.api.DataBroker;
@@ -32,26 +33,30 @@ import com.google.common.util.concurrent.Futures;
 
 public class FWRuleRegistryDataChangeListenerFuture extends AbstractFuture<FwruleRegistryEntry> implements DataChangeListener,AutoCloseable{
 
-	
-	 DataBroker db;
-	 private static final Logger LOG = LoggerFactory.getLogger(RuleRegistryDataChangeListenerFuture.class);
-	 private ListenerRegistration<DataChangeListener> registration;
 
-	 public FWRuleRegistryDataChangeListenerFuture(DataBroker db) {
+    DataBroker db;
+    private static final Logger LOG = LoggerFactory.getLogger(FWRuleRegistryDataChangeListenerFuture.class);
+    private ListenerRegistration<DataChangeListener> registration;
+    private Flowguard flowguard;
+    private ShiftedGraph shiftedGraph;
+
+	 public FWRuleRegistryDataChangeListenerFuture(DataBroker db, Flowguard flowguard, ShiftedGraph sg) {
 		   this.db = db;
+		   this.flowguard = flowguard;
+		   this.shiftedGraph = sg;
 		   InstanceIdentifier<FwruleRegistry> ruleIID = InstanceIdentifier.builder(FwruleRegistry.class).build();
-	
+
 		   db.registerDataChangeListener(LogicalDatastoreType.CONFIGURATION, ruleIID, this, AsyncDataBroker.DataChangeScope.SUBTREE);
-		   
+
 		   LOG.info("FIREWALL RULES DataChangeListener registered with MD-SAL for path {}", ruleIID);
 	 }
-	
-	
+
+
 	@Override
 	public void close() throws Exception {
 		 if (registration != null) {
 	          registration.close();
-	     }	
+	     }
 	}
 
 	@Override
@@ -68,8 +73,8 @@ public class FWRuleRegistryDataChangeListenerFuture extends AbstractFuture<Fwrul
 	             }
 	        }
 	}
-	
-	
+
+
     /**
      * Don't need this yet. This is for comparing with the ShiftedGraph
      * @param firewallRule
@@ -80,25 +85,18 @@ public class FWRuleRegistryDataChangeListenerFuture extends AbstractFuture<Fwrul
                  .setRuleId(input.getRuleId())
                  .setNode(input.getNode())
                  .setInPort(input.getInPort())
-                 .setSourceIpAddress(input.getSourceIpAddress())               
-                 .setDestinationIpAddress(input.getDestinationIpAddress()) 
+                 .setSourceIpAddress(input.getSourceIpAddress())
+                 .setDestinationIpAddress(input.getDestinationIpAddress())
                  .setSourcePort(input.getSourcePort())
                  .setDestinationPort(input.getDestinationPort())
                  .setAction(input.getAction())
+                 .setPriority(input.getPriority())
                  .build();
-        
-        /*
-        //FirewallRuleParser.static_rule = false;
-        WriteTransaction transaction = db.newWriteOnlyTransaction();
-        InstanceIdentifier<FwruleRegistryEntry> iid = InstanceIdentifier.create(FwruleRegistry.class)
-                 .child(FwruleRegistryEntry.class, new FwruleRegistryEntryKey(input.getRuleId()));
-        transaction.merge(LogicalDatastoreType.CONFIGURATION, iid, entry);
-        CheckedFuture<Void, TransactionCommitFailedException> future = transaction.submit();
-        Futures.addCallback(future, new LoggingFuturesCallBack<Void>("Failed add DYNAMIC firewall rule", LOG));
-        */
-      
+        FirewallRule rule = new FirewallRule();
+        flowguard.addRuleToStorage(rule, entry);
+        shiftedGraph.buildSourceProbeNode(rule);
     }
-    
+
     @Override
     public boolean cancel(boolean mayInterruptIfRunning) {
         quietClose();

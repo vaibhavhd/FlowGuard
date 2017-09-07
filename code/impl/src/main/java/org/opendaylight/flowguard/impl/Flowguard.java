@@ -84,14 +84,22 @@ public class Flowguard {
     public void start() {
         // Create the snapshot of existing network topology */
         this.buildTopology();
-        this.importStaticFlows();
-        this.importStaticRules();
+        if(this.topologyStorage.isEmpty()) {
+            LOG.info("No network found!!");
+        }
+        else {
+            this.importStaticFlows();
+            this.importStaticRules();
 
-        this.sg = new ShiftedGraph(this, this.readTx, this.flowStorage, this.topologyStorage, this.db);
-        //Pull the FW Rules from a file.
-        if(ruleStorage.size() != 0)
-            sg.buildSourceProbeNode(this.ruleStorage);
-        /* After firewall rules are checked for violation, run listeners on any external flow modifications */
+            this.sg = new ShiftedGraph(this, this.readTx, this.flowStorage, this.topologyStorage, this.db);
+            //Pull the FW Rules from a file.
+            if(ruleStorage.size() != 0)
+                sg.buildSourceProbeNode(this.ruleStorage);
+            /* After firewall rules are checked for violation, run listeners on any external flow modifications */
+        }
+        // TODO OPERATIONAL LISTENER
+        // TODO New nodes listener
+        FWRuleRegistryDataChangeListenerFuture firewall_future = new FWRuleRegistryDataChangeListenerFuture(this.db, this, this.sg);
         RuleRegistryDataChangeListenerFuture future = new RuleRegistryDataChangeListenerFuture(this.db, this.sg);
     }
 
@@ -119,28 +127,7 @@ public class Flowguard {
 
         for(FwruleRegistryEntry entry : entries) {
             FirewallRule rule = new FirewallRule();
-
-            rule.ruleid = entry.getRuleId();
-            int[] arr;
-            arr = parseIP(entry.getSourceIpAddress());
-            rule.nw_src_prefix = arr[0];
-            rule.nw_src_maskbits = arr[1];
-
-            arr = parseIP(entry.getDestinationIpAddress());
-            rule.nw_dst_prefix = arr[0];
-            rule.nw_dst_maskbits = arr[1];
-
-            rule.priority = entry.getPriority(); //get priority of the firewall rule
-
-            rule.tp_src = Short.parseShort(entry.getSourcePort());
-            rule.tp_dst = Short.parseShort(entry.getDestinationPort());
-            rule.action = (entry.getAction() == Action.Allow) ? FirewallRule.FirewallAction.ALLOW
-                    : FirewallRule.FirewallAction.DENY;
-            rule.in_port = new String(entry.getInPort());
-            rule.dpid = entry.getNode();
-
-            ruleStorage.add(rule);
-            LOG.info("Rule for switch: {} addded to the list: id:{} ", rule.dpid, rule.ruleid);
+            addRuleToStorage(rule, entry);
         }
         //quickSort(ruleStorage,0,ruleStorage.size()-1);
         Collections.sort(ruleStorage, new Comparator<FirewallRule>()
@@ -165,6 +152,28 @@ public class Flowguard {
 
 
 
+    public void addRuleToStorage(FirewallRule rule, FwruleRegistryEntry entry) {
+
+        rule.ruleid = entry.getRuleId();
+        int[] arr;
+        arr = parseIP(entry.getSourceIpAddress());
+        rule.nw_src_prefix = arr[0];
+        rule.nw_src_maskbits = arr[1];
+        arr = parseIP(entry.getDestinationIpAddress());
+        rule.nw_dst_prefix = arr[0];
+        rule.nw_dst_maskbits = arr[1];
+        rule.priority = entry.getPriority(); //get priority of the firewall rule
+        rule.tp_src = Short.parseShort(entry.getSourcePort());
+        rule.tp_dst = Short.parseShort(entry.getDestinationPort());
+        rule.action = (entry.getAction() == Action.Allow) ? FirewallRule.FirewallAction.ALLOW
+                : FirewallRule.FirewallAction.DENY;
+        rule.in_port = new String(entry.getInPort());
+        rule.dpid = entry.getNode();
+
+        ruleStorage.add(rule);
+        LOG.info("Rule for switch: {} added to the list: id:{} ", rule.dpid, rule.ruleid);
+    }
+
     private int[] parseIP(String address) {
         int[] arr = new int[2];
         if(address.equals("*")) {
@@ -187,8 +196,9 @@ public class Flowguard {
          * This can be the case when ODL fails to install the default flows in
          * the nw.
          */
-        if( linkList == null)
+        if( linkList == null) {
             return;
+        }
         for (Link link : linkList) {
         	String destId = link.getDestination().getDestNode().getValue();
         	String srcId = link.getSource().getSourceNode().getValue();

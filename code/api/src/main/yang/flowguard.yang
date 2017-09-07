@@ -77,36 +77,6 @@ module flowguard {
           }
   }
 
-    grouping rule {
-
-    	leaf name {
-    		type string;
-    		config true;
-    		mandatory false;
-    		description "Name of FW rule";
-    	}
-    	leaf node {
-        	type string;
-        }
-    	leaf destinationIpAddress {
-            type string;
-            config true;
-            mandatory false;
-            description
-              "The IP address destination";
-          }
-
-
-          leaf destinationPort {
-              type uint16;
-              config true;
-              mandatory false;
-              description
-                "The destination port";
-          }
-
-    }
-    
     grouping conflict-info {
 	     leaf priority {
 	     	type uint16;
@@ -161,7 +131,7 @@ module flowguard {
                   "forward = 2";
               }
             }
-            config true; 
+            config true;
 	     }
 	     leaf protocol {
 	     	type enumeration {
@@ -174,9 +144,9 @@ module flowguard {
               enum "ANY" {
                 value 3;
               }
-              
+
             }
-            config true; 
+            config true;
 	     }
 	     leaf gen-count {
 	     	type uint16;
@@ -216,15 +186,7 @@ module flowguard {
 	     	config true;
 	     }
     }
-    container rule-registry {
-    	list rule-registry-entry {
-    		key "name";
-    		uses flowguard:rule;
-    		leaf greeting {
-    			type string;
-    		}
-    	}
-    }
+
     container fwrule-registry {
         list fwrule-registry-entry {
             key "ruleId";
@@ -273,16 +235,6 @@ module flowguard {
 			type string;
 		}
 	}
-    rpc add-rule {
-    	input {
-    		uses flowguard:rule;
-    	}
-    	output {
-    		leaf greeting {
-    			type string;
-    		}
-    	}
-    }
 
     rpc flowguard-control {
         input {
@@ -316,7 +268,7 @@ module flowguard {
             }
         }
     }
-    
+
     rpc get-conflicts {
     	input {
     		leaf conflict-type {
