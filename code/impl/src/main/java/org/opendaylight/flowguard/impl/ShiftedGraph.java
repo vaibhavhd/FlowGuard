@@ -463,6 +463,14 @@ public class ShiftedGraph {
         flowBuilder.setHardTimeout(0);
         flowBuilder.setIdleTimeout(0);
 
+        List<FlowRuleNode> ruletable = this.FlowRuleNodes.get(dpid);
+        if(ruletable != null) {
+            this.FlowRuleNodes.remove(dpid);
+        }
+        ruletable = FlowRuleNode.addFlowRuleNode(ruletable, flowBuilder.build());
+
+        this.FlowRuleNodes.put(dpid, ruletable);
+
         //FirewallRule rule = createFirewallRule(input.getNode(), input.getSourcePort());
         //this.shiftedGraph.buildSourceProbeNode(rule);
 
@@ -819,6 +827,10 @@ public class ShiftedGraph {
 
             // TODO Check port equivalence and URI type
             if(t.dpid.equals(flowinfo.next_switch_dpid) && t.port.equals(flowinfo.next_ingress_port)){
+                if(this.topologyStorage.get(t).dpid == null && this.topologyStorage.get(t).port == null) {
+                    /* The port is not connected to either a host or to nothing */
+                    return null;
+                }
                 nextLink = this.topologyStorage.get(t);
                 flowinfo.next_switch_dpid = nextLink.dpid;
                 flowinfo.next_ingress_port = new String(nextLink.port);
@@ -1076,14 +1088,6 @@ public class ShiftedGraph {
         if(this.findFlowRuleNode(dpid, rulename) == false){
             newrule = true;
         }
-        ruletable = this.FlowRuleNodes.get(dpid);
-        if(ruletable != null) {
-            this.FlowRuleNodes.remove(dpid);
-        }
-        long start = System.nanoTime();
-        ruletable = FlowRuleNode.addFlowRuleNode(ruletable, newFlow);
-
-        this.FlowRuleNodes.put(dpid, ruletable);
 
         if(newrule){
             boolean onetimepass = true;
@@ -1107,6 +1111,7 @@ public class ShiftedGraph {
                                 // Copy the information from last rule in the flowhistory of ith rule.
                                 fi = FlowInfo.valueCopy2(this.flowstorage.get(i));
                                 fi.candidate_rule = rulename;
+                                fi.is_finished = false;
                                 this.propagateFlow(fi, this.flowstorage.get(i).target, this.getRuleIndex(rule_name));
                                 this.flowstorage.get(i).candidate_rule = null;
                                 if(onetimepass && this.FlowRuleNodes.get(dpid).size()>=2){
@@ -1176,6 +1181,7 @@ public class ShiftedGraph {
                                 }
                                 FlowInfo fi = new FlowInfo();
                                 fi = FlowInfo.valueCopy2(this.flowstorage.get(i));
+                                fi.is_finished = false;
                                 fi.candidate_rule = rulename;
                                 this.propagateFlow(fi, this.flowstorage.get(i).target, this.getRuleIndex(rule_name));
                                 this.flowstorage.get(i).candidate_rule = null;

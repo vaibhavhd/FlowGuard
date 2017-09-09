@@ -30,6 +30,7 @@ import org.opendaylight.yang.gen.v1.urn.opendaylight.flow.inventory.rev130819.ta
 import org.opendaylight.yang.gen.v1.urn.opendaylight.inventory.rev130819.NodeConnectorId;
 import org.opendaylight.yang.gen.v1.urn.opendaylight.inventory.rev130819.NodeId;
 import org.opendaylight.yang.gen.v1.urn.opendaylight.inventory.rev130819.Nodes;
+import org.opendaylight.yang.gen.v1.urn.opendaylight.inventory.rev130819.node.NodeConnector;
 import org.opendaylight.yang.gen.v1.urn.opendaylight.inventory.rev130819.nodes.Node;
 import org.opendaylight.yang.gen.v1.urn.opendaylight.inventory.rev130819.nodes.NodeKey;
 import org.opendaylight.yang.gen.v1.urn.opendaylight.params.xml.ns.yang.flowguard.rev170505.Fwrule.Action;
@@ -85,22 +86,63 @@ public class Flowguard {
         // Create the snapshot of existing network topology */
         this.buildTopology();
         if(this.topologyStorage.isEmpty()) {
-            LOG.info("No network found!!");
+            /* No node<->node links found in the network
+             * Issue #6  : Check for standalone nodes */
+            getStandaloneNodes();
+            if(this.topologyStorage.isEmpty()) {
+                LOG.info("No network found!!");
+                return;
+            }
         }
-        else {
-            this.importStaticFlows();
-            this.importStaticRules();
 
-            this.sg = new ShiftedGraph(this, this.readTx, this.flowStorage, this.topologyStorage, this.db);
-            //Pull the FW Rules from a file.
-            if(ruleStorage.size() != 0)
-                sg.buildSourceProbeNode(this.ruleStorage);
-            /* After firewall rules are checked for violation, run listeners on any external flow modifications */
-        }
+        this.importStaticFlows();
+        this.importStaticRules();
+
+        this.sg = new ShiftedGraph(this, this.readTx, this.flowStorage, this.topologyStorage, this.db);
+
+        if(ruleStorage.size() != 0)
+            sg.buildSourceProbeNode(this.ruleStorage);
+        /* After firewall rules are checked for violation, run listeners on any external flow modifications */
+
         // TODO OPERATIONAL LISTENER
         // TODO New nodes listener
         FWRuleRegistryDataChangeListenerFuture firewall_future = new FWRuleRegistryDataChangeListenerFuture(this.db, this, this.sg);
         RuleRegistryDataChangeListenerFuture future = new RuleRegistryDataChangeListenerFuture(this.db, this.sg);
+    }
+
+    private void getStandaloneNodes() {
+        InstanceIdentifier<Nodes> nodesIdentifier = InstanceIdentifier.builder(Nodes.class).toInstance();
+
+        try {
+            Optional<Nodes> optNodes= null;
+            Optional<Table> optTable = null;
+            Optional<Flow> optFlow = null;
+
+            List<Node> nodeList;
+            List<Flow> flowList;
+
+            /* Retrieve all the switches in the operational data tree */
+            optNodes = readTx.read(LogicalDatastoreType.OPERATIONAL, nodesIdentifier).get();
+            /* If there are no operational nodes in the network - return*/
+            if(optNodes == null)
+                return;
+            nodeList = optNodes.get().getNode();
+            LOG.info("No. of detected nodes: {}", nodeList.size());
+
+            for(Node node : nodeList) {
+                String srcID = node.getId().getValue();
+                List<NodeConnector> ports = node.getNodeConnector();
+                for (NodeConnector port : ports) {
+                    LOG.info("Standalone Node {} with port {}", srcID, port.getId().getValue());
+                    TopologyStruct srcNode = new TopologyStruct(srcID, port.getId().getValue());
+                    TopologyStruct dstNode = new TopologyStruct(null, null);
+                    this.topologyStorage.put(srcNode, dstNode);
+                }
+            }
+        } catch (InterruptedException | ExecutionException e) {
+        e.printStackTrace();
+    }
+
     }
 
     private void importStaticRules() {

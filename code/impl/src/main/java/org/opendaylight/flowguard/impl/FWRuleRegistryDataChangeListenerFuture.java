@@ -94,7 +94,8 @@ public class FWRuleRegistryDataChangeListenerFuture extends AbstractFuture<Fwrul
                  .build();
         FirewallRule rule = new FirewallRule();
         flowguard.addRuleToStorage(rule, entry);
-        shiftedGraph.buildSourceProbeNode(rule);
+        //if(shiftedGraph != null)
+            shiftedGraph.buildSourceProbeNode(rule);
     }
 
     @Override
