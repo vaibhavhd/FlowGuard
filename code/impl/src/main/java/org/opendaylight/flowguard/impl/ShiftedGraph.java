@@ -168,8 +168,8 @@ public class ShiftedGraph {
         if(true || this.checkflowremoving(flowinfo, ho) == false){
             this.flowtagging(flowinfo);
 
-            if(flowinfo.candidate_rule != null && false){
-                System.out.println("S2-Update Rejecting applied!!");
+            if(flowinfo.candidate_rule != null){
+                System.out.println("S2-Update Rejecting applied. Flow being rejected: " + flowinfo.candidate_rule);
                 this.resolution_method = 2;
                 Set<String> set2 = this.FlowRuleNodes.keySet();
                 Iterator<String> itr2 = set2.iterator();
@@ -179,16 +179,23 @@ public class ShiftedGraph {
                     int size = ruletable.size();
                     for(int j = 0; j < size; j++){
                         if(flowinfo.candidate_rule.equals(ruletable.get(j).rule_name)){
-                            if(ho.nw_src_maskbits == 32 && ho.nw_dst_maskbits == 32){
+                            System.out.println("Found a matching rejected rule in ruletablestorage");
+                            delFlowEntry(key.toString(), this.FlowRuleNodes.get(key.toString()).get(j));
+                            this.FlowRuleNodes.get(key.toString()).remove(j);
+                            return ho;
+                            /*if(ho.nw_src_maskbits == 32 && ho.nw_dst_maskbits == 32){
+                                delFlowEntry(key.toString(), this.FlowRuleNodes.get(key.toString()).get(j));
                                 this.FlowRuleNodes.get(key.toString()).remove(j);
-                                // TODO this.storageSource.deleteRowAsync(STATICENTRY_TABLE_NAME, flowinfo.candidate_rule);
+                                //this.storageSource.deleteRowAsync(STATICENTRY_TABLE_NAME, flowinfo.candidate_rule);
                                 return ho;
                             }else if(ho.nw_src_maskbits == ruletable.get(j).nw_src_maskbits && ho.nw_dst_maskbits == ruletable.get(j).nw_dst_maskbits){
+                                delFlowEntry(key.toString(), this.FlowRuleNodes.get(key.toString()).get(j));
                                 this.FlowRuleNodes.get(key.toString()).remove(j);
-                                //TODO this.storageSource.deleteRowAsync(STATICENTRY_TABLE_NAME, flowinfo.candidate_rule);
+                                //this.storageSource.deleteRowAsync(STATICENTRY_TABLE_NAME, flowinfo.candidate_rule);
                                 return ho;
                             }
                             break;
+                            */
                         }
                     }
                 }
@@ -463,13 +470,7 @@ public class ShiftedGraph {
         flowBuilder.setHardTimeout(0);
         flowBuilder.setIdleTimeout(0);
 
-        List<FlowRuleNode> ruletable = this.FlowRuleNodes.get(dpid);
-        if(ruletable != null) {
-            this.FlowRuleNodes.remove(dpid);
-        }
-        ruletable = FlowRuleNode.addFlowRuleNode(ruletable, flowBuilder.build());
-
-        this.FlowRuleNodes.put(dpid, ruletable);
+        addRuletoPlumbingGraph(dpid, flowBuilder.build());
 
         //FirewallRule rule = createFirewallRule(input.getNode(), input.getSourcePort());
         //this.shiftedGraph.buildSourceProbeNode(rule);
@@ -497,8 +498,18 @@ public class ShiftedGraph {
 
     }
 
+    private void addRuletoPlumbingGraph(String dpid, Flow flow) {
+        List<FlowRuleNode> ruletable = this.FlowRuleNodes.get(dpid);
+        if(ruletable != null) {
+            this.FlowRuleNodes.remove(dpid);
+        }
+        ruletable = FlowRuleNode.addFlowRuleNode(ruletable, flow);
+
+        this.FlowRuleNodes.put(dpid, ruletable);
+    }
+
     private void delFlowEntry(String dpid, FlowRuleNode flowRuleNode) {
-        // TODO Auto-generated method stub
+        System.out.println("Removing flow: "+flowRuleNode+" from node: "+dpid);
         NodeId nodeId = new NodeId(dpid);
         InstanceIdentifier<Flow> flowIID =
                 InstanceIdentifier.builder(Nodes.class).child(Node.class, new NodeKey(nodeId))
@@ -508,7 +519,7 @@ public class ShiftedGraph {
                     .build();
         Preconditions.checkNotNull(db);
         WriteTransaction transaction = db.newWriteOnlyTransaction();
-        transaction.delete(LogicalDatastoreType.OPERATIONAL, flowIID);
+        transaction.delete(LogicalDatastoreType.CONFIGURATION, flowIID);
         CheckedFuture<Void, TransactionCommitFailedException> future = transaction.submit();
 
         Futures.addCallback( future, new FutureCallback<Void>() {
@@ -676,7 +687,7 @@ public class ShiftedGraph {
                                 	sample.is_finished = true;
                                 	flowinfo.is_finished = true;
                                 	sample = flowRule.flow_info;
-                                    System.out.println("Flow has been dropped by the tablemiss entry");
+                                    System.out.println("Flow has been dropped by the DROP rule/tablemiss entry");
                                     this.printFlowInfo(sample, false);
                                     return;
                                 }
@@ -1080,7 +1091,7 @@ public class ShiftedGraph {
     public void staticEntryModified(String dpid, Flow newFlow){
 
         List<FlowRuleNode> ruletable;
-        String rulename = newFlow.getFlowName();
+        String rulename = newFlow.getId().getValue();//.getFlowName();
         if(this.FlowRuleNodes == null){
             this.FlowRuleNodes = new ConcurrentHashMap<String, List<FlowRuleNode>>();
         }
@@ -1090,6 +1101,10 @@ public class ShiftedGraph {
         }
 
         if(newrule){
+            System.out.println("New rule to be added: " + rulename);
+            /* First add the rule to the plumbing graph */
+            addRuletoPlumbingGraph(dpid, newFlow);
+
             boolean onetimepass = true;
             //new rules inserted
             if(this.flowstorage != null){
@@ -1101,9 +1116,11 @@ public class ShiftedGraph {
                                     newFlow.getPriority() >= this.getPriority(this.flowstorage.get(i).flow_history.get(j).rule_node_name)){
                                 String rule_name = this.flowstorage.get(i).flow_history.get(j).rule_node_name;
                                 int size = this.flowstorage.get(i).flow_history.size();
+                                System.out.println("Found a lower priority rule in flow history of " + this.flowstorage.get(i).rule_node_name);
                                 if(j >0){
                                     for(int k = j; k < size; k++){
                                         /* Remove all the flows from Jth flow in hostuiry till the end */
+                                        // TODO Remove shoul dbe done only for rules which match the same pattern but are lower priority
                                         this.flowstorage.get(i).flow_history.remove(j);
                                     }
                                 }
@@ -1128,6 +1145,8 @@ public class ShiftedGraph {
                                     newFlow.getPriority() < this.getPriority(this.flowstorage.get(i).flow_history.get(j).rule_node_name) &&
                                     onetimepass){
                                 String rule_name = this.flowstorage.get(i).flow_history.get(j).rule_node_name;
+                                System.out.println("New Flow has the least priority in flow history of " + this.flowstorage.get(i).rule_node_name);
+
                                 FlowInfo fi = new FlowInfo();
                                 // Copy the information from the ith rule itself
                                 fi = FlowInfo.valueCopy(this.flowstorage.get(i));
@@ -1164,6 +1183,7 @@ public class ShiftedGraph {
             }
         }else{
             //existing rule_node update case
+            System.out.println("Existing rule being modified: " + rulename);
             if(this.flowstorage != null){
                 int flowstorage_size = this.flowstorage.size();
                 for(int i = 0; i < flowstorage_size; i++){
