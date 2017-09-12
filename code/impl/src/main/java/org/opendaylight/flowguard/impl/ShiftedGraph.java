@@ -166,7 +166,8 @@ public class ShiftedGraph {
         System.out.println("***********************************************************************************");
         //this is method 3(entire violation) : flow removing in the case of entire violation
         if(true || this.checkflowremoving(flowinfo, ho) == false){
-            this.flowtagging(flowinfo);
+            // TODO FlowTagging requires correction
+            //this.flowtagging(flowinfo);
 
             if(flowinfo.candidate_rule != null){
                 System.out.println("S2-Update Rejecting applied. Flow being rejected: " + flowinfo.candidate_rule);
