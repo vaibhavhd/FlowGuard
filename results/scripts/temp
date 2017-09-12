@@ -1,0 +1,15 @@
+{
+    "fwrule-registry-entry": [
+        {
+            "ruleId": "500",
+            "node": "openflow:1",
+            "inPort": "openflow:1:1",
+            "priority": "50",
+            "sourceIpAddress": "10.0.0.1/32",
+            "destinationIpAddress": "10.0.0.3/32",
+            "sourcePort": "1",
+            "destinationPort": "80",
+            "action": "deny"
+        }
+    ]
+}

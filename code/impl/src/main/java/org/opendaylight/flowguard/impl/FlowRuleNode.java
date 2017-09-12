@@ -216,15 +216,11 @@ public class FlowRuleNode {
                 Ipv4Prefix dst = ((Ipv4Match)flow.getMatch().getLayer3Match()).getIpv4Destination();
                 if(src != null) {
                     instance.nw_src_prefix = calculateIpfromPrefix(src);
-                    System.out.println("Debugging at checking l3match source before mask");
                     instance.nw_src_maskbits = calculateMaskfromPrefix(src);
-                    System.out.println("Debugging at checking l3match source");
                 }
                 if(dst != null) {
                     instance.nw_dst_prefix = calculateIpfromPrefix(dst);
-                    System.out.println("Debugging at checking l3match dst before mask");
                     instance.nw_dst_maskbits = calculateMaskfromPrefix(dst);
-                    System.out.println("Debugging at checking l3match dst");
                 }
             }
             else if (l3Match instanceof Ipv4MatchArbitraryBitMask){
@@ -233,7 +229,6 @@ public class FlowRuleNode {
                 Ipv4Prefix src = createPrefix(addr, convertArbitraryMaskToByteArray(mask));
                 if(src != null) {
                     instance.nw_src_prefix = calculateIpfromPrefix(src);
-                    System.out.println("Debugging at checking Ipv4 match source before mask");
                     instance.nw_src_maskbits = calculateMaskfromPrefix(src);
                 }
                 addr = ((Ipv4MatchArbitraryBitMask)flow.getMatch().getLayer3Match()).getIpv4DestinationAddressNoMask();
@@ -241,7 +236,6 @@ public class FlowRuleNode {
                 Ipv4Prefix dst = createPrefix(addr, convertArbitraryMaskToByteArray(mask));
                 if(dst != null) {
                     instance.nw_dst_prefix = calculateIpfromPrefix(dst);
-                    System.out.println("Debugging at checking Ipv4 dst before mask");
                     instance.nw_dst_maskbits = calculateMaskfromPrefix(dst);
                 }
             }

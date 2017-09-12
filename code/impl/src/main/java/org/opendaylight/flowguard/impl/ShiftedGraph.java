@@ -491,7 +491,6 @@ public class ShiftedGraph {
         Preconditions.checkNotNull(db);
         WriteTransaction transaction = db.newWriteOnlyTransaction();
         transaction.merge( LogicalDatastoreType.CONFIGURATION, flowIID, flowBuilder.build(),true);
-
         CheckedFuture<Void, TransactionCommitFailedException> future = transaction.submit();
         Futures.addCallback(future, new LoggingFuturesCallBack<Void>("Failed add firewall rule", LOG));
 
@@ -518,6 +517,8 @@ public class ShiftedGraph {
                     .child(Table.class, new TableKey((short) 0))
                     .child(Flow.class, new FlowKey(new FlowId(flowRuleNode.rule_name)))
                     .build();
+
+        delRuleFromPlumbingGraph(dpid, flowRuleNode);
         Preconditions.checkNotNull(db);
         WriteTransaction transaction = db.newWriteOnlyTransaction();
         transaction.delete(LogicalDatastoreType.CONFIGURATION, flowIID);
@@ -536,6 +537,16 @@ public class ShiftedGraph {
         // TODO Delete from the plumbing graph too
         System.out.println("Deleted Flow rule " +flowRuleNode.rule_name+ " of switch: "+dpid);
         LOG.info("Deleted Flow rule");
+    }
+
+    private void delRuleFromPlumbingGraph(String dpid, FlowRuleNode flowRuleNode) {
+        List<FlowRuleNode> ruletable = new ArrayList<FlowRuleNode>();
+        ruletable = this.FlowRuleNodes.get(dpid);
+        if(ruletable != null) {
+            this.FlowRuleNodes.remove(dpid);
+        }
+        ruletable = FlowRuleNode.deleteFlowRuleNode(ruletable, flowRuleNode.rule_name);
+        this.FlowRuleNodes.put(dpid, ruletable);
     }
 
     public void printFlowInfo(FlowInfo flowinfo, boolean inverseflow){
@@ -686,7 +697,7 @@ public class ShiftedGraph {
                                 flowRule = FlowRuleNode.computeFlow(flowRule, sample, null);
                                 if(flowRule.flow_info.is_finished) {
                                 	sample.is_finished = true;
-                                	flowinfo.is_finished = true;
+                                	//flowinfo.is_finished = true;
                                 	sample = flowRule.flow_info;
                                     System.out.println("Flow has been dropped by the DROP rule/tablemiss entry");
                                     this.printFlowInfo(sample, false);
@@ -765,12 +776,12 @@ public class ShiftedGraph {
                                     System.out.println("Node information after propagation:");
                                     System.out.println("Node: "+sample.next_switch_dpid+" Port: "+sample.next_ingress_port);
                                     propagateFlow(sample, target,0);
-                                    if(sample.is_finished) {
+                                    /*if(sample.is_finished) {
                                     	System.out.println("Should not reach here");
                                     	flowinfo.is_finished = true;
                                     	old.is_finished = true;
                                         return;
-                                    }
+                                    }*/
                                 }
                             }
                             //break;
@@ -1035,8 +1046,8 @@ public class ShiftedGraph {
         return "ShiftedGraph";
     }
 
-    public boolean findFlowRuleNode(String dpid, String rulename){
-        boolean result = false;
+    public FlowRuleNode findFlowRuleNode(String dpid, String rulename){
+        // TODO Change the linear search to binary search!
         Set<String> set = this.FlowRuleNodes.keySet();
         Iterator<String> itr = set.iterator();
         while(itr.hasNext()){
@@ -1045,13 +1056,12 @@ public class ShiftedGraph {
                 List<FlowRuleNode> ruletable = this.FlowRuleNodes.get((String) key);
                 for(int j = 0; j < ruletable.size(); j++){
                     if(rulename.equals(ruletable.get(j).rule_name)) {
-                        result = true;
-                        break;
+                        return ruletable.get(j);
                     }
                 }
             }
         }
-        return result;
+        return null;
     }
 
     public short getPriority(String rulename){
@@ -1097,7 +1107,8 @@ public class ShiftedGraph {
             this.FlowRuleNodes = new ConcurrentHashMap<String, List<FlowRuleNode>>();
         }
         boolean newrule = false;
-        if(this.findFlowRuleNode(dpid, rulename) == false){
+        FlowRuleNode changedFlow = this.findFlowRuleNode(dpid, rulename);
+        if( changedFlow == null){
             newrule = true;
         }
 
@@ -1185,7 +1196,10 @@ public class ShiftedGraph {
         }else{
             //existing rule_node update case
             System.out.println("Existing rule being modified: " + rulename);
-            if(this.flowstorage != null){
+            delRuleFromPlumbingGraph(dpid, changedFlow);
+            addRuletoPlumbingGraph(dpid, newFlow);
+
+            if(false && this.flowstorage != null){
                 int flowstorage_size = this.flowstorage.size();
                 for(int i = 0; i < flowstorage_size; i++){
                     if(this.flowstorage.get(i).flow_history != null){
@@ -1195,7 +1209,6 @@ public class ShiftedGraph {
                                 String rule_name = this.flowstorage.get(i).flow_history.get(j).rule_node_name;
                                 int size = this.flowstorage.get(i).flow_history.size();
                                 if(j>0){
-                                 // TODO What is Correction: K loop not required | remove kth rule from history?
                                     for(int k = j; k < size; k++){
                                         this.flowstorage.get(i).flow_history.remove(j);
                                     }
