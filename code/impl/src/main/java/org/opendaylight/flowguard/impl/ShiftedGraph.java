@@ -182,7 +182,6 @@ public class ShiftedGraph {
                         if(flowinfo.candidate_rule.equals(ruletable.get(j).rule_name)){
                             System.out.println("Found a matching rejected rule in ruletablestorage");
                             delFlowEntry(key.toString(), this.FlowRuleNodes.get(key.toString()).get(j));
-                            this.FlowRuleNodes.get(key.toString()).remove(j);
                             return ho;
                             /*if(ho.nw_src_maskbits == 32 && ho.nw_dst_maskbits == 32){
                                 delFlowEntry(key.toString(), this.FlowRuleNodes.get(key.toString()).get(j));
