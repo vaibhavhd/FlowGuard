@@ -137,12 +137,11 @@ public class RuleRegistryDataChangeListenerFuture implements DataChangeListener,
                     if (dataObject instanceof Flow) {
                         LOG.info("Node {} Flow {} ", node.firstKeyOf(Node.class).getId().getValue(), ((Flow)dataObject).getFlowName());
                         sg.staticEntryModified(node.firstKeyOf(Node.class).getId().getValue(), ((Flow)dataObject));
+                        return;
                     }
                 }
-                break;
             }
         }
-
 
         for (Map.Entry<InstanceIdentifier<?>, DataObject> entry : change.getUpdatedData().entrySet()) {
             dataObject = entry.getValue();
@@ -152,8 +151,12 @@ public class RuleRegistryDataChangeListenerFuture implements DataChangeListener,
         }
         Set<InstanceIdentifier<?>> set = change.getRemovedPaths();
         for (InstanceIdentifier<?> entry : set) {
-            if (entry instanceof Flow ) {
-                LOG.info("Leaf removed is a Flow");
+            InstanceIdentifier<Node> node = entry.firstIdentifierOf(Node.class);
+            String flowID = entry.firstKeyOf(Flow.class).getId().getValue();
+            String dpid = node.firstKeyOf(Node.class).getId().getValue();
+            LOG.info("Flow removed {} from node {}", flowID, dpid);
+            if(flowID != null) {
+                sg.staticEntryDeleted(dpid, flowID);
             }
         }
 

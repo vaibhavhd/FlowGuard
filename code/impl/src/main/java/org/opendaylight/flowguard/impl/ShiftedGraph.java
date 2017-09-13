@@ -214,7 +214,6 @@ public class ShiftedGraph {
              * and the destination address of the violated space (S v ), denoted as [P o s , P v d ]
              * Violated Space: Tracked space which should be denied and thus is a violation.
              */
-            //egress switch block
 
             if(checkDirectFlowPath(flowinfo.flow_history.get(flowinfo.flow_history.size()-1).current_ho)) {
                 /* If flow path is a direct flow path, install the immediate firewall rule corresponding
@@ -225,13 +224,14 @@ public class ShiftedGraph {
                         flowinfo.flow_history.get(1).current_ingress_port);
                 return ho;
             }
+            System.out.println("Installing a new flow in egress switch");
             this.addFlowEntry(flowinfo.flow_history.get(flowinfo.flow_history.size()-1).current_ho,
                     flowinfo.flow_history.get(flowinfo.flow_history.size()-1).current_switch_dpid,
                     flowinfo.flow_history.get(flowinfo.flow_history.size()-1).current_ingress_port);
             //ingress switch block
             // TODO This is workaround. HO has been changed. Check Inverseflow
             ho = flowinfo.flow_history.get(1).current_ho;
-
+            System.out.println("Installing a new flow in ingress switch");
             this.addFlowEntry(ho, flowinfo.flow_history.get(1).current_switch_dpid, flowinfo.flow_history.get(1).current_ingress_port);
             //this is method 4(partial violation) : add firewall rule and add new flow entry for packet bloacking
             this.addFirewallRule(ho, flowinfo.flow_history.get(1).current_switch_dpid, flowinfo.flow_history.get(1).current_ingress_port);
@@ -775,12 +775,12 @@ public class ShiftedGraph {
                                     System.out.println("Node information after propagation:");
                                     System.out.println("Node: "+sample.next_switch_dpid+" Port: "+sample.next_ingress_port);
                                     propagateFlow(sample, target,0);
-                                    /*if(sample.is_finished) {
+                                    if(sample.is_finished) {
                                     	System.out.println("Should not reach here");
                                     	flowinfo.is_finished = true;
                                     	old.is_finished = true;
                                         return;
-                                    }*/
+                                    }
                                 }
                             }
                             //break;
@@ -1102,6 +1102,10 @@ public class ShiftedGraph {
 
         List<FlowRuleNode> ruletable;
         String rulename = newFlow.getId().getValue();//.getFlowName();
+        if(rulename.startsWith("resolution")) {
+            LOG.info("DataChangeNotification for a resolution. Skipping the test..");
+            return;
+        }
         if(this.FlowRuleNodes == null){
             this.FlowRuleNodes = new ConcurrentHashMap<String, List<FlowRuleNode>>();
         }
@@ -1227,7 +1231,7 @@ public class ShiftedGraph {
         }
     }
 
-    public boolean findRulename(String rulename){
+  /*  public boolean findRulename(String rulename){
         Set<String> set = this.FlowRuleNodes.keySet();
         Iterator<String> itr = set.iterator();
         while(itr.hasNext()){
@@ -1240,36 +1244,16 @@ public class ShiftedGraph {
             }
         }
         return false;
-    }
+    } */
 
-    public void staticEntryDeleted(String rulename){
-        long start = System.nanoTime();
+    public void staticEntryDeleted(String dpid, String rulename){
 
-        if(this.findRulename(rulename) == false){
-            //if there exist no such rulename, then exit this function.
+        FlowRuleNode changedFlow = this.findFlowRuleNode(dpid, rulename);
+        if( changedFlow == null){
+            LOG.info("Flow not found in plumbing graph!");
             return;
         }
-        String dpid = null;
-        Set<String> set = this.FlowRuleNodes.keySet();
-        Iterator<String> itr = set.iterator();
-        while(itr.hasNext()){
-            Object key = itr.next();
-            List<FlowRuleNode> ruletable = this.FlowRuleNodes.get(key.toString());
-            for(int j = 0; j < ruletable.size(); j++){
-                if(rulename.equals(ruletable.get(j).rule_name)){
-                    this.FlowRuleNodes.get(key.toString()).remove(ruletable.get(j));
-                    dpid = key.toString();
-                    break;
-                }
-            }
-        }
-        List<FlowRuleNode> ruletable = new ArrayList<FlowRuleNode>();
-        ruletable = this.FlowRuleNodes.get(dpid);
-        if(ruletable != null) {
-            this.FlowRuleNodes.remove(dpid);
-        }
-        ruletable = FlowRuleNode.deleteFlowRuleNode(ruletable, rulename);
-        this.FlowRuleNodes.put(dpid, ruletable);
+        delRuleFromPlumbingGraph(dpid, changedFlow);
 
         int flowstorage_size = this.flowstorage.size();
         if(this.flowstorage != null && flowstorage_size > 0){
