@@ -414,14 +414,14 @@ public class ShiftedGraph {
     }
 
 
-    public void addFirewallRule(HeaderObject ho, String dpid, String port){
+    public void addFirewallRule(HeaderObject ho, String dpid, int port){
         FirewallRule rule = new FirewallRule();
         rule.ruleid = rule.genID();
         rule.priority = 32768;
         rule.dpid = dpid;
         rule.wildcard_dpid = false;
         // TODO Handle wildcarded in_ports
-        rule.in_port = new String(port);
+        rule.in_port = port;
         rule.wildcard_in_port = false;
         rule.wildcard_nw_src = false;
         rule.wildcard_dl_type = false;
@@ -437,7 +437,7 @@ public class ShiftedGraph {
         this.firewall.addRule(rule);
     }
 
-    public void addFlowEntry(HeaderObject ho, String dpid, String port){
+    public void addFlowEntry(HeaderObject ho, String dpid, int port){
         // TODO Add to the plumbing graph too
         Map<String, Object> entry = new HashMap<String, Object>();
         String rulename = "resolution"+Integer.toString(this.resolution_index);
@@ -453,7 +453,8 @@ public class ShiftedGraph {
         // Creating match object
         MatchBuilder matchBuilder = new MatchBuilder();
         MatchUtils.createDstL3IPv4Match(matchBuilder, new Ipv4Prefix(destIP), new Ipv4Prefix(srcIP));
-        matchBuilder.setInPort(new NodeConnectorId(port));
+        String nodePort = dpid + ":" + Integer.toString(port);
+        matchBuilder.setInPort(new NodeConnectorId(nodePort));
         /*
          * Create Flow
          */
@@ -606,7 +607,7 @@ public class ShiftedGraph {
         FlowInfo sample = FlowInfo.valueCopy(flowinfo);
 
         String targetdpid = target.dpid;
-        String targetport = new String(target.port);
+        int targetport = target.port;
         System.out.println("Propagating to target dpid: "+targetdpid+" port: "+targetport);
         while(true){
             if (sample.is_finished) {
@@ -676,9 +677,9 @@ public class ShiftedGraph {
                     // TODO The if will never pass. Correction: switch_name is never set and is not required either.
                     // Moreover, dpid will be same ith rule is pulled from the node of sample flow.
                     System.out.println("RuleTable info: In_port "+ruletable.get(i).in_port+" Priority: "+ruletable.get(i).priority);
-                    System.out.println("Sample packet info: "+sample.next_ingress_port.toString());
-                    if(sample.next_switch_dpid.equals(SWITCHDPID) && ((FlowRuleNode.isWildcarded(ruletable.get(i).in_port))
-                            || sample.next_ingress_port.toString().equals(ruletable.get(i).in_port.toString()))) {
+                    System.out.println("Sample packet info: "+sample.next_ingress_port);
+                    if(sample.next_switch_dpid.equals(SWITCHDPID) && (ruletable.get(i).in_port == 0)
+                            || sample.next_ingress_port == ruletable.get(i).in_port) {
                         FlowRuleNode flowRule = ruletable.get(i);
                         /// TODO INFINTE LOOP is seen when testing
                         System.out.println("Found a rule with same/wildcarded next ingress port");
@@ -730,7 +731,7 @@ public class ShiftedGraph {
                                     sample = flowRule.flow_info;
                                     System.out.println("Sample information after compute:");
                                     System.out.println("Sample: "+sample.next_switch_dpid+" Port: "+sample.next_ingress_port);
-                                    if (sample.next_ingress_port == null) {
+                                    if (sample.next_ingress_port == 0) {
                                         System.out.println("Sample is not reachable: Packet drop by flow rule!");
                                         this.printFlowInfo(sample, false);
                                         sample.is_finished = true;
@@ -740,12 +741,12 @@ public class ShiftedGraph {
                                     } else {
                                         /* If the flow has not reached the destination, find the next node to hop and propagate */
                                         /* However, the OutputAction is a port number. Add dpid to it */
-                                        sample.next_ingress_port = sample.next_switch_dpid + ":" + sample.next_ingress_port;
+                                        //sample.next_ingress_port = sample.next_switch_dpid + ":" + sample.next_ingress_port;
                                     }
 
                                     if(sample.next_switch_dpid.equals(targetdpid)){
                                         //normal execution
-                                        if(sample.next_ingress_port.equals(targetport)) {
+                                        if(sample.next_ingress_port == targetport) {
                                             System.out.println("Flows are reached to the Destination!!!");
                                             this.printFlowInfo(sample, true);
                                             sample.is_finished = true;
@@ -813,7 +814,7 @@ public class ShiftedGraph {
                             System.out.println("No rules in the next switch table matched: Flows are unreachable!!!");
                             System.out.println("sample next switch dpid" + sample.next_switch_dpid +
                             		"\n ruletable i switch name " + ruletable.get(i).switch_name +
-                            		"\n sample next ingress port " + sample.next_ingress_port.toString() +
+                            		"\n sample next ingress port " + sample.next_ingress_port +
                             		"\nruletable i inport " + ruletable.get(i).in_port);
                             System.out.println("Unmatch_count = "+unmatch_count);
                             System.out.println("NO FLOW FOR: SWITCHDPID=" + SWITCHDPID + "\n sample dpid:" + sample.next_switch_dpid + "target dpid:" + targetdpid  );
@@ -848,14 +849,14 @@ public class ShiftedGraph {
             TopologyStruct t = iter.next();
 
             // TODO Check port equivalence and URI type
-            if(t.dpid.equals(flowinfo.next_switch_dpid) && t.port.equals(flowinfo.next_ingress_port)){
-                if(this.topologyStorage.get(t).dpid == null && this.topologyStorage.get(t).port == null) {
+            if(t.dpid.equals(flowinfo.next_switch_dpid) && t.port == flowinfo.next_ingress_port){
+                if(this.topologyStorage.get(t).dpid == null && this.topologyStorage.get(t).port == 0) {
                     /* The port is not connected to either a host or to nothing */
                     return null;
                 }
                 nextLink = this.topologyStorage.get(t);
                 flowinfo.next_switch_dpid = nextLink.dpid;
-                flowinfo.next_ingress_port = new String(nextLink.port);
+                flowinfo.next_ingress_port = nextLink.port;
                 System.out.println(t.dpid + " / " + t.port + " <--> " +nextLink.dpid + "/ " + nextLink.port);
                 break;
             }
@@ -960,9 +961,9 @@ public class ShiftedGraph {
         sample.current_ho.nw_src_prefix = 0;//firewall_rules.get(i).nw_src_prefix;//167772160;
         sample.current_ho.nw_src_maskbits = 0;//firewall_rules.get(i).nw_src_maskbits;
         sample.current_switch_dpid = source.dpid;
-        sample.current_ingress_port = new String(source.port);
+        sample.current_ingress_port = source.port;
         sample.next_switch_dpid = source.dpid;
-        sample.next_ingress_port = new String(source.port);
+        sample.next_ingress_port = source.port;
         // TODO Work on next_ho
         sample.next_ho = new HeaderObject();
         sample.next_ho.nw_dst_prefix = 0;//firewall_rules.get(i).nw_dst_prefix;
@@ -1024,7 +1025,8 @@ public class ShiftedGraph {
             	        	int ipnum = InetAddresses.coerceToInteger(InetAddresses.forString(ip.getValue()));
             	        	if(ipnum == IP_address) {
             	        		dpid_port.dpid = node.getId().getValue();
-            	        		dpid_port.port = connector.getId().getValue();
+            	        		String connectorID = connector.getId().getValue();
+            	        		dpid_port.port = TopologyStruct.getPortfromURI(connectorID);
             	        		return dpid_port;
             	        	}
             	          //address.getFirstSeen(); // first time the tuple was observed on this port

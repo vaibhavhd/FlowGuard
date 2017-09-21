@@ -25,9 +25,9 @@ public class FlowInfo {
     public HeaderObject current_ho; //input header objects
     public HeaderObject next_ho; //output header objects
     public String next_switch_dpid; //next switch id to propagate
-    public String next_ingress_port;
+    public int next_ingress_port;
     public String current_switch_dpid; //next switch id to propagate
-    public String current_ingress_port;
+    public int current_ingress_port;
     public String rule_node_name;
     public TopologyStruct target;
     public String candidate_rule;
@@ -56,9 +56,9 @@ public class FlowInfo {
         newflow.firewall_ruldid = new String(sample.firewall_ruldid);
         newflow.flow_index = sample.flow_index;
         newflow.is_finished = sample.is_finished;
-        newflow.current_ingress_port = new String(sample.current_ingress_port);
+        newflow.current_ingress_port = sample.current_ingress_port;
         newflow.current_switch_dpid = new String(sample.current_switch_dpid);
-        newflow.next_ingress_port = new String(sample.next_ingress_port);
+        newflow.next_ingress_port = sample.next_ingress_port;
         newflow.next_switch_dpid = new String(sample.next_switch_dpid);
         newflow.rule_node_name = sample.rule_node_name;
         if(sample.candidate_rule != null)

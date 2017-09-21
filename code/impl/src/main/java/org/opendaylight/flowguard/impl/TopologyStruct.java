@@ -10,14 +10,19 @@ package org.opendaylight.flowguard.impl;
 
 public class TopologyStruct {
 	public String dpid;
-    public String port;
+    public int port;
 
     public TopologyStruct() {
 		// TODO Auto-generated constructor stub
 	}
 
-	public TopologyStruct(String destId, String destPort) {
+	public TopologyStruct(String destId, int destPort) {
 		this.dpid = destId;
 		this.port = destPort;
+	}
+	public static int getPortfromURI(String URI) {
+		int port = Integer.valueOf(
+				URI.substring(URI.lastIndexOf(':') + 1 ));
+		return port;
 	}
 }

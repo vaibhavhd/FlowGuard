@@ -29,7 +29,7 @@ public class FirewallRule implements Comparable<FirewallRule> {
     public int ruleid;
 
     public String dpid;
-    public String in_port;
+    public int in_port;
     public long dl_src;
     public long dl_dst;
     public long dl_type;
@@ -65,7 +65,7 @@ public class FirewallRule implements Comparable<FirewallRule> {
     }
 
     public FirewallRule() {
-        this.in_port = null;
+        this.in_port = 0;
         this.dl_src = 0;
         this.nw_src_prefix = 0;
         this.nw_src_maskbits = 0;
@@ -213,8 +213,6 @@ public class FirewallRule implements Comparable<FirewallRule> {
         final int prime = 2521;
         int result = super.hashCode();
         //TODOresult = prime * result + (int) dpid;
-        if (in_port != null)
-            result = prime * result + in_port.hashCode();
         result = prime * result + (int) dl_src;
         result = prime * result + (int) dl_dst;
         result = (int) (prime * result + dl_type);

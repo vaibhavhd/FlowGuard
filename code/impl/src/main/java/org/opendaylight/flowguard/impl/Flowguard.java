@@ -33,24 +33,20 @@ import org.opendaylight.yang.gen.v1.urn.opendaylight.inventory.rev130819.Nodes;
 import org.opendaylight.yang.gen.v1.urn.opendaylight.inventory.rev130819.node.NodeConnector;
 import org.opendaylight.yang.gen.v1.urn.opendaylight.inventory.rev130819.nodes.Node;
 import org.opendaylight.yang.gen.v1.urn.opendaylight.inventory.rev130819.nodes.NodeKey;
-import org.opendaylight.yang.gen.v1.urn.opendaylight.params.xml.ns.yang.flowguard.rev170505.Fwrule.Action;
-import org.opendaylight.yang.gen.v1.urn.opendaylight.params.xml.ns.yang.flowguard.rev170505.ConflictInfo;
-import org.opendaylight.yang.gen.v1.urn.opendaylight.params.xml.ns.yang.flowguard.rev170505.ConflictInfo.Protocol;
-import org.opendaylight.yang.gen.v1.urn.opendaylight.params.xml.ns.yang.flowguard.rev170505.ConflictInfoRegistry;
-import org.opendaylight.yang.gen.v1.urn.opendaylight.params.xml.ns.yang.flowguard.rev170505.FlowguardStatus;
-import org.opendaylight.yang.gen.v1.urn.opendaylight.params.xml.ns.yang.flowguard.rev170505.FlowguardStatusBuilder;
-import org.opendaylight.yang.gen.v1.urn.opendaylight.params.xml.ns.yang.flowguard.rev170505.FwruleRegistry;
-import org.opendaylight.yang.gen.v1.urn.opendaylight.params.xml.ns.yang.flowguard.rev170505.GetConflictsInput;
-import org.opendaylight.yang.gen.v1.urn.opendaylight.params.xml.ns.yang.flowguard.rev170505.conflict.info.registry.ConflictSwitch;
-import org.opendaylight.yang.gen.v1.urn.opendaylight.params.xml.ns.yang.flowguard.rev170505.conflict.info.registry.ConflictSwitchKey;
-import org.opendaylight.yang.gen.v1.urn.opendaylight.params.xml.ns.yang.flowguard.rev170505.conflict.info.registry.conflictswitch.ConflictTable;
-import org.opendaylight.yang.gen.v1.urn.opendaylight.params.xml.ns.yang.flowguard.rev170505.conflict.info.registry.conflictswitch.ConflictTableKey;
-import org.opendaylight.yang.gen.v1.urn.opendaylight.params.xml.ns.yang.flowguard.rev170505.conflict.info.registry.conflictswitch.conflicttable.ConflictGroupEntry;
-import org.opendaylight.yang.gen.v1.urn.opendaylight.params.xml.ns.yang.flowguard.rev170505.conflict.info.registry.conflictswitch.conflicttable.ConflictGroupEntryBuilder;
-import org.opendaylight.yang.gen.v1.urn.opendaylight.params.xml.ns.yang.flowguard.rev170505.conflict.info.registry.conflictswitch.conflicttable.ConflictGroupEntryKey;
-import org.opendaylight.yang.gen.v1.urn.opendaylight.params.xml.ns.yang.flowguard.rev170505.fwrule.registry.FwruleRegistryEntry;
-import org.opendaylight.yang.gen.v1.urn.opendaylight.params.xml.ns.yang.flowguard.rev170505.fwrule.registry.FwruleRegistryEntryKey;
-import org.opendaylight.yang.gen.v1.urn.opendaylight.params.xml.ns.yang.flowguard.rev170505.get.conflicts.output.ConflictGroupListBuilder;
+import org.opendaylight.yang.gen.v1.urn.opendaylight.params.xml.ns.yang.flowguard.rev170913.ConflictInfo;
+import org.opendaylight.yang.gen.v1.urn.opendaylight.params.xml.ns.yang.flowguard.rev170913.ConflictInfoRegistry;
+import org.opendaylight.yang.gen.v1.urn.opendaylight.params.xml.ns.yang.flowguard.rev170913.FlowguardStatus;
+import org.opendaylight.yang.gen.v1.urn.opendaylight.params.xml.ns.yang.flowguard.rev170913.FlowguardStatusBuilder;
+import org.opendaylight.yang.gen.v1.urn.opendaylight.params.xml.ns.yang.flowguard.rev170913.Fwrule.Action;
+import org.opendaylight.yang.gen.v1.urn.opendaylight.params.xml.ns.yang.flowguard.rev170913.FwruleRegistry;
+import org.opendaylight.yang.gen.v1.urn.opendaylight.params.xml.ns.yang.flowguard.rev170913.conflict.info.registry.ConflictSwitch;
+import org.opendaylight.yang.gen.v1.urn.opendaylight.params.xml.ns.yang.flowguard.rev170913.conflict.info.registry.ConflictSwitchKey;
+import org.opendaylight.yang.gen.v1.urn.opendaylight.params.xml.ns.yang.flowguard.rev170913.conflict.info.registry.conflictswitch.ConflictTable;
+import org.opendaylight.yang.gen.v1.urn.opendaylight.params.xml.ns.yang.flowguard.rev170913.conflict.info.registry.conflictswitch.ConflictTableKey;
+import org.opendaylight.yang.gen.v1.urn.opendaylight.params.xml.ns.yang.flowguard.rev170913.conflict.info.registry.conflictswitch.conflicttable.ConflictGroupEntry;
+import org.opendaylight.yang.gen.v1.urn.opendaylight.params.xml.ns.yang.flowguard.rev170913.conflict.info.registry.conflictswitch.conflicttable.ConflictGroupEntryBuilder;
+import org.opendaylight.yang.gen.v1.urn.opendaylight.params.xml.ns.yang.flowguard.rev170913.conflict.info.registry.conflictswitch.conflicttable.ConflictGroupEntryKey;
+import org.opendaylight.yang.gen.v1.urn.opendaylight.params.xml.ns.yang.flowguard.rev170913.fwrule.registry.FwruleRegistryEntry;
 import org.opendaylight.yang.gen.v1.urn.tbd.params.xml.ns.yang.network.topology.rev131021.NetworkTopology;
 //import org.opendaylight.yang.gen.v1.urn.tbd.params.xml.ns.yang.network.topology.rev131021.NodeId;
 import org.opendaylight.yang.gen.v1.urn.tbd.params.xml.ns.yang.network.topology.rev131021.TopologyId;
@@ -134,8 +130,9 @@ public class Flowguard {
                 List<NodeConnector> ports = node.getNodeConnector();
                 for (NodeConnector port : ports) {
                     LOG.info("Standalone Node {} with port {}", srcID, port.getId().getValue());
-                    TopologyStruct srcNode = new TopologyStruct(srcID, port.getId().getValue());
-                    TopologyStruct dstNode = new TopologyStruct(null, null);
+                    TopologyStruct srcNode = new TopologyStruct(srcID,
+                    		TopologyStruct.getPortfromURI(port.getId().getValue()));
+                    TopologyStruct dstNode = new TopologyStruct(null, 0);
                     this.topologyStorage.put(srcNode, dstNode);
                 }
             }
@@ -209,7 +206,7 @@ public class Flowguard {
         rule.tp_dst = Short.parseShort(entry.getDestinationPort());
         rule.action = (entry.getAction() == Action.Allow) ? FirewallRule.FirewallAction.ALLOW
                 : FirewallRule.FirewallAction.DENY;
-        rule.in_port = new String(entry.getInPort());
+        rule.in_port = entry.getInPort();
         rule.dpid = entry.getNode();
 
         ruleStorage.add(rule);
@@ -246,8 +243,9 @@ public class Flowguard {
         	String srcId = link.getSource().getSourceNode().getValue();
 
         	if(srcId.contains("openflow:") && destId.contains("openflow:")) {
-        		String destPort = link.getDestination().getDestTp().getValue();
-        		String srcPort = link.getSource().getSourceTp().getValue();
+        		int destPort = TopologyStruct.getPortfromURI(link.getDestination().getDestTp().getValue());
+        		int srcPort = TopologyStruct.getPortfromURI(link.getSource().getSourceTp().getValue());
+
         		TopologyStruct srcNode = new TopologyStruct(srcId, srcPort);
         		TopologyStruct destNode = new TopologyStruct(destId, destPort);
         		this.topologyStorage.put(srcNode, destNode);
@@ -389,7 +387,7 @@ public class Flowguard {
 	    	ConflictGroupEntry newFlow = new ConflictGroupEntryBuilder().setId(rule.flowId).setVlanId(new Long(0))
     	        .setDlDst(rule.dl_dst).setDlSrc(rule.dl_src).setL4Dst(rule.tp_dst).setL4Src(rule.tp_src)
     	        .setNwDst(IPv4.fromIPv4Address(rule.nw_dst_prefix)).setNwSrc(IPv4.fromIPv4Address(rule.nw_src_prefix))
-    	        .setPriority(rule.priority).setProtocol(proto).setInPort(rule.in_port).setAction(action)
+    	        .setPriority(rule.priority).setProtocol(proto).setInPort("TODO").setAction(action)
     	        .setConflictGroupNumber(1).setConflictType(rule.conflictList.toString())
     			.setShCount(rule.shCount).setGenCount(rule.genCount).setCorCount(rule.corCount).setRedCount(rule.redCount).setOverCount(rule.overCount)
                 .setResolution(rule.resolution).setMechanism(rule.mechanism)

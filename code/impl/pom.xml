@@ -1,29 +1,35 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!-- vi: set et smarttab sw=4 tabstop=4: -->
 <!--
-Copyright © 2016 Vaibhav and others. All rights reserved.
+Copyright © 2017 Vaibhav and others. All rights reserved.
 
 This program and the accompanying materials are made available under the
 terms of the Eclipse Public License v1.0 which accompanies this distribution,
 and is available at http://www.eclipse.org/legal/epl-v10.html
 -->
-<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+
   <modelVersion>4.0.0</modelVersion>
 
   <parent>
     <groupId>org.opendaylight.controller</groupId>
     <artifactId>config-parent</artifactId>
-    <version>0.5.2-Boron-SR2</version>
+    <version>0.6.0-Carbon</version>
     <relativePath/>
   </parent>
 
   <groupId>org.opendaylight.flowguard</groupId>
   <artifactId>flowguard-impl</artifactId>
   <version>0.1.0-SNAPSHOT</version>
+  <!-- <name> formatting is used by autorelease to parse and notify projects on
+       build failure. Please do not modify this unless you have a good reason. -->
+  <name>ODL :: org.opendaylight.flowguard :: ${project.artifactId}</name>
   <packaging>bundle</packaging>
+  
   <properties>
-  	<openflowplugin.version>0.3.2-Boron-SR2</openflowplugin.version>
-  	<restconf.version>1.4.2-Boron-SR2</restconf.version>
+  	<openflowplugin.version>0.4.0-Carbon</openflowplugin.version>
+  	<restconf.version>1.5.0-Carbon</restconf.version>
   </properties>
 
   <dependencies>
@@ -35,17 +41,17 @@ and is available at http://www.eclipse.org/legal/epl-v10.html
 
     <!-- Testing Dependencies -->
     <dependency>
-          <groupId>org.opendaylight.openflowplugin</groupId>
-          <artifactId>openflowplugin-api</artifactId>
-          <version>${openflowplugin.version}</version>
+       <groupId>org.opendaylight.openflowplugin</groupId>
+       <artifactId>openflowplugin-api</artifactId>
+       <version>${openflowplugin.version}</version>
     </dependency>
 
 	<dependency>
       <groupId>org.opendaylight.l2switch.addresstracker</groupId>
       <artifactId>addresstracker-model</artifactId>
-      <version>0.4.2-Boron-SR2</version>
+      <version>0.5.0-Carbon</version>
 	</dependency>
-
+	
 	<dependency>
       <groupId>org.restlet.osgi</groupId>
       <artifactId>org.restlet</artifactId>
@@ -63,14 +69,15 @@ and is available at http://www.eclipse.org/legal/epl-v10.html
     <dependency>
       <groupId>org.opendaylight.controller</groupId>
       <artifactId>liblldp</artifactId>
-      <version>0.11.2-Boron-SR2</version>
+      <version>0.12.1-Carbon</version>
     </dependency>
 
-     <dependency>
-            <groupId>org.opendaylight.mdsal.model</groupId>
-            <artifactId>ietf-topology</artifactId>
+    <dependency>
+       <groupId>org.opendaylight.mdsal.model</groupId>
+       <artifactId>ietf-topology</artifactId>
     </dependency>
-
+    
+    
     <dependency>
       <groupId>junit</groupId>
       <artifactId>junit</artifactId>
@@ -79,7 +86,7 @@ and is available at http://www.eclipse.org/legal/epl-v10.html
 
     <dependency>
       <groupId>org.mockito</groupId>
-      <artifactId>mockito-all</artifactId>
+      <artifactId>mockito-core</artifactId>
       <scope>test</scope>
     </dependency>
   </dependencies>

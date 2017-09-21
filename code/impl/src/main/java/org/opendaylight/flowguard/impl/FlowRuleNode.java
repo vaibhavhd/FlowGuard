@@ -18,13 +18,10 @@ import org.opendaylight.controller.liblldp.EtherTypes;
 import org.opendaylight.yang.gen.v1.urn.ietf.params.xml.ns.yang.ietf.inet.types.rev130715.Ipv4Address;
 import org.opendaylight.yang.gen.v1.urn.ietf.params.xml.ns.yang.ietf.inet.types.rev130715.Ipv4Prefix;
 import org.opendaylight.yang.gen.v1.urn.ietf.params.xml.ns.yang.ietf.yang.types.rev130715.DottedQuad;
-import org.opendaylight.yang.gen.v1.urn.opendaylight.action.types.rev131112.action.action.set.field._case.SetField;
 import org.opendaylight.yang.gen.v1.urn.opendaylight.action.types.rev131112.action.action.OutputActionCase;
 import org.opendaylight.yang.gen.v1.urn.opendaylight.action.types.rev131112.action.action.SetFieldCase;
 import org.opendaylight.yang.gen.v1.urn.opendaylight.action.types.rev131112.action.action.SetVlanIdActionCase;
-import org.opendaylight.yang.gen.v1.urn.opendaylight.action.types.rev131112.action.action.output.action._case.OutputAction;
 import org.opendaylight.yang.gen.v1.urn.opendaylight.action.types.rev131112.action.list.Action;
-import org.opendaylight.yang.gen.v1.urn.opendaylight.flow.types.rev131026.instruction.instruction.write.actions._case.WriteActions;
 import org.opendaylight.yang.gen.v1.urn.opendaylight.flow.inventory.rev130819.tables.table.Flow;
 import org.opendaylight.yang.gen.v1.urn.opendaylight.flow.types.rev131026.instruction.instruction.ApplyActionsCase;
 import org.opendaylight.yang.gen.v1.urn.opendaylight.flow.types.rev131026.instruction.instruction.ClearActionsCase;
@@ -34,7 +31,6 @@ import org.opendaylight.yang.gen.v1.urn.opendaylight.flow.types.rev131026.instru
 
 import org.opendaylight.yang.gen.v1.urn.opendaylight.flow.types.rev131026.instruction.list.Instruction;
 
-import org.opendaylight.yang.gen.v1.urn.opendaylight.model.match.types.rev131026.ethernet.match.fields.EthernetType;
 import org.opendaylight.yang.gen.v1.urn.opendaylight.model.match.types.rev131026.match.Layer3Match;
 import org.opendaylight.yang.gen.v1.urn.opendaylight.model.match.types.rev131026.match.Layer4Match;
 import org.opendaylight.yang.gen.v1.urn.opendaylight.model.match.types.rev131026.match.layer._3.match.Ipv4Match;
@@ -55,7 +51,7 @@ public class FlowRuleNode {
     public int flowId;
     public int vlan;
     public short length = 0;
-    public String in_port;
+    public int in_port;
     public String dl_src;
     public String dl_dst;
     public int dl_type = 0;
@@ -99,7 +95,7 @@ public class FlowRuleNode {
      * a copy of the object is sent to the respective port.
      */
     public class ActionList {
-        private String action_out_port;
+        private int action_out_port;
         private String action_dl_src;
         private String action_dl_dst;
         private int action_nw_src_prefix;
@@ -186,9 +182,11 @@ public class FlowRuleNode {
          * A  zero-length  OpenFlow  match  (one  with  no  OXM  TLVs)  matches  every  packet.
          * Match  fields  that should be wildcarded are omitted from the OpenFlow match.         *
          */
-        if (flow.getMatch().getInPort() != null)
-         {
-            instance.in_port = flow.getMatch().getInPort().getValue();//.substring(beginIndex); // It should ne inport or physical input port??
+        if (flow.getMatch().getInPort() != null) {
+            instance.in_port = TopologyStruct.getPortfromURI((flow.getMatch().getInPort().getValue()));//.substring(beginIndex); // It should ne inport or physical input port??
+        }
+        else {
+        	instance.in_port = 0;
         }
         if (flow.getMatch().getVlanMatch() != null) {
             instance.vlan = flow.getMatch().getVlanMatch().getVlanId().getVlanId().getValue();
@@ -281,8 +279,14 @@ public class FlowRuleNode {
                     for (Action a : action) {
                         if (a.getAction() instanceof OutputActionCase) {
                             LOG.info("Setting the Output Action");
-                            node.action_out_port = ((OutputActionCase)(a.getAction())).getOutputAction()
+                            String actionPort =  ((OutputActionCase)(a.getAction())).getOutputAction()
                                     .getOutputNodeConnector().getValue();
+                            if(actionPort.equals("CONTROLLER")) {
+                            	node.action_out_port = 0;
+                            }
+                            else {
+                            	node.action_out_port = Integer.valueOf(actionPort);
+                            }
                             instance.actionList.add(node);
                             /* The set-field actions untill next output action have been populated in the actionList Object
                              * This also takes care of the case where multiple actions are chained which modify same or
@@ -354,8 +358,8 @@ public class FlowRuleNode {
                     for (Action a : action) {
                         if (a.getAction() instanceof OutputActionCase) {
                             LOG.info("Setting the Output Action");
-                            node.action_out_port = ((OutputActionCase)(a.getAction())).getOutputAction()
-                                    .getOutputNodeConnector().getValue();
+                            node.action_out_port = Integer.valueOf(((OutputActionCase)(a.getAction())).getOutputAction()
+                                    .getOutputNodeConnector().getValue());
                             instance.actionList.add(node);
                             /* The set-field actions untill next output action have been populated in the actionList Object
                              * This also takes care of the case where multiple actions are chained which modify same or
@@ -480,8 +484,8 @@ public class FlowRuleNode {
          */
         for(int i = 0; i < ruletable.size() - 1; i++){
             for(int j = i + 1; j < ruletable.size(); j++){
-                if((isWildcarded(ruletable.get(i).in_port) || isWildcarded(ruletable.get(i).in_port)
-                        || ruletable.get(i).in_port.equals(ruletable.get(j).in_port))
+                if((isWildcarded(ruletable.get(i).in_port) || (ruletable.get(i).in_port == 0)
+                        || (ruletable.get(i).in_port == ruletable.get(j).in_port))
                         && ruletable.get(i).dl_type == (EtherTypes.IPv4.intValue())
                         && ruletable.get(j).dl_type == (EtherTypes.IPv4.intValue())
                         && ruletable.get(i).active == true //TODO The rule will always be active as above!
