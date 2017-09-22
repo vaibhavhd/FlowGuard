@@ -3,7 +3,7 @@
         {
             "ruleId": "1",
             "node": "openflow:1",
-            "inPort": "openflow:1:1",
+            "inPort": "1",
             "priority": "50",
             "sourceIpAddress": "10.0.0.1/32",
             "destinationIpAddress": "10.0.0.2/32",
@@ -14,7 +14,7 @@
         {
             "ruleId": "2",
             "node": "openflow:2",
-            "inPort": "openflow:2:1",
+            "inPort": "1",
             "priority": "30",
             "sourceIpAddress": "10.0.0.2/32",
             "destinationIpAddress": "10.0.0.1/32",
@@ -25,7 +25,7 @@
         {
             "ruleId": "3",
             "node": "openflow:3",
-            "inPort": "openflow:3:2",
+            "inPort": "2",
             "priority": "40",
             "sourceIpAddress": "10.0.0.3/32",
             "destinationIpAddress": "10.0.0.1/32",
@@ -36,7 +36,7 @@
         {
             "ruleId": "4",
             "node": "openflow:3",
-            "inPort": "openflow:3:2",
+            "inPort": "2",
             "priority": "80",
             "sourceIpAddress": "10.0.0.3/32",
             "destinationIpAddress": "10.0.0.1/32",
@@ -47,7 +47,7 @@
         {
             "ruleId": "5",
             "node": "openflow:3",
-            "inPort": "openflow:1:2",
+            "inPort": "2",
             "priority": "5",
             "sourceIpAddress": "10.0.0.3/32",
             "destinationIpAddress": "10.0.0.1/32",

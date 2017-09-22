@@ -121,30 +121,33 @@ Enter the "flowguard rev.2017-05-05" module and click the operations button. Fol
 For a detailed description of each module, refer the Flowguard documentation in the doc folder.
 ```
 	flowguard-control
-	add-dynamic-fwrule
-	add-static-fwrule
-	add-dynamic-flows
-	add-static-flows(Coming soon)	
+	add-fwrule
 	get-conflicts
 ``` 
 The format of a firewall rule file is kept in sync with traditional IPTABLES
 ```
-	ruleid	dpid	in_port	nw_src_prefix	nw_dst_prefix	tp_src	tp_dst	action
-```
-A sample list of firewall rules is also present at
-```
-	FlowGuard/results/scripts$ stat FirewallPolicy.txt
-``` 
-Install a bunch of static firewall rules using "add-static-fwrule" RPC. Provide absolute filepath and send the POST request:
-```
-	http://127.0.0.1:8181/restconf/operations/flowguard:add-static-fwrule
-Sample:
+    http://localhost:8181/restconf/operations/flowguard:add-fwrule
 	{
 	    "input": {
-		"filePath": "/home/vhd/workspace/FlowGuard/results/scripts/FirewallPolicy.txt"
+	        "ruleId": "1",
+	        "node": "openflow:1",
+	        "inPort": "1",
+	        "priority": "50",
+	        "sourceIpAddress": "10.0.0.1/32",
+	        "destinationIpAddress": "10.0.0.3/32",
+	        "sourcePort": "1",
+	        "destinationPort": "80",
+	        "action": "deny"
 	    }
-	}
+	}	
+
 ```
+
+A sample list of firewall rules is also present at
+```
+	FlowGuard/results/scripts/data/FirewallRules.json
+``` 
+
 It is good practise to ensure the RPC has done its job by checking the logs for every web request made on DLUX
 
 ```
@@ -152,7 +155,7 @@ It is good practise to ensure the RPC has done its job by checking the logs for 
 Sample:
 	org.opendaylight.flowguard.impl - 0.1.0.SNAPSHOT | 
 
-	org.opendaylight.flowguard.impl - 0.1.0.SNAPSHOT | Added STATIC Rule
+	org.opendaylight.flowguard.impl - 0.1.0.SNAPSHOT | Added Rule
 	org.opendaylight.flowguard.impl - 0.1.0.SNAPSHOT | *****************
 	org.opendaylight.flowguard.impl - 0.1.0.SNAPSHOT | *****************
 	org.opendaylight.flowguard.impl - 0.1.0.SNAPSHOT | input ruleid 10
@@ -173,7 +176,7 @@ Finally, start the Flowguard policy analyzer by sending POST request to "flowgua
 
 	{
 	    "input": {
-		"action": "Enable"
+			"action": "Enable"
 	    }
 	}
 ```
@@ -207,6 +210,7 @@ Follow following steps:
 ```
     $ my_karaf
 ```
+
 If there are changes to the code( locally or pulled), build and start the Flowguard.
 Note that the -all option takes much time to finish the tests. If there are no changes to feature project use -test option.
 ```
@@ -214,21 +218,71 @@ Note that the -all option takes much time to finish the tests. If there are no c
     Usage: ./build.sh <build_type>
     build_type: all / test
 ```
+
+There is also a fast_build.sh script. This option disables ODL feature tests, which makes the build process much faster.
+
+```
+	$ ~/workspace/FlowGuard/results/scripts/build.sh
+	Usage: ./fast_build.sh <build_type>
+    build_type: all / test
+```
+
+
 Start Mininet on a different tab:
 ```
     $ sudo ~/workspace/FlowGuard/results/scripts/linear_topo.py
 ```
-Start Flowguard and install static firewall rules:
+
+To install static firewall rules:
 ```
-    $ ~/workspace/FlowGuard/results/scripts/flowguard.py ~/workspace/FlowGuard/results/scripts/FirewallPolicy.txt 
+    $ ~/workspace/FlowGuard/results/scripts/flowguard.py -r ~/workspace/FlowGuard/results/scripts/data/FirewallRules.json
 ```
+
+To start flowguard:
+```
+	$ ~/workspace/FlowGuard/results/scripts/flowguard.py -i
+```
+
 Verify that the two REST requests are successful(200):
 ```
-    $ ~/workspace/FlowGuard/results/scripts/flowguard.py ~/workspace/FlowGuard/results/scripts/FirewallPolicy.txt 
-    {'status': '200', 'transfer-encoding': 'chunked', 'set-cookie': 'JSESSIONID=1v6alx2rcgtihqtrs0tz78cse;Path=/restconf, rememberMe=deleteMe; Path=/restconf; Max-Age=0; Expires=Tue, 25-Jul-2017 00:49:25 GMT', 'expires': 'Thu, 01 Jan 1970 00:00:00 GMT', 'server': 'Jetty(8.1.19.v20160209)', 'content-type': 'application/yang.operation+json'}
+    $ ~/workspace/FlowGuard/results/scripts/flowguard.py -r ~/workspace/FlowGuard/results/scripts/data/FirewallRules.json
+    {'status': '204', 'transfer-encoding': 'chunked', 'set-cookie': 'JSESSIONID=1v6alx2rcgtihqtrs0tz78cse;Path=/restconf, rememberMe=deleteMe; Path=/restconf; Max-Age=0; Expires=Tue, 25-Jul-2017 00:49:25 GMT', 'expires': 'Thu, 01 Jan 1970 00:00:00 GMT', 'server': 'Jetty(8.1.19.v20160209)', 'content-type': 'application/yang.operation+json'}
+    $ ~/workspace/FlowGuard/results/scripts/flowguard.py -i
     {'status': '200', 'transfer-encoding': 'chunked', 'set-cookie': 'JSESSIONID=18u080q7qaqunfbk4sz1mgt3b;Path=/restconf, rememberMe=deleteMe; Path=/restconf; Max-Age=0; Expires=Tue, 25-Jul-2017 00:49:25 GMT', 'expires': 'Thu, 01 Jan 1970 00:00:00 GMT', 'server': 'Jetty(8.1.19.v20160209)', 'content-type': 'application/yang.operation+json'}
 ```
 The controller might take longer sometimes to install the flows and the second REST request might come as an error(500) untill then.
+
+
+##### Important Note for Deployment #####
+To deploy the module project Flowguard in a distribution controller downloaded from opendaylight website:
+   	https://www.opendaylight.org/technical-community/getting-started-for-developers/downloads-and-documentation
+
+First, download and build flowguard:
+```
+	$ cd ~/workspace/FlowGuard/code/
+	$ mvn clean install
+```
+
+Secondly, download the Carbon (0.6.0) release from opendaylight webiste and unzip the file:
+```	
+	$ wget https://nexus.opendaylight.org/content/repositories/opendaylight.release/org/opendaylight/integration/distribution-karaf/0.6.0-Carbon/distribution-karaf-0.6.0-Carbon.tar.gz
+```
+
+Thirdly, access .m2/repository and copy flowguard folder and paste the flowguard folder in distribution-karaf-0.6.0-Carbon/system/
+```
+	$ cd ~/.m2/repository/org/opendaylight/
+	$ cp -r flowguard/ ~/distribution-karaf-0.6.0-Carbon/system/.
+```
+
+Next, start distribution-karaf , add flowguard repo , and install flowguard features 
+```	
+	$ ~/distribution-karaf-0.6.0-Carbon/bin/karaf
+	$ opendaylight-user@root> feature:repo-add mvn:org.opendaylight.flowguard/flowguard-features/0.1.0-SNAPSHOT/xml/features
+	$ opendaylight-user@root> feature:install odl-flowguard odl-flowguard-api odl-flowguard-cli odl-flowguard-rest odl-flowguard-ui
+```
+
+Now, flowguard is ready!!!
+
 ## Contributing
 
 ## Versioning
