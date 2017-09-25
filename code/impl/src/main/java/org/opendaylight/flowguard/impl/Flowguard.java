@@ -23,10 +23,13 @@ import org.opendaylight.controller.md.sal.common.api.data.TransactionCommitFaile
 import org.opendaylight.flowguard.packet.IPv4;
 import org.opendaylight.yang.gen.v1.urn.ietf.params.xml.ns.yang.ietf.inet.types.rev130715.Ipv4Prefix;
 import org.opendaylight.yang.gen.v1.urn.opendaylight.flow.inventory.rev130819.FlowCapableNode;
+import org.opendaylight.yang.gen.v1.urn.opendaylight.flow.inventory.rev130819.FlowId;
 import org.opendaylight.yang.gen.v1.urn.opendaylight.flow.inventory.rev130819.tables.Table;
 import org.opendaylight.yang.gen.v1.urn.opendaylight.flow.inventory.rev130819.tables.TableKey;
 import org.opendaylight.yang.gen.v1.urn.opendaylight.flow.inventory.rev130819.tables.table.Flow;
 import org.opendaylight.yang.gen.v1.urn.opendaylight.flow.inventory.rev130819.tables.table.FlowBuilder;
+import org.opendaylight.yang.gen.v1.urn.opendaylight.flow.inventory.rev130819.tables.table.FlowKey;
+import org.opendaylight.yang.gen.v1.urn.opendaylight.flow.types.rev131026.flow.MatchBuilder;
 import org.opendaylight.yang.gen.v1.urn.opendaylight.inventory.rev130819.NodeConnectorId;
 import org.opendaylight.yang.gen.v1.urn.opendaylight.inventory.rev130819.NodeId;
 import org.opendaylight.yang.gen.v1.urn.opendaylight.inventory.rev130819.Nodes;
@@ -58,6 +61,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.google.common.base.Optional;
+import com.google.common.base.Preconditions;
 import com.google.common.util.concurrent.CheckedFuture;
 import com.google.common.util.concurrent.Futures;
 
@@ -177,19 +181,12 @@ public class Flowguard {
         				return priority2 - priority1;
         			}
         		});
-        /*
-        for(FirewallRule rule:ruleStorage){
-        	System.out.println("Priority of rule "+ rule.priority);
-        }
-        */
+
         for(int i = 0; i < ruleStorage.size();i++)
         	System.out.println("Priority of rule " + ruleStorage.get(i).priority + "\trule ID " + ruleStorage.get(i).ruleid);
-
-        System.out.println("Done with import static rules");
     }
-
-
-
+    
+ 
 
     public void addRuleToStorage(FirewallRule rule, FwruleRegistryEntry entry) {
 
@@ -210,7 +207,50 @@ public class Flowguard {
         rule.dpid = entry.getNode();
 
         ruleStorage.add(rule);
+        
         LOG.info("Rule for switch: {} added to the list: id:{} ", rule.dpid, rule.ruleid);
+    }
+    
+    
+    public void removeRuleFromStorage(FirewallRule rule, FwruleRegistryEntry entry){
+    	LOG.info("Entering removeRuleFromStorage");
+    	//create a function to convert FwRuleRegistryEntry -> FirewallRule
+    	rule.ruleid = entry.getRuleId();
+        int[] arr;
+        arr = parseIP(entry.getSourceIpAddress());
+        rule.nw_src_prefix = arr[0];
+        rule.nw_src_maskbits = arr[1];
+        arr = parseIP(entry.getDestinationIpAddress());
+        rule.nw_dst_prefix = arr[0];
+        rule.nw_dst_maskbits = arr[1];
+        rule.priority = entry.getPriority(); //get priority of the firewall rule
+        rule.tp_src = Short.parseShort(entry.getSourcePort());
+        rule.tp_dst = Short.parseShort(entry.getDestinationPort());
+        rule.action = (entry.getAction() == Action.Allow) ? FirewallRule.FirewallAction.ALLOW
+                : FirewallRule.FirewallAction.DENY;
+        rule.in_port = entry.getInPort();
+        rule.dpid = entry.getNode();
+        
+        //delete flow here
+        String rule_name = "resolution_"+entry.getRuleId()+"_[0-9]*";// regex resolution_firewallID_resID
+        
+        List<FlowRuleNode> flowList = flowStorage.get(entry.getNode());
+        
+        /*
+        for(FlowRuleNode flow_rule: flowList){
+        	System.out.println("flow_rule.name : " + flow_rule.rule_name);
+        }
+        */
+        
+	    for(int i=0 ; i < flowList.size();i++){
+	    	//System.out.println("Flow_rule: "+ flow_rule.rule_name);
+	    	if((flowList.get(i).rule_name).matches(rule_name)){
+	    		//System.out.println("Deleting flow rule: " + flow_rule.rule_name);
+	    		sg.delFlowEntry(entry.getNode(), flowList.get(i));
+	    	}
+	    }
+       
+        
     }
 
     private int[] parseIP(String address) {
@@ -359,7 +399,7 @@ public class Flowguard {
         Topology flowTopology = getFlowTopology();
         return flowTopology.getLink();
     }
-
+    
 	public void addRule(FirewallRule rule) {
 		// TODO Auto-generated method stub
 

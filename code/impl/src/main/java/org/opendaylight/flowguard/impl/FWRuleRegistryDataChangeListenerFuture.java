@@ -9,6 +9,7 @@ package org.opendaylight.flowguard.impl;
 
 import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
 
 import org.opendaylight.controller.md.sal.binding.api.DataBroker;
 import org.opendaylight.controller.md.sal.binding.api.DataChangeListener;
@@ -60,18 +61,41 @@ public class FWRuleRegistryDataChangeListenerFuture extends AbstractFuture<Fwrul
 
 	@Override
 	public void onDataChanged(AsyncDataChangeEvent<InstanceIdentifier<?>, DataObject> change) {
-		  LOG.info("Firewall rule dataChanged");
+		  	LOG.info("Firewall rule dataChanged");
 	        DataObject dataObject;
-
+	        
 	        // Iterate over any created nodes or interfaces
 	        for (Map.Entry<InstanceIdentifier<?>, DataObject> entry : change.getCreatedData().entrySet()) {
 	        	dataObject = entry.getValue();
 	        	 if((dataObject instanceof FwruleRegistryEntry)) {
 	                 addFirewallRule((FwruleRegistryEntry) dataObject);
+	                 LOG.info("ADDED FwRule in listener - fwruleID: {}",((FwruleRegistryEntry) dataObject).getRuleId());
 	                 //Redundancy here
 	             }
 	        }
-	}
+	        
+	        
+	        Map<InstanceIdentifier<?>, DataObject> originalData = change.getOriginalData();
+	        
+	        //Updated Firewall Rule
+	        for (Map.Entry<InstanceIdentifier<?>, DataObject> entry : change.getUpdatedData().entrySet()) {
+	            dataObject = entry.getValue();
+	            if((dataObject instanceof FwruleRegistryEntry)){
+	            	removeFirewallRule((FwruleRegistryEntry) dataObject); 	//delete the original firewall rule
+	            	addFirewallRule((FwruleRegistryEntry) dataObject);		//then add the updated firewall rule
+	            	LOG.debug("UPDATED FwRule in listner - fwruleID: {}",((FwruleRegistryEntry) dataObject).getRuleId());
+	            }
+	        }
+	        
+	        //Deleted Firewall Rule
+	        for (InstanceIdentifier<?> path : change.getRemovedPaths()) {
+	        	dataObject = originalData.get(path);
+	        	if((dataObject instanceof FwruleRegistryEntry)){
+	            	removeFirewallRule((FwruleRegistryEntry) dataObject);
+	            	LOG.debug("REMOVED FwRule in listner - fwruleID: {}",((FwruleRegistryEntry) dataObject).getRuleId());
+	        	}
+	        }
+	}	
 
 
     /**
@@ -94,8 +118,28 @@ public class FWRuleRegistryDataChangeListenerFuture extends AbstractFuture<Fwrul
         FirewallRule rule = new FirewallRule();
         flowguard.addRuleToStorage(rule, entry);
         //if(shiftedGraph != null)
-            shiftedGraph.buildSourceProbeNode(rule);
+        shiftedGraph.buildSourceProbeNode(rule);
     }
+    
+
+    private void removeFirewallRule(FwruleRegistryEntry input){
+    	//should make a function for this
+    	 FwruleRegistryEntry entry = new FwruleRegistryEntryBuilder()
+                 .setRuleId(input.getRuleId())
+                 .setNode(input.getNode())
+                 .setInPort(input.getInPort())
+                 .setSourceIpAddress(input.getSourceIpAddress())
+                 .setDestinationIpAddress(input.getDestinationIpAddress())
+                 .setSourcePort(input.getSourcePort())
+                 .setDestinationPort(input.getDestinationPort())
+                 .setAction(input.getAction())
+                 .setPriority(input.getPriority())
+                 .build();
+    	FirewallRule rule = new FirewallRule();
+    	flowguard.removeRuleFromStorage(rule, entry);    	
+    	//TODO need to update propagate function
+    }
+    
 
     @Override
     public boolean cancel(boolean mayInterruptIfRunning) {

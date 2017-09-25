@@ -70,6 +70,7 @@ import org.opendaylight.yang.gen.v1.urn.opendaylight.inventory.rev130819.node.No
 import org.opendaylight.yang.gen.v1.urn.opendaylight.inventory.rev130819.nodes.Node;
 import org.opendaylight.yang.gen.v1.urn.opendaylight.inventory.rev130819.nodes.NodeKey;
 import org.opendaylight.yang.gen.v1.urn.opendaylight.model.match.types.rev131026.vlan.match.fields.VlanId;
+import org.opendaylight.yang.gen.v1.urn.opendaylight.params.xml.ns.yang.flowguard.rev170913.fwrule.registry.FwruleRegistryEntry;
 import org.opendaylight.yangtools.yang.binding.InstanceIdentifier;
 
 
@@ -221,18 +222,18 @@ public class ShiftedGraph {
                  */
                 System.out.println("Direct Flow Path Violation!");
                 this.addFlowEntry(flowinfo.ruleHO, flowinfo.flow_history.get(1).current_switch_dpid,
-                        flowinfo.flow_history.get(1).current_ingress_port);
+                        flowinfo.flow_history.get(1).current_ingress_port,flowinfo.firewall_ruldid);
                 return ho;
             }
             System.out.println("Installing a new flow in egress switch");
             this.addFlowEntry(flowinfo.flow_history.get(flowinfo.flow_history.size()-1).current_ho,
                     flowinfo.flow_history.get(flowinfo.flow_history.size()-1).current_switch_dpid,
-                    flowinfo.flow_history.get(flowinfo.flow_history.size()-1).current_ingress_port);
+                    flowinfo.flow_history.get(flowinfo.flow_history.size()-1).current_ingress_port,flowinfo.firewall_ruldid);
             //ingress switch block
             // TODO This is workaround. HO has been changed. Check Inverseflow
             ho = flowinfo.flow_history.get(1).current_ho;
             System.out.println("Installing a new flow in ingress switch");
-            this.addFlowEntry(ho, flowinfo.flow_history.get(1).current_switch_dpid, flowinfo.flow_history.get(1).current_ingress_port);
+            this.addFlowEntry(ho, flowinfo.flow_history.get(1).current_switch_dpid, flowinfo.flow_history.get(1).current_ingress_port,flowinfo.firewall_ruldid);
             //this is method 4(partial violation) : add firewall rule and add new flow entry for packet bloacking
             this.addFirewallRule(ho, flowinfo.flow_history.get(1).current_switch_dpid, flowinfo.flow_history.get(1).current_ingress_port);
         }
@@ -437,10 +438,10 @@ public class ShiftedGraph {
         this.firewall.addRule(rule);
     }
 
-    public void addFlowEntry(HeaderObject ho, String dpid, int port){
+    public void addFlowEntry(HeaderObject ho, String dpid, int port, String fwRuleId){
         // TODO Add to the plumbing graph too
         Map<String, Object> entry = new HashMap<String, Object>();
-        String rulename = "resolution"+Integer.toString(this.resolution_index);
+        String rulename = "resolution_"+ fwRuleId +"_"+Integer.toString(this.resolution_index);
         this.resolution_index++;
         System.out.printf("Adding a new rule(%s) to the node(%s) for inPort(%s)\n", rulename, dpid, port);
 
@@ -495,7 +496,6 @@ public class ShiftedGraph {
         Futures.addCallback(future, new LoggingFuturesCallBack<Void>("Failed add firewall rule", LOG));
 
         LOG.info("Added security rule with ip {} and port {} into node {}", destIP, port, dpid);
-
     }
 
     private void addRuletoPlumbingGraph(String dpid, Flow flow) {
@@ -508,8 +508,8 @@ public class ShiftedGraph {
         this.FlowRuleNodes.put(dpid, ruletable);
     }
 
-    private void delFlowEntry(String dpid, FlowRuleNode flowRuleNode) {
-        System.out.println("Removing flow: "+flowRuleNode+" from node: "+dpid);
+    public void delFlowEntry(String dpid, FlowRuleNode flowRuleNode) {
+        System.out.println("Removing flow: "+flowRuleNode.rule_name+" from node: "+dpid);
         NodeId nodeId = new NodeId(dpid);
         InstanceIdentifier<Flow> flowIID =
                 InstanceIdentifier.builder(Nodes.class).child(Node.class, new NodeKey(nodeId))
@@ -1249,7 +1249,12 @@ public class ShiftedGraph {
     } */
 
     public void staticEntryDeleted(String dpid, String rulename){
-
+    	
+    	if(rulename.startsWith("resolution")) {
+            LOG.info("DataChangeNotification for a resolution. Skipping the test..");
+            return;
+        }
+    	
         FlowRuleNode changedFlow = this.findFlowRuleNode(dpid, rulename);
         if( changedFlow == null){
             LOG.info("Flow not found in plumbing graph!");

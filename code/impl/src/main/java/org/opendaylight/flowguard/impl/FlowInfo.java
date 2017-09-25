@@ -32,6 +32,7 @@ public class FlowInfo {
     public TopologyStruct target;
     public String candidate_rule;
 
+
     public ArrayList<FlowInfo> flow_history;
 
     public static void printFlowInfo(FlowInfo flowinfo){
