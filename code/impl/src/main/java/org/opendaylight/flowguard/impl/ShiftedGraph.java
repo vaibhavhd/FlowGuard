@@ -8,16 +8,10 @@
 
 package org.opendaylight.flowguard.impl;
 
-import java.io.BufferedWriter;
-import java.io.File;
-import java.io.FileWriter;
-import java.io.IOException;
 import java.util.ArrayList;
-
-import java.util.Arrays;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Iterator;
-import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -34,9 +28,6 @@ import com.google.common.util.concurrent.CheckedFuture;
 import com.google.common.util.concurrent.FutureCallback;
 import com.google.common.util.concurrent.Futures;
 
-import org.restlet.resource.Post;
-import org.restlet.resource.Resource;
-import org.restlet.resource.ServerResource;
 import org.opendaylight.controller.liblldp.EtherTypes;
 import org.opendaylight.controller.md.sal.binding.api.DataBroker;
 import org.opendaylight.controller.md.sal.binding.api.ReadTransaction;
@@ -48,11 +39,9 @@ import org.opendaylight.flowguard.impl.FirewallRule.FirewallAction;
 import org.opendaylight.flowguard.impl.FlowRuleNode.ActionList;
 import org.opendaylight.flowguard.packet.Ethernet;
 import org.opendaylight.flowguard.packet.IPv4;
-import org.opendaylight.yang.gen.v1.urn.ietf.params.xml.ns.yang.ietf.inet.types.rev130715.IpAddress;
 import org.opendaylight.yang.gen.v1.urn.ietf.params.xml.ns.yang.ietf.inet.types.rev130715.Ipv4Address;
 import org.opendaylight.yang.gen.v1.urn.ietf.params.xml.ns.yang.ietf.inet.types.rev130715.Ipv4Prefix;
 import org.opendaylight.yang.gen.v1.urn.ietf.params.xml.ns.yang.ietf.inet.types.rev130715.PortNumber;
-import org.opendaylight.yang.gen.v1.urn.ietf.params.xml.ns.yang.ietf.inet.types.rev130715.Uri;
 import org.opendaylight.yang.gen.v1.urn.opendaylight.address.tracker.rev140617.AddressCapableNodeConnector;
 import org.opendaylight.yang.gen.v1.urn.opendaylight.address.tracker.rev140617.address.node.connector.Addresses;
 import org.opendaylight.yang.gen.v1.urn.opendaylight.flow.inventory.rev130819.FlowCapableNode;
@@ -69,8 +58,6 @@ import org.opendaylight.yang.gen.v1.urn.opendaylight.inventory.rev130819.Nodes;
 import org.opendaylight.yang.gen.v1.urn.opendaylight.inventory.rev130819.node.NodeConnector;
 import org.opendaylight.yang.gen.v1.urn.opendaylight.inventory.rev130819.nodes.Node;
 import org.opendaylight.yang.gen.v1.urn.opendaylight.inventory.rev130819.nodes.NodeKey;
-import org.opendaylight.yang.gen.v1.urn.opendaylight.model.match.types.rev131026.vlan.match.fields.VlanId;
-import org.opendaylight.yang.gen.v1.urn.opendaylight.params.xml.ns.yang.flowguard.rev170913.fwrule.registry.FwruleRegistryEntry;
 import org.opendaylight.yangtools.yang.binding.InstanceIdentifier;
 
 
@@ -79,21 +66,26 @@ public class ShiftedGraph {
     private static final Logger LOG = LoggerFactory.getLogger(Flowguard.class);
     private static ReadTransaction readTx;
     // Map<DPID, Map<Name, FlowMod>>; FlowMod can be null to indicate non-active
-    public Map<String, Map<String, FlowBuilder>> entriesFromStorage;
-    public Map<String, List<FlowRuleNode>> FlowRuleNodes;
-    public Map<TopologyStruct, TopologyStruct> topologyStorage;
-    public Map<String, Map<FlowInfo, TopologyStruct>> SourceProbeNodeStorage;
-    public List<FlowInfo> flowstorage;
-    public int current_flow_index = 0;
+    //private Map<String, Map<String, FlowBuilder>> entriesFromStorage;
+    private Map<String, List<FlowRuleNode>> FlowRuleNodes;
+    private Map<TopologyStruct, TopologyStruct> topologyStorage;
+    private Map<String, Map<FlowInfo, TopologyStruct>> SourceProbeNodeStorage;
+    private List<FlowInfo> flowstorage;
+    private int current_flow_index = 0;
     //public StaticFlowEntryPusher static_pusher;
-    public Flowguard firewall;
+    private Flowguard firewall;
     // Entry Name -> DPID of Switch it's on
     protected boolean AUTOPORTFAST_DEFAULT = false;
     protected boolean autoPortFastFeature = AUTOPORTFAST_DEFAULT;
     //protected IResultSet topologyResult;
-    public String RESULT_PATH="/tmp/";
-    public int resolution_index = 0;
-    public int resolution_method = 0;
+    private String RESULT_PATH="/tmp/";
+    private int resolution_index = 0;
+    private int resolution_method = 0;
+    
+    private Map<Integer, Set<String>> fwruleSwitchList;
+    private Set<String> setOfSwiches;
+    
+    private List<FirewallRule> ruleStorage;
 
     protected static Logger logger;
 
@@ -102,12 +94,14 @@ public class ShiftedGraph {
     protected int subnet_mask = IPv4.toIPv4Address("255.255.255.0");
 	private DataBroker db;
 
-    public ShiftedGraph(Flowguard firewall, ReadTransaction readTx, Map<String, List<FlowRuleNode>> flowStorage, Map<TopologyStruct, TopologyStruct> topologyStorage, DataBroker db) {
+    public ShiftedGraph(Flowguard firewall, ReadTransaction readTx, Map<String, List<FlowRuleNode>> flowStorage, Map<TopologyStruct, TopologyStruct> topologyStorage, DataBroker db, Map<Integer, Set<String>> fwruleSwitchList, List<FirewallRule> ruleStorage) {
         this.firewall = firewall;
     	this.readTx = readTx;
         this.FlowRuleNodes = flowStorage;
         this.topologyStorage = topologyStorage;
         this.db = db;
+        this.fwruleSwitchList = fwruleSwitchList;
+        this.ruleStorage = ruleStorage;
     }
 
     public HeaderObject computeInverseFlow(FlowInfo flowinfo){
@@ -116,6 +110,11 @@ public class ShiftedGraph {
         ho.nw_dst_prefix = flowinfo.next_ho.nw_dst_prefix;
         ho.nw_src_maskbits = flowinfo.next_ho.nw_src_maskbits;
         ho.nw_src_prefix = flowinfo.next_ho.nw_src_prefix;
+        ho.tcp_src = flowinfo.next_ho.tcp_src;
+        ho.tcp_dst = flowinfo.next_ho.tcp_dst;
+  
+    
+        
         for(int i = flowinfo.flow_history.size()-1; i > 0; i--){
             String rulename = flowinfo.flow_history.get(i).rule_node_name;
             String dpid = flowinfo.flow_history.get(i).current_switch_dpid;
@@ -171,7 +170,9 @@ public class ShiftedGraph {
             //this.flowtagging(flowinfo);
 
             if(flowinfo.candidate_rule != null){
+            	System.out.println("\n#########################################################################");
                 System.out.println("S2-Update Rejecting applied. Flow being rejected: " + flowinfo.candidate_rule);
+                System.out.println("#########################################################################\n");
                 this.resolution_method = 2;
                 Set<String> set2 = this.FlowRuleNodes.keySet();
                 Iterator<String> itr2 = set2.iterator();
@@ -201,8 +202,9 @@ public class ShiftedGraph {
                     }
                 }
             }
-
+            System.out.println("\n#########################################################################");
             System.out.println("S4-Packet Blocking applied!!");
+            System.out.println("#########################################################################\n");
             if(this.resolution_method == 1){
                 this.resolution_method = 5;
             }else{
@@ -249,10 +251,10 @@ public class ShiftedGraph {
 
     public boolean checkflowremoving(FlowInfo flowinfo, HeaderObject ho){
         FirewallRule frule = new FirewallRule();
-        if(this.firewall.ruleStorage != null){
-            for(int i=0;i<this.firewall.ruleStorage.size(); i++){
-                if(this.firewall.ruleStorage.get(i).ruleid == Integer.parseInt(flowinfo.firewall_ruldid)){
-                    frule = this.firewall.ruleStorage.get(i);
+        if(this.ruleStorage != null){
+            for(int i=0;i<this.ruleStorage.size(); i++){
+                if(this.ruleStorage.get(i).ruleid == flowinfo.firewall_ruldid){ //Integer.parseInt(flowinfo.firewall_ruldid)){
+                    frule = this.ruleStorage.get(i);
                 }
             }
         }
@@ -414,7 +416,6 @@ public class ShiftedGraph {
 */
     }
 
-
     public void addFirewallRule(HeaderObject ho, String dpid, int port){
         FirewallRule rule = new FirewallRule();
         rule.ruleid = rule.genID();
@@ -437,10 +438,12 @@ public class ShiftedGraph {
         rule.action = FirewallRule.FirewallAction.DENY;
         this.firewall.addRule(rule);
     }
-
-    public void addFlowEntry(HeaderObject ho, String dpid, int port, String fwRuleId){
+    
+   
+    public void addFlowEntry(HeaderObject ho, String dpid, int port, int fwRuleId){
         // TODO Add to the plumbing graph too
-        Map<String, Object> entry = new HashMap<String, Object>();
+        //Map<String, Object> entry = new HashMap<String, Object>();
+ 
         String rulename = "resolution_"+ fwRuleId +"_"+Integer.toString(this.resolution_index);
         this.resolution_index++;
         System.out.printf("Adding a new rule(%s) to the node(%s) for inPort(%s)\n", rulename, dpid, port);
@@ -448,12 +451,15 @@ public class ShiftedGraph {
         NodeId nodeId = new NodeId(dpid);
         String destIP = IPv4.fromIPv4Address(ho.nw_dst_prefix)+"/"+Integer.toString(ho.nw_dst_maskbits);
         String srcIP = IPv4.fromIPv4Address(ho.nw_src_prefix)+"/"+Integer.toString(ho.nw_src_maskbits);
+        
 
-        System.out.printf("Rule: DENY source(%s) to dest(%s)\n", srcIP, destIP);
+        System.out.printf("Rule: DENY sourceIP(%s):(%s) to destIP(%s):(%s)\n", 
+        								srcIP,ho.tcp_src, destIP,ho.tcp_dst);
 
         // Creating match object
         MatchBuilder matchBuilder = new MatchBuilder();
         MatchUtils.createDstL3IPv4Match(matchBuilder, new Ipv4Prefix(destIP), new Ipv4Prefix(srcIP));
+        MatchUtils.createSetDstTcpMatch(matchBuilder, new PortNumber(ho.tcp_dst), new PortNumber(ho.tcp_src));
         String nodePort = dpid + ":" + Integer.toString(port);
         matchBuilder.setInPort(new NodeConnectorId(nodePort));
         /*
@@ -471,11 +477,16 @@ public class ShiftedGraph {
         flowBuilder.setFlowName(flowId);
         flowBuilder.setHardTimeout(0);
         flowBuilder.setIdleTimeout(0);
-
+        
         addRuletoPlumbingGraph(dpid, flowBuilder.build());
-
-        //FirewallRule rule = createFirewallRule(input.getNode(), input.getSourcePort());
-        //this.shiftedGraph.buildSourceProbeNode(rule);
+        
+        
+        setOfSwiches = fwruleSwitchList.get(fwRuleId); 	//get all switches associate with a fwrule
+        if(setOfSwiches == null) {						//if null means fwrule did not have any resolution
+        	setOfSwiches = new HashSet<String>();
+        	fwruleSwitchList.put(fwRuleId, setOfSwiches);
+        }
+        setOfSwiches.add(dpid);
 
         /*
          * Perform transaction to store rule.
@@ -504,7 +515,6 @@ public class ShiftedGraph {
             this.FlowRuleNodes.remove(dpid);
         }
         ruletable = FlowRuleNode.addFlowRuleNode(ruletable, flow);
-
         this.FlowRuleNodes.put(dpid, ruletable);
     }
 
@@ -603,9 +613,8 @@ public class ShiftedGraph {
      * to the "target" switch.
      */
     public void propagateFlow(FlowInfo flowinfo, TopologyStruct target, int index){
-
         FlowInfo sample = FlowInfo.valueCopy(flowinfo);
-
+        
         String targetdpid = target.dpid;
         int targetport = target.port;
         System.out.println("Propagating to target dpid: "+targetdpid+" port: "+targetport);
@@ -693,6 +702,8 @@ public class ShiftedGraph {
                         if((flowRule.dl_type == 0 || flowRule.dl_type  == EtherTypes.IPv4.intValue()) && flowRule.active == true){
                             System.out.println("ETH_TYPE matched/wildcarded: "+flowRule.dl_type);
                             //System.out.println("Number of actions in the rule: "+flowRule.actionList.size());
+                           
+                            
                             if(flowRule.actionList == null) {
                                 flowRule = FlowRuleNode.computeFlow(flowRule, sample, null);
                                 if(flowRule.flow_info.is_finished) {
@@ -951,7 +962,10 @@ public class ShiftedGraph {
         sample.ruleHO.nw_src_maskbits = firewallRule.nw_src_maskbits;
         sample.ruleHO.nw_dst_prefix = firewallRule.nw_dst_prefix;
         sample.ruleHO.nw_dst_maskbits = firewallRule.nw_dst_maskbits;
-        sample.firewall_ruldid = Integer.toString(firewallRule.ruleid);
+        sample.ruleHO.tcp_src = firewallRule.tp_src;
+        sample.ruleHO.tcp_dst = firewallRule.tp_dst;
+        sample.firewall_ruldid = firewallRule.ruleid;//Integer.toString(firewallRule.ruleid);
+        
         this.current_flow_index++;
         sample.flow_index = this.current_flow_index;
         sample.rule_node_name = "SourceNode";
@@ -959,17 +973,23 @@ public class ShiftedGraph {
         sample.current_ho.nw_dst_prefix = 0;//firewall_rules.get(i).nw_dst_prefix;
         sample.current_ho.nw_dst_maskbits = 0;//firewall_rules.get(i).nw_dst_maskbits;
         sample.current_ho.nw_src_prefix = 0;//firewall_rules.get(i).nw_src_prefix;//167772160;
-        sample.current_ho.nw_src_maskbits = 0;//firewall_rules.get(i).nw_src_maskbits;
+        sample.current_ho.nw_src_maskbits = 0;//firewall_rules.get(i).nw_src_maskbits;= 
+        sample.current_ho.tcp_src = 0;
+        sample.current_ho.tcp_dst = 0;
         sample.current_switch_dpid = source.dpid;
         sample.current_ingress_port = source.port;
         sample.next_switch_dpid = source.dpid;
         sample.next_ingress_port = source.port;
+     
         // TODO Work on next_ho
         sample.next_ho = new HeaderObject();
         sample.next_ho.nw_dst_prefix = 0;//firewall_rules.get(i).nw_dst_prefix;
         sample.next_ho.nw_dst_maskbits = 0;//firewall_rules.get(i).nw_dst_maskbits;
         sample.next_ho.nw_src_prefix = 0;//firewall_rules.get(i).nw_src_prefix;
         sample.next_ho.nw_src_maskbits = 0;//firewall_rules.get(i).nw_src_maskbits;
+        sample.next_ho.tcp_src = 0;
+        sample.next_ho.tcp_dst = 0;
+        
         sample.target = new TopologyStruct();
         sample.target.dpid = probe.dpid;
         sample.target.port = probe.port;
