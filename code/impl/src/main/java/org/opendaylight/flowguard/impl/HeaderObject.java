@@ -9,10 +9,6 @@
 package org.opendaylight.flowguard.impl;
 
 import java.util.List;
-
-import org.opendaylight.yang.gen.v1.urn.ietf.params.xml.ns.yang.ietf.inet.types.rev130715.Ipv4Prefix;
-import org.opendaylight.yang.gen.v1.urn.opendaylight.model.match.types.rev131026.vlan.match.fields.VlanId;
-
 import com.google.common.net.InetAddresses;
 
 
@@ -42,6 +38,8 @@ public class HeaderObject {
 		temp.nw_dst_maskbits = this.nw_dst_maskbits;
 		temp.vlan = this.vlan;
 		temp.diff = this.diff;
+		temp.tcp_src = this.tcp_src;
+		temp.tcp_dst = this.tcp_dst;
 		return temp;
 	}
 
@@ -52,6 +50,7 @@ public class HeaderObject {
 				", src_IP_mask="+Integer.toString(ho.nw_src_maskbits)+", dst_IP="+IPv4.fromIPv4Address(ho.nw_dst_prefix)+
 				", dst_IP_mask="+Integer.toString(ho.nw_dst_maskbits)+"}");
 		*/
+		
 		System.out.println("{ vlan = "+ho.vlan+", src_IP = "+ InetAddresses.fromInteger(ho.nw_src_prefix)+"/"+Integer.toString(ho.nw_src_maskbits)+
 				", dst_IP = "+InetAddresses.fromInteger(ho.nw_dst_prefix)+"/"+Integer.toString(ho.nw_dst_maskbits)+" }");
 		if(ho.diff != null){

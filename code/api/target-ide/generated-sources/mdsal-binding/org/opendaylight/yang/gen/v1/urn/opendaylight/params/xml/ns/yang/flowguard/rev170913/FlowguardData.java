@@ -20,12 +20,6 @@ import org.opendaylight.yangtools.yang.binding.DataRoot;
  *             leaf ruleId {
  *                 type uint16;
  *             }
- *             leaf node {
- *                 type string;
- *             }
- *             leaf inPort {
- *                 type uint16;
- *             }
  *             leaf priority {
  *                 type uint16;
  *             }
@@ -146,12 +140,6 @@ import org.opendaylight.yangtools.yang.binding.DataRoot;
  *         leaf ruleId {
  *             type uint16;
  *         }
- *         leaf node {
- *             type string;
- *         }
- *         leaf inPort {
- *             type uint16;
- *         }
  *         leaf priority {
  *             type uint16;
  *         }
@@ -237,56 +225,6 @@ import org.opendaylight.yangtools.yang.binding.DataRoot;
  *         }
  *     }
  *
- *     rpc flowguard-control {
- *         input {
- *             leaf action {
- *                 type enumeration;
- *             }
- *         }
- *         
- *         output {
- *             leaf greeting {
- *                 type string;
- *             }
- *         }
- *     }
- *     rpc add-fwrule {
- *         input {
- *             leaf ruleId {
- *                 type uint16;
- *             }
- *             leaf node {
- *                 type string;
- *             }
- *             leaf inPort {
- *                 type uint16;
- *             }
- *             leaf priority {
- *                 type uint16;
- *             }
- *             leaf sourceIpAddress {
- *                 type string;
- *             }
- *             leaf destinationIpAddress {
- *                 type string;
- *             }
- *             leaf sourcePort {
- *                 type string;
- *             }
- *             leaf destinationPort {
- *                 type string;
- *             }
- *             leaf action {
- *                 type enumeration;
- *             }
- *         }
- *         
- *         output {
- *             leaf greeting {
- *                 type string;
- *             }
- *         }
- *     }
  *     rpc get-conflicts {
  *         input {
  *             leaf conflict-type {
@@ -361,6 +299,50 @@ import org.opendaylight.yangtools.yang.binding.DataRoot;
  *                     type string;
  *                 }
  *                 uses conflict-info;
+ *             }
+ *         }
+ *     }
+ *     rpc flowguard-control {
+ *         input {
+ *             leaf action {
+ *                 type enumeration;
+ *             }
+ *         }
+ *         
+ *         output {
+ *             leaf greeting {
+ *                 type string;
+ *             }
+ *         }
+ *     }
+ *     rpc add-fwrule {
+ *         input {
+ *             leaf ruleId {
+ *                 type uint16;
+ *             }
+ *             leaf priority {
+ *                 type uint16;
+ *             }
+ *             leaf sourceIpAddress {
+ *                 type string;
+ *             }
+ *             leaf destinationIpAddress {
+ *                 type string;
+ *             }
+ *             leaf sourcePort {
+ *                 type string;
+ *             }
+ *             leaf destinationPort {
+ *                 type string;
+ *             }
+ *             leaf action {
+ *                 type enumeration;
+ *             }
+ *         }
+ *         
+ *         output {
+ *             leaf greeting {
+ *                 type string;
  *             }
  *         }
  *     }

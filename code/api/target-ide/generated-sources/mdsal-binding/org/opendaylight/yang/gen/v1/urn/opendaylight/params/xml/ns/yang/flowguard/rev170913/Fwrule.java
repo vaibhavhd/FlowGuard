@@ -11,12 +11,6 @@ import org.opendaylight.yangtools.yang.common.QName;
  *     leaf ruleId {
  *         type uint16;
  *     }
- *     leaf node {
- *         type string;
- *     }
- *     leaf inPort {
- *         type uint16;
- *     }
  *     leaf priority {
  *         type uint16;
  *     }
@@ -117,16 +111,6 @@ public interface Fwrule
      * @return <code>java.lang.Integer</code> <code>ruleId</code>, or <code>null</code> if not present
      */
     java.lang.Integer getRuleId();
-    
-    /**
-     * @return <code>java.lang.String</code> <code>node</code>, or <code>null</code> if not present
-     */
-    java.lang.String getNode();
-    
-    /**
-     * @return <code>java.lang.Integer</code> <code>inPort</code>, or <code>null</code> if not present
-     */
-    java.lang.Integer getInPort();
     
     /**
      * Priority of the FW rule

@@ -16,11 +16,8 @@ import org.opendaylight.yang.gen.v1.urn.opendaylight.model.match.types.rev131026
 import org.opendaylight.yang.gen.v1.urn.opendaylight.model.match.types.rev131026.match.IpMatchBuilder;
 import org.opendaylight.yang.gen.v1.urn.opendaylight.model.match.types.rev131026.match.layer._3.match.Ipv4MatchBuilder;
 import org.opendaylight.yang.gen.v1.urn.opendaylight.model.match.types.rev131026.match.layer._4.match.TcpMatchBuilder;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 public class MatchUtils {
-  private static final Logger logger = LoggerFactory.getLogger(MatchUtils.class);
   public static final short ICMP_SHORT = 1;
   public static final short TCP_SHORT = 6;
   public static final short UDP_SHORT = 17;
@@ -49,7 +46,7 @@ public class MatchUtils {
 
   }
 
-  public static MatchBuilder createSetDstTcpMatch(MatchBuilder matchBuilder, PortNumber tcpDstPort) {
+  public static MatchBuilder createSetDstTcpMatch(MatchBuilder matchBuilder, PortNumber tcpDstPort, PortNumber tcpSrcPort) {
 
     EthernetMatchBuilder ethType = new EthernetMatchBuilder();
     EthernetTypeBuilder ethTypeBuilder = new EthernetTypeBuilder();
@@ -63,6 +60,7 @@ public class MatchUtils {
 
     TcpMatchBuilder tcpmatch = new TcpMatchBuilder();
     tcpmatch.setTcpDestinationPort(tcpDstPort);
+    tcpmatch.setTcpSourcePort(tcpSrcPort);
     matchBuilder.setLayer4Match(tcpmatch.build());
 
     return matchBuilder;

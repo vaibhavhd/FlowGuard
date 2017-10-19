@@ -130,8 +130,6 @@ The format of a firewall rule file is kept in sync with traditional IPTABLES
 	{
 	    "input": {
 	        "ruleId": "1",
-	        "node": "openflow:1",
-	        "inPort": "1",
 	        "priority": "50",
 	        "sourceIpAddress": "10.0.0.1/32",
 	        "destinationIpAddress": "10.0.0.3/32",
@@ -271,7 +269,7 @@ Secondly, download the Carbon (0.6.0) release from opendaylight webiste and unzi
 Thirdly, access .m2/repository and copy flowguard folder and paste the flowguard folder in distribution-karaf-0.6.0-Carbon/system/
 ```
 	$ cd ~/.m2/repository/org/opendaylight/
-	$ cp -r flowguard/ ~/distribution-karaf-0.6.0-Carbon/system/.
+	$ cp -r flowguard/ ~/distribution-karaf-0.6.0-Carbon/system/org/opendaylight/.
 ```
 
 Next, start distribution-karaf , add flowguard repo , and install flowguard features 

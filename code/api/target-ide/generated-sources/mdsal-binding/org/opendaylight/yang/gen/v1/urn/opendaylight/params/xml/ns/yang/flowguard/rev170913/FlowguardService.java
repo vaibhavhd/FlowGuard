@@ -7,56 +7,6 @@ import java.util.concurrent.Future;
 /**
  * Interface for implementing the following YANG RPCs defined in module <b>flowguard</b>
  * <pre>
- * rpc flowguard-control {
- *     input {
- *         leaf action {
- *             type enumeration;
- *         }
- *     }
- *     
- *     output {
- *         leaf greeting {
- *             type string;
- *         }
- *     }
- * }
- * rpc add-fwrule {
- *     input {
- *         leaf ruleId {
- *             type uint16;
- *         }
- *         leaf node {
- *             type string;
- *         }
- *         leaf inPort {
- *             type uint16;
- *         }
- *         leaf priority {
- *             type uint16;
- *         }
- *         leaf sourceIpAddress {
- *             type string;
- *         }
- *         leaf destinationIpAddress {
- *             type string;
- *         }
- *         leaf sourcePort {
- *             type string;
- *         }
- *         leaf destinationPort {
- *             type string;
- *         }
- *         leaf action {
- *             type enumeration;
- *         }
- *     }
- *     
- *     output {
- *         leaf greeting {
- *             type string;
- *         }
- *     }
- * }
  * rpc get-conflicts {
  *     input {
  *         leaf conflict-type {
@@ -134,6 +84,50 @@ import java.util.concurrent.Future;
  *         }
  *     }
  * }
+ * rpc flowguard-control {
+ *     input {
+ *         leaf action {
+ *             type enumeration;
+ *         }
+ *     }
+ *     
+ *     output {
+ *         leaf greeting {
+ *             type string;
+ *         }
+ *     }
+ * }
+ * rpc add-fwrule {
+ *     input {
+ *         leaf ruleId {
+ *             type uint16;
+ *         }
+ *         leaf priority {
+ *             type uint16;
+ *         }
+ *         leaf sourceIpAddress {
+ *             type string;
+ *         }
+ *         leaf destinationIpAddress {
+ *             type string;
+ *         }
+ *         leaf sourcePort {
+ *             type string;
+ *         }
+ *         leaf destinationPort {
+ *             type string;
+ *         }
+ *         leaf action {
+ *             type enumeration;
+ *         }
+ *     }
+ *     
+ *     output {
+ *         leaf greeting {
+ *             type string;
+ *         }
+ *     }
+ * }
  * </pre>
  *
  */
@@ -145,14 +139,14 @@ public interface FlowguardService
 
 
 
-    Future<RpcResult<FlowguardControlOutput>> flowguardControl(FlowguardControlInput input);
-    
-    Future<RpcResult<AddFwruleOutput>> addFwrule(AddFwruleInput input);
-    
     /**
      * @return <code>java.util.concurrent.Future</code> <code>conflicts</code>, or <code>null</code> if not present
      */
     Future<RpcResult<GetConflictsOutput>> getConflicts(GetConflictsInput input);
+    
+    Future<RpcResult<FlowguardControlOutput>> flowguardControl(FlowguardControlInput input);
+    
+    Future<RpcResult<AddFwruleOutput>> addFwrule(AddFwruleInput input);
 
 }
 

@@ -14,12 +14,6 @@ module flowguard {
            mandatory true;
            description "Name of FW rule";
         }
-        leaf node {
-           type string;
-        }
-        leaf inPort {
-           type uint16;
-        }
         leaf priority {
             type uint16;
             config true;

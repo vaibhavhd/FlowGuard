@@ -536,6 +536,8 @@ public class FlowRuleNode {
                                     ho.nw_src_prefix = ruletable.get(i).nw_src_prefix;
                                     ho.nw_dst_maskbits = ruletable.get(i).nw_dst_maskbits;
                                     ho.nw_src_maskbits = ruletable.get(i).nw_src_maskbits;
+                                    ho.tcp_src = ruletable.get(i).tp_src;
+                                    ho.tcp_dst = ruletable.get(i).tp_dst;
 
                                     boolean donothing = false;
                                     /*
@@ -653,12 +655,15 @@ public class FlowRuleNode {
             if(matchIPAddress(flowRuleNode.nw_src_prefix, flowRuleNode.nw_src_maskbits,
                     processingflow.current_ho.nw_src_prefix, processingflow.current_ho.nw_src_maskbits)){
                 System.out.println("Processing flow matched the IP of the Flow rule");
+
+                // VU's TODO making sure that it checks 
+               
                 if(actionNode == null) {
                     //The flow rule has no output action; drop the packet
                     System.out.println("Flow rule ACTION=DROP");
                     processingflow.is_finished = true;
                     inputflow.is_finished = true;
-                  //add flow information in the flow history
+                    //add flow information in the flow history
                     if (processingflow.flow_history == null)
                         processingflow.flow_history =new ArrayList<FlowInfo>();
                     processingflow.flow_history.add(processingflow);
@@ -951,7 +956,6 @@ public class FlowRuleNode {
             //just return FlowRuleNode without any changes
             System.out.println("DST MATCH FAILED");
         }
-
         return flowRuleNode;
     }
 
@@ -963,9 +967,9 @@ public class FlowRuleNode {
 
     public static int calculateIpfromPrefix(Ipv4Prefix prefix) {
         String[] parts;
-
         parts = prefix.getValue().split("/");
-
+        
+        
         return InetAddresses.coerceToInteger(InetAddresses.forString(parts[0]));
     }
 

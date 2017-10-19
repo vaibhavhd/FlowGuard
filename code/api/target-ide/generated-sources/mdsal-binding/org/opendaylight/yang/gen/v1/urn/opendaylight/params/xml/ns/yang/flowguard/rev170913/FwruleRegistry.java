@@ -15,12 +15,6 @@ import org.opendaylight.yangtools.yang.binding.Augmentable;
  *         leaf ruleId {
  *             type uint16;
  *         }
- *         leaf node {
- *             type string;
- *         }
- *         leaf inPort {
- *             type uint16;
- *         }
  *         leaf priority {
  *             type uint16;
  *         }

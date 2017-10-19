@@ -7,17 +7,12 @@
  */
 package org.opendaylight.flowguard.impl;
 
-import java.util.List;
 import java.util.Map;
-import java.util.Map.Entry;
-
 import org.opendaylight.controller.md.sal.binding.api.DataBroker;
 import org.opendaylight.controller.md.sal.binding.api.DataChangeListener;
-import org.opendaylight.controller.md.sal.binding.api.WriteTransaction;
 import org.opendaylight.controller.md.sal.common.api.data.AsyncDataBroker;
 import org.opendaylight.controller.md.sal.common.api.data.AsyncDataChangeEvent;
 import org.opendaylight.controller.md.sal.common.api.data.LogicalDatastoreType;
-import org.opendaylight.controller.md.sal.common.api.data.TransactionCommitFailedException;
 import org.opendaylight.yang.gen.v1.urn.opendaylight.params.xml.ns.yang.flowguard.rev170913.FwruleRegistry;
 import org.opendaylight.yang.gen.v1.urn.opendaylight.params.xml.ns.yang.flowguard.rev170913.fwrule.registry.FwruleRegistryEntry;
 import org.opendaylight.yang.gen.v1.urn.opendaylight.params.xml.ns.yang.flowguard.rev170913.fwrule.registry.FwruleRegistryEntryBuilder;
@@ -28,8 +23,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.google.common.util.concurrent.AbstractFuture;
-import com.google.common.util.concurrent.CheckedFuture;
-import com.google.common.util.concurrent.Futures;
 
 public class FWRuleRegistryDataChangeListenerFuture extends AbstractFuture<FwruleRegistryEntry> implements DataChangeListener,AutoCloseable{
 
@@ -103,11 +96,8 @@ public class FWRuleRegistryDataChangeListenerFuture extends AbstractFuture<Fwrul
      * @param firewallRule
      */
     private void addFirewallRule(FwruleRegistryEntry input) {
-
         FwruleRegistryEntry entry = new FwruleRegistryEntryBuilder()
                  .setRuleId(input.getRuleId())
-                 .setNode(input.getNode())
-                 .setInPort(input.getInPort())
                  .setSourceIpAddress(input.getSourceIpAddress())
                  .setDestinationIpAddress(input.getDestinationIpAddress())
                  .setSourcePort(input.getSourcePort())
@@ -117,7 +107,6 @@ public class FWRuleRegistryDataChangeListenerFuture extends AbstractFuture<Fwrul
                  .build();
         FirewallRule rule = new FirewallRule();
         flowguard.addRuleToStorage(rule, entry);
-        //if(shiftedGraph != null)
         shiftedGraph.buildSourceProbeNode(rule);
     }
     
@@ -126,8 +115,6 @@ public class FWRuleRegistryDataChangeListenerFuture extends AbstractFuture<Fwrul
     	//should make a function for this
     	 FwruleRegistryEntry entry = new FwruleRegistryEntryBuilder()
                  .setRuleId(input.getRuleId())
-                 .setNode(input.getNode())
-                 .setInPort(input.getInPort())
                  .setSourceIpAddress(input.getSourceIpAddress())
                  .setDestinationIpAddress(input.getDestinationIpAddress())
                  .setSourcePort(input.getSourcePort())

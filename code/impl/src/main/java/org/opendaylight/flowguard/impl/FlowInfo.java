@@ -10,15 +10,11 @@ package org.opendaylight.flowguard.impl;
 
 
 import java.util.ArrayList;
-import java.util.List;
-
-import org.opendaylight.yang.gen.v1.urn.ietf.params.xml.ns.yang.ietf.inet.types.rev130715.Uri;
-import org.opendaylight.yang.gen.v1.urn.opendaylight.inventory.rev130819.NodeConnectorId;
 
 
 public class FlowInfo {
     public int flow_index = 0;
-    public String firewall_ruldid;
+    public int firewall_ruldid;
     /* Do not convert this to premitive type boolean */
     public boolean is_finished = false;
     public HeaderObject ruleHO;
@@ -30,12 +26,14 @@ public class FlowInfo {
     public int current_ingress_port;
     public String rule_node_name;
     public TopologyStruct target;
-    public String candidate_rule;
+    public String candidate_rule;    
+    
 
 
     public ArrayList<FlowInfo> flow_history;
 
     public static void printFlowInfo(FlowInfo flowinfo){
+    	/*
         System.out.println("<<<<< current_HeaderObject >>>>>");
         HeaderObject.printHeaderObject(flowinfo.current_ho);
         System.out.println("current_switch_info = "+flowinfo.current_switch_dpid+
@@ -44,6 +42,7 @@ public class FlowInfo {
         HeaderObject.printHeaderObject(flowinfo.next_ho);
         System.out.println("next_switch_info = " + flowinfo.next_switch_dpid+
                 " / "+flowinfo.next_ingress_port);
+        */
     }
 
 
@@ -54,7 +53,7 @@ public class FlowInfo {
          */
         FlowInfo newflow = new FlowInfo();
         newflow.ruleHO = sample.ruleHO;
-        newflow.firewall_ruldid = new String(sample.firewall_ruldid);
+        newflow.firewall_ruldid = sample.firewall_ruldid;//new String(sample.firewall_ruldid);
         newflow.flow_index = sample.flow_index;
         newflow.is_finished = sample.is_finished;
         newflow.current_ingress_port = sample.current_ingress_port;
@@ -62,6 +61,7 @@ public class FlowInfo {
         newflow.next_ingress_port = sample.next_ingress_port;
         newflow.next_switch_dpid = new String(sample.next_switch_dpid);
         newflow.rule_node_name = sample.rule_node_name;
+
         if(sample.candidate_rule != null)
             newflow.candidate_rule = new String(sample.candidate_rule);
         if(sample.target != null){
@@ -79,6 +79,9 @@ public class FlowInfo {
             newflow.current_ho.nw_src_maskbits = sample.current_ho.nw_src_maskbits;
             newflow.current_ho.nw_src_prefix = sample.current_ho.nw_src_prefix;
             newflow.current_ho.vlan = sample.current_ho.vlan;
+            newflow.current_ho.tcp_src = sample.current_ho.tcp_src;
+            newflow.current_ho.tcp_dst = sample.current_ho.tcp_dst;
+            
             if(sample.current_ho.diff != null){
                 newflow.current_ho.diff = new ArrayList<HeaderObject>();
                 for(int i = 0; i < sample.current_ho.diff.size(); i++){
@@ -89,6 +92,8 @@ public class FlowInfo {
                     newflow.current_ho.diff.get(i).nw_dst_prefix = sample.current_ho.diff.get(i).nw_dst_prefix;
                     newflow.current_ho.diff.get(i).nw_src_maskbits = sample.current_ho.diff.get(i).nw_src_maskbits;
                     newflow.current_ho.diff.get(i).nw_src_prefix = sample.current_ho.diff.get(i).nw_src_prefix;
+                    newflow.current_ho.diff.get(i).tcp_src = sample.current_ho.diff.get(i).tcp_src;
+                    newflow.current_ho.diff.get(i).tcp_dst = sample.current_ho.diff.get(i).tcp_dst;
                 }
             }
         }
@@ -102,6 +107,9 @@ public class FlowInfo {
             newflow.next_ho.nw_src_maskbits = sample.next_ho.nw_src_maskbits;
             newflow.next_ho.nw_src_prefix = sample.next_ho.nw_src_prefix;
             newflow.next_ho.vlan = sample.next_ho.vlan;
+            newflow.next_ho.tcp_src = sample.next_ho.tcp_src;
+            newflow.next_ho.tcp_dst = sample.next_ho.tcp_dst;
+            
             if(sample.next_ho.diff != null){
                 newflow.next_ho.diff = new ArrayList<HeaderObject>();
                 for(int i = 0; i < sample.next_ho.diff.size(); i++){
@@ -112,6 +120,8 @@ public class FlowInfo {
                     newflow.next_ho.diff.get(i).nw_dst_prefix = sample.next_ho.diff.get(i).nw_dst_prefix;
                     newflow.next_ho.diff.get(i).nw_src_maskbits = sample.next_ho.diff.get(i).nw_src_maskbits;
                     newflow.next_ho.diff.get(i).nw_src_prefix = sample.next_ho.diff.get(i).nw_src_prefix;
+                    newflow.next_ho.diff.get(i).tcp_src = sample.next_ho.diff.get(i).tcp_src;
+                    newflow.next_ho.diff.get(i).tcp_dst = sample.next_ho.diff.get(i).tcp_dst;
                 }
             }
         }
@@ -144,6 +154,7 @@ public class FlowInfo {
         newflow.next_switch_dpid = sample.flow_history.get(k).next_switch_dpid;
         newflow.rule_node_name = sample.flow_history.get(k).rule_node_name;
         newflow.candidate_rule = sample.flow_history.get(k).candidate_rule;
+        
         if(sample.target != null){
             newflow.target = new TopologyStruct();
             newflow.target.dpid = sample.target.dpid;
@@ -159,6 +170,9 @@ public class FlowInfo {
             newflow.current_ho.nw_src_maskbits = sample.flow_history.get(k).current_ho.nw_src_maskbits;
             newflow.current_ho.nw_src_prefix = sample.flow_history.get(k).current_ho.nw_src_prefix;
             newflow.current_ho.vlan = sample.flow_history.get(k).current_ho.vlan;
+            newflow.current_ho.tcp_src = sample.current_ho.tcp_src;
+            newflow.current_ho.tcp_dst = sample.current_ho.tcp_dst;
+            
             if(sample.flow_history.get(k).current_ho.diff != null){
                 newflow.current_ho.diff = new ArrayList<HeaderObject>();
                 for(int i = 0; i < sample.flow_history.get(i).current_ho.diff.size(); i++){
@@ -170,6 +184,8 @@ public class FlowInfo {
                     newflow.current_ho.diff.get(i).nw_src_maskbits = sample.flow_history.get(i).current_ho.diff.get(i).nw_src_maskbits;
                     newflow.current_ho.diff.get(i).nw_src_prefix = sample.flow_history.get(i).current_ho.diff.get(i).nw_src_prefix;
                     newflow.current_ho.diff.get(i).vlan = sample.flow_history.get(i).current_ho.diff.get(i).vlan;
+                    newflow.current_ho.diff.get(i).tcp_src = sample.flow_history.get(i).current_ho.diff.get(i).tcp_src;
+                    newflow.current_ho.diff.get(i).tcp_dst = sample.flow_history.get(i).current_ho.diff.get(i).tcp_dst;
                 }
             }
         }
@@ -194,10 +210,11 @@ public class FlowInfo {
                     newflow.next_ho.diff.get(i).nw_src_maskbits = sample.flow_history.get(i).next_ho.diff.get(i).nw_src_maskbits;
                     newflow.next_ho.diff.get(i).nw_src_prefix = sample.flow_history.get(i).next_ho.diff.get(i).nw_src_prefix;
                     newflow.next_ho.diff.get(i).vlan = sample.flow_history.get(i).next_ho.diff.get(i).vlan;
+                    newflow.next_ho.diff.get(i).tcp_src = sample.flow_history.get(i).next_ho.diff.get(i).tcp_src;
+                    newflow.next_ho.diff.get(i).tcp_dst = sample.flow_history.get(i).next_ho.diff.get(i).tcp_dst;
                 }
             }
         }
-
         return newflow;
     }
 

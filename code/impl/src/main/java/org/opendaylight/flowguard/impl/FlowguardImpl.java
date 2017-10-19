@@ -83,8 +83,8 @@ public class FlowguardImpl implements FlowguardService  {
     @Override
 	public Future<RpcResult<GetConflictsOutput>> getConflicts(GetConflictsInput input) {
 		LOG.info("Preparing to pull the flows and calculate conflicts");
-		List<ConflictGroupList> list = new ArrayList<ConflictGroupList>();
-/*
+		//List<ConflictGroupList> list = new ArrayList<ConflictGroupList>();
+		/*
 		ConflictGroupList head = new ConflictGroupListBuilder().setId(new Long(1)).setVlanId(new Long(0))
 		        .setDlDst("1.1.1.1").setDlSrc("1.1.1.1").setL4Dst("").setL4Src("").setNwDst("").setNwSrc("")
 		        .setPriority(1).setProtocol(Protocol.ANY).setInPort("Openflow:1:1").setAction(Action.DROP)
@@ -118,9 +118,7 @@ public class FlowguardImpl implements FlowguardService  {
         WriteTransaction transaction = db.newWriteOnlyTransaction();
         InstanceIdentifier<FwruleRegistryEntry> iid = toInstanceIdentifier(input);
         FwruleRegistryEntry rule = new FwruleRegistryEntryBuilder()
-                .setNode(input.getNode())
                 .setRuleId(input.getRuleId())
-                .setInPort(input.getInPort())
                 .setPriority(input.getPriority())
                 .setSourceIpAddress(input.getSourceIpAddress())
                 .setDestinationIpAddress(input.getDestinationIpAddress())
@@ -134,8 +132,6 @@ public class FlowguardImpl implements FlowguardService  {
         LOG.info("\nAdded Firewall Rule");
         LOG.info("*****************");
         LOG.info("input rule_id {}", input.getRuleId());
-        LOG.info("input node {}", input.getNode());
-        LOG.info("input inport {}",input.getInPort());
         LOG.info("input priority {}",input.getPriority());
         LOG.info("input src ip {} ", input.getSourceIpAddress());
         LOG.info("input dst ip {} ", input.getDestinationIpAddress());

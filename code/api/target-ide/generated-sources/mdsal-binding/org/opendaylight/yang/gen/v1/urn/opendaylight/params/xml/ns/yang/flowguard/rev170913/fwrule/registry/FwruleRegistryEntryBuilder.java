@@ -21,9 +21,7 @@ public class FwruleRegistryEntryBuilder implements Builder <org.opendaylight.yan
     private Action _action;
     private java.lang.String _destinationIpAddress;
     private java.lang.String _destinationPort;
-    private java.lang.Integer _inPort;
     private FwruleRegistryEntryKey _key;
-    private java.lang.String _node;
     private java.lang.Integer _priority;
     private java.lang.Integer _ruleId;
     private java.lang.String _sourceIpAddress;
@@ -35,8 +33,6 @@ public class FwruleRegistryEntryBuilder implements Builder <org.opendaylight.yan
     }
     public FwruleRegistryEntryBuilder(org.opendaylight.yang.gen.v1.urn.opendaylight.params.xml.ns.yang.flowguard.rev170913.Fwrule arg) {
         this._ruleId = arg.getRuleId();
-        this._node = arg.getNode();
-        this._inPort = arg.getInPort();
         this._priority = arg.getPriority();
         this._sourceIpAddress = arg.getSourceIpAddress();
         this._destinationIpAddress = arg.getDestinationIpAddress();
@@ -58,8 +54,6 @@ public class FwruleRegistryEntryBuilder implements Builder <org.opendaylight.yan
         this._action = base.getAction();
         this._destinationIpAddress = base.getDestinationIpAddress();
         this._destinationPort = base.getDestinationPort();
-        this._inPort = base.getInPort();
-        this._node = base.getNode();
         this._priority = base.getPriority();
         this._sourceIpAddress = base.getSourceIpAddress();
         this._sourcePort = base.getSourcePort();
@@ -90,8 +84,6 @@ public class FwruleRegistryEntryBuilder implements Builder <org.opendaylight.yan
         boolean isValidArg = false;
         if (arg instanceof org.opendaylight.yang.gen.v1.urn.opendaylight.params.xml.ns.yang.flowguard.rev170913.Fwrule) {
             this._ruleId = ((org.opendaylight.yang.gen.v1.urn.opendaylight.params.xml.ns.yang.flowguard.rev170913.Fwrule)arg).getRuleId();
-            this._node = ((org.opendaylight.yang.gen.v1.urn.opendaylight.params.xml.ns.yang.flowguard.rev170913.Fwrule)arg).getNode();
-            this._inPort = ((org.opendaylight.yang.gen.v1.urn.opendaylight.params.xml.ns.yang.flowguard.rev170913.Fwrule)arg).getInPort();
             this._priority = ((org.opendaylight.yang.gen.v1.urn.opendaylight.params.xml.ns.yang.flowguard.rev170913.Fwrule)arg).getPriority();
             this._sourceIpAddress = ((org.opendaylight.yang.gen.v1.urn.opendaylight.params.xml.ns.yang.flowguard.rev170913.Fwrule)arg).getSourceIpAddress();
             this._destinationIpAddress = ((org.opendaylight.yang.gen.v1.urn.opendaylight.params.xml.ns.yang.flowguard.rev170913.Fwrule)arg).getDestinationIpAddress();
@@ -120,16 +112,8 @@ public class FwruleRegistryEntryBuilder implements Builder <org.opendaylight.yan
         return _destinationPort;
     }
     
-    public java.lang.Integer getInPort() {
-        return _inPort;
-    }
-    
     public FwruleRegistryEntryKey getKey() {
         return _key;
-    }
-    
-    public java.lang.String getNode() {
-        return _node;
     }
     
     public java.lang.Integer getPriority() {
@@ -175,30 +159,8 @@ public class FwruleRegistryEntryBuilder implements Builder <org.opendaylight.yan
     }
     
      
-     private static void checkInPortRange(final int value) {
-         if (value >= 0 && value <= 65535) {
-             return;
-         }
-         throw new IllegalArgumentException(String.format("Invalid range: %s, expected: [[0‥65535]].", value));
-     }
-    
-    public FwruleRegistryEntryBuilder setInPort(final java.lang.Integer value) {
-    if (value != null) {
-        checkInPortRange(value);
-    }
-        this._inPort = value;
-        return this;
-    }
-    
-     
     public FwruleRegistryEntryBuilder setKey(final FwruleRegistryEntryKey value) {
         this._key = value;
-        return this;
-    }
-    
-     
-    public FwruleRegistryEntryBuilder setNode(final java.lang.String value) {
-        this._node = value;
         return this;
     }
     
@@ -281,9 +243,7 @@ public class FwruleRegistryEntryBuilder implements Builder <org.opendaylight.yan
         private final Action _action;
         private final java.lang.String _destinationIpAddress;
         private final java.lang.String _destinationPort;
-        private final java.lang.Integer _inPort;
         private final FwruleRegistryEntryKey _key;
-        private final java.lang.String _node;
         private final java.lang.Integer _priority;
         private final java.lang.Integer _ruleId;
         private final java.lang.String _sourceIpAddress;
@@ -304,8 +264,6 @@ public class FwruleRegistryEntryBuilder implements Builder <org.opendaylight.yan
             this._action = base.getAction();
             this._destinationIpAddress = base.getDestinationIpAddress();
             this._destinationPort = base.getDestinationPort();
-            this._inPort = base.getInPort();
-            this._node = base.getNode();
             this._priority = base.getPriority();
             this._sourceIpAddress = base.getSourceIpAddress();
             this._sourcePort = base.getSourcePort();
@@ -338,18 +296,8 @@ public class FwruleRegistryEntryBuilder implements Builder <org.opendaylight.yan
         }
         
         @Override
-        public java.lang.Integer getInPort() {
-            return _inPort;
-        }
-        
-        @Override
         public FwruleRegistryEntryKey getKey() {
             return _key;
-        }
-        
-        @Override
-        public java.lang.String getNode() {
-            return _node;
         }
         
         @Override
@@ -395,9 +343,7 @@ public class FwruleRegistryEntryBuilder implements Builder <org.opendaylight.yan
             result = prime * result + Objects.hashCode(_action);
             result = prime * result + Objects.hashCode(_destinationIpAddress);
             result = prime * result + Objects.hashCode(_destinationPort);
-            result = prime * result + Objects.hashCode(_inPort);
             result = prime * result + Objects.hashCode(_key);
-            result = prime * result + Objects.hashCode(_node);
             result = prime * result + Objects.hashCode(_priority);
             result = prime * result + Objects.hashCode(_ruleId);
             result = prime * result + Objects.hashCode(_sourceIpAddress);
@@ -430,13 +376,7 @@ public class FwruleRegistryEntryBuilder implements Builder <org.opendaylight.yan
             if (!Objects.equals(_destinationPort, other.getDestinationPort())) {
                 return false;
             }
-            if (!Objects.equals(_inPort, other.getInPort())) {
-                return false;
-            }
             if (!Objects.equals(_key, other.getKey())) {
-                return false;
-            }
-            if (!Objects.equals(_node, other.getNode())) {
                 return false;
             }
             if (!Objects.equals(_priority, other.getPriority())) {
@@ -491,19 +431,9 @@ public class FwruleRegistryEntryBuilder implements Builder <org.opendaylight.yan
                 builder.append(_destinationPort);
                 builder.append(", ");
             }
-            if (_inPort != null) {
-                builder.append("_inPort=");
-                builder.append(_inPort);
-                builder.append(", ");
-            }
             if (_key != null) {
                 builder.append("_key=");
                 builder.append(_key);
-                builder.append(", ");
-            }
-            if (_node != null) {
-                builder.append("_node=");
-                builder.append(_node);
                 builder.append(", ");
             }
             if (_priority != null) {

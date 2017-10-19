@@ -1,0 +1,19 @@
+#!/bin/bash
+
+KARAF_HOME="$HOME/workspace/FlowGuard/code/karaf/"
+KARAF="$HOME/workspace/FlowGuard/code/karaf/target/assembly/bin"
+
+
+if [ "$1" == "clean" ]; then
+    cd $KARAF_HOME
+    mvn clean install
+elif [ "$1" == "karaf" ]; then
+    cd $KARAF
+else
+    echo "Usage: ./setup.sh <build_type>"
+    echo "build_type: clean / karaf"
+    exit 0
+fi
+
+#Start the ODL container
+($KARAF/karaf)

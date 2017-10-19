@@ -21,8 +21,6 @@ public class AddFwruleInputBuilder implements Builder <org.opendaylight.yang.gen
     private Action _action;
     private java.lang.String _destinationIpAddress;
     private java.lang.String _destinationPort;
-    private java.lang.Integer _inPort;
-    private java.lang.String _node;
     private java.lang.Integer _priority;
     private java.lang.Integer _ruleId;
     private java.lang.String _sourceIpAddress;
@@ -34,8 +32,6 @@ public class AddFwruleInputBuilder implements Builder <org.opendaylight.yang.gen
     }
     public AddFwruleInputBuilder(org.opendaylight.yang.gen.v1.urn.opendaylight.params.xml.ns.yang.flowguard.rev170913.Fwrule arg) {
         this._ruleId = arg.getRuleId();
-        this._node = arg.getNode();
-        this._inPort = arg.getInPort();
         this._priority = arg.getPriority();
         this._sourceIpAddress = arg.getSourceIpAddress();
         this._destinationIpAddress = arg.getDestinationIpAddress();
@@ -48,8 +44,6 @@ public class AddFwruleInputBuilder implements Builder <org.opendaylight.yang.gen
         this._action = base.getAction();
         this._destinationIpAddress = base.getDestinationIpAddress();
         this._destinationPort = base.getDestinationPort();
-        this._inPort = base.getInPort();
-        this._node = base.getNode();
         this._priority = base.getPriority();
         this._ruleId = base.getRuleId();
         this._sourceIpAddress = base.getSourceIpAddress();
@@ -81,8 +75,6 @@ public class AddFwruleInputBuilder implements Builder <org.opendaylight.yang.gen
         boolean isValidArg = false;
         if (arg instanceof org.opendaylight.yang.gen.v1.urn.opendaylight.params.xml.ns.yang.flowguard.rev170913.Fwrule) {
             this._ruleId = ((org.opendaylight.yang.gen.v1.urn.opendaylight.params.xml.ns.yang.flowguard.rev170913.Fwrule)arg).getRuleId();
-            this._node = ((org.opendaylight.yang.gen.v1.urn.opendaylight.params.xml.ns.yang.flowguard.rev170913.Fwrule)arg).getNode();
-            this._inPort = ((org.opendaylight.yang.gen.v1.urn.opendaylight.params.xml.ns.yang.flowguard.rev170913.Fwrule)arg).getInPort();
             this._priority = ((org.opendaylight.yang.gen.v1.urn.opendaylight.params.xml.ns.yang.flowguard.rev170913.Fwrule)arg).getPriority();
             this._sourceIpAddress = ((org.opendaylight.yang.gen.v1.urn.opendaylight.params.xml.ns.yang.flowguard.rev170913.Fwrule)arg).getSourceIpAddress();
             this._destinationIpAddress = ((org.opendaylight.yang.gen.v1.urn.opendaylight.params.xml.ns.yang.flowguard.rev170913.Fwrule)arg).getDestinationIpAddress();
@@ -109,14 +101,6 @@ public class AddFwruleInputBuilder implements Builder <org.opendaylight.yang.gen
     
     public java.lang.String getDestinationPort() {
         return _destinationPort;
-    }
-    
-    public java.lang.Integer getInPort() {
-        return _inPort;
-    }
-    
-    public java.lang.String getNode() {
-        return _node;
     }
     
     public java.lang.Integer getPriority() {
@@ -158,28 +142,6 @@ public class AddFwruleInputBuilder implements Builder <org.opendaylight.yang.gen
      
     public AddFwruleInputBuilder setDestinationPort(final java.lang.String value) {
         this._destinationPort = value;
-        return this;
-    }
-    
-     
-     private static void checkInPortRange(final int value) {
-         if (value >= 0 && value <= 65535) {
-             return;
-         }
-         throw new IllegalArgumentException(String.format("Invalid range: %s, expected: [[0‥65535]].", value));
-     }
-    
-    public AddFwruleInputBuilder setInPort(final java.lang.Integer value) {
-    if (value != null) {
-        checkInPortRange(value);
-    }
-        this._inPort = value;
-        return this;
-    }
-    
-     
-    public AddFwruleInputBuilder setNode(final java.lang.String value) {
-        this._node = value;
         return this;
     }
     
@@ -262,8 +224,6 @@ public class AddFwruleInputBuilder implements Builder <org.opendaylight.yang.gen
         private final Action _action;
         private final java.lang.String _destinationIpAddress;
         private final java.lang.String _destinationPort;
-        private final java.lang.Integer _inPort;
-        private final java.lang.String _node;
         private final java.lang.Integer _priority;
         private final java.lang.Integer _ruleId;
         private final java.lang.String _sourceIpAddress;
@@ -275,8 +235,6 @@ public class AddFwruleInputBuilder implements Builder <org.opendaylight.yang.gen
             this._action = base.getAction();
             this._destinationIpAddress = base.getDestinationIpAddress();
             this._destinationPort = base.getDestinationPort();
-            this._inPort = base.getInPort();
-            this._node = base.getNode();
             this._priority = base.getPriority();
             this._ruleId = base.getRuleId();
             this._sourceIpAddress = base.getSourceIpAddress();
@@ -307,16 +265,6 @@ public class AddFwruleInputBuilder implements Builder <org.opendaylight.yang.gen
         @Override
         public java.lang.String getDestinationPort() {
             return _destinationPort;
-        }
-        
-        @Override
-        public java.lang.Integer getInPort() {
-            return _inPort;
-        }
-        
-        @Override
-        public java.lang.String getNode() {
-            return _node;
         }
         
         @Override
@@ -362,8 +310,6 @@ public class AddFwruleInputBuilder implements Builder <org.opendaylight.yang.gen
             result = prime * result + Objects.hashCode(_action);
             result = prime * result + Objects.hashCode(_destinationIpAddress);
             result = prime * result + Objects.hashCode(_destinationPort);
-            result = prime * result + Objects.hashCode(_inPort);
-            result = prime * result + Objects.hashCode(_node);
             result = prime * result + Objects.hashCode(_priority);
             result = prime * result + Objects.hashCode(_ruleId);
             result = prime * result + Objects.hashCode(_sourceIpAddress);
@@ -394,12 +340,6 @@ public class AddFwruleInputBuilder implements Builder <org.opendaylight.yang.gen
                 return false;
             }
             if (!Objects.equals(_destinationPort, other.getDestinationPort())) {
-                return false;
-            }
-            if (!Objects.equals(_inPort, other.getInPort())) {
-                return false;
-            }
-            if (!Objects.equals(_node, other.getNode())) {
                 return false;
             }
             if (!Objects.equals(_priority, other.getPriority())) {
@@ -452,16 +392,6 @@ public class AddFwruleInputBuilder implements Builder <org.opendaylight.yang.gen
             if (_destinationPort != null) {
                 builder.append("_destinationPort=");
                 builder.append(_destinationPort);
-                builder.append(", ");
-            }
-            if (_inPort != null) {
-                builder.append("_inPort=");
-                builder.append(_inPort);
-                builder.append(", ");
-            }
-            if (_node != null) {
-                builder.append("_node=");
-                builder.append(_node);
                 builder.append(", ");
             }
             if (_priority != null) {

@@ -12,6 +12,7 @@ import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutionException;
 
@@ -23,15 +24,9 @@ import org.opendaylight.controller.md.sal.common.api.data.TransactionCommitFaile
 import org.opendaylight.flowguard.packet.IPv4;
 import org.opendaylight.yang.gen.v1.urn.ietf.params.xml.ns.yang.ietf.inet.types.rev130715.Ipv4Prefix;
 import org.opendaylight.yang.gen.v1.urn.opendaylight.flow.inventory.rev130819.FlowCapableNode;
-import org.opendaylight.yang.gen.v1.urn.opendaylight.flow.inventory.rev130819.FlowId;
 import org.opendaylight.yang.gen.v1.urn.opendaylight.flow.inventory.rev130819.tables.Table;
 import org.opendaylight.yang.gen.v1.urn.opendaylight.flow.inventory.rev130819.tables.TableKey;
 import org.opendaylight.yang.gen.v1.urn.opendaylight.flow.inventory.rev130819.tables.table.Flow;
-import org.opendaylight.yang.gen.v1.urn.opendaylight.flow.inventory.rev130819.tables.table.FlowBuilder;
-import org.opendaylight.yang.gen.v1.urn.opendaylight.flow.inventory.rev130819.tables.table.FlowKey;
-import org.opendaylight.yang.gen.v1.urn.opendaylight.flow.types.rev131026.flow.MatchBuilder;
-import org.opendaylight.yang.gen.v1.urn.opendaylight.inventory.rev130819.NodeConnectorId;
-import org.opendaylight.yang.gen.v1.urn.opendaylight.inventory.rev130819.NodeId;
 import org.opendaylight.yang.gen.v1.urn.opendaylight.inventory.rev130819.Nodes;
 import org.opendaylight.yang.gen.v1.urn.opendaylight.inventory.rev130819.node.NodeConnector;
 import org.opendaylight.yang.gen.v1.urn.opendaylight.inventory.rev130819.nodes.Node;
@@ -51,7 +46,6 @@ import org.opendaylight.yang.gen.v1.urn.opendaylight.params.xml.ns.yang.flowguar
 import org.opendaylight.yang.gen.v1.urn.opendaylight.params.xml.ns.yang.flowguard.rev170913.conflict.info.registry.conflictswitch.conflicttable.ConflictGroupEntryKey;
 import org.opendaylight.yang.gen.v1.urn.opendaylight.params.xml.ns.yang.flowguard.rev170913.fwrule.registry.FwruleRegistryEntry;
 import org.opendaylight.yang.gen.v1.urn.tbd.params.xml.ns.yang.network.topology.rev131021.NetworkTopology;
-//import org.opendaylight.yang.gen.v1.urn.tbd.params.xml.ns.yang.network.topology.rev131021.NodeId;
 import org.opendaylight.yang.gen.v1.urn.tbd.params.xml.ns.yang.network.topology.rev131021.TopologyId;
 import org.opendaylight.yang.gen.v1.urn.tbd.params.xml.ns.yang.network.topology.rev131021.network.topology.Topology;
 import org.opendaylight.yang.gen.v1.urn.tbd.params.xml.ns.yang.network.topology.rev131021.network.topology.TopologyKey;
@@ -61,7 +55,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.google.common.base.Optional;
-import com.google.common.base.Preconditions;
 import com.google.common.util.concurrent.CheckedFuture;
 import com.google.common.util.concurrent.Futures;
 
@@ -69,10 +62,11 @@ public class Flowguard {
     private static final Logger LOG = LoggerFactory.getLogger(Flowguard.class);
     private ReadTransaction readTx;
     private DataBroker db;
-    public Map<TopologyStruct, TopologyStruct> topologyStorage;
-    public Map<String, List<FlowRuleNode>> flowStorage;
-    public List<FirewallRule> ruleStorage;
-    public ShiftedGraph sg;
+    private Map<TopologyStruct, TopologyStruct> topologyStorage;
+    private Map<String, List<FlowRuleNode>> flowStorage;
+    private List<FirewallRule> ruleStorage;
+    private Map<Integer, Set<String>> fwruleSwitchList; // firewall rule ID is an int thus mapping Integer makes more sense
+    private ShiftedGraph sg;
 
     Flowguard(DataBroker db){
         this.db = db;
@@ -80,6 +74,7 @@ public class Flowguard {
         this.topologyStorage = new ConcurrentHashMap<TopologyStruct, TopologyStruct>();
         this.flowStorage = new ConcurrentHashMap<String, List<FlowRuleNode>>();
         this.ruleStorage = new ArrayList<FirewallRule>();
+        this.fwruleSwitchList = new ConcurrentHashMap<Integer,Set<String>>();
     }
 
     public void start() {
@@ -98,7 +93,7 @@ public class Flowguard {
         this.importStaticFlows();
         this.importStaticRules();
 
-        this.sg = new ShiftedGraph(this, this.readTx, this.flowStorage, this.topologyStorage, this.db);
+        this.sg = new ShiftedGraph(this, this.readTx, this.flowStorage, this.topologyStorage, this.db, this.fwruleSwitchList,this.ruleStorage);
 
         if(ruleStorage.size() != 0)
             sg.buildSourceProbeNode(this.ruleStorage);
@@ -142,8 +137,7 @@ public class Flowguard {
             }
         } catch (InterruptedException | ExecutionException e) {
         e.printStackTrace();
-    }
-
+        }
     }
 
     private void importStaticRules() {
@@ -181,15 +175,9 @@ public class Flowguard {
         				return priority2 - priority1;
         			}
         		});
-
-        for(int i = 0; i < ruleStorage.size();i++)
-        	System.out.println("Priority of rule " + ruleStorage.get(i).priority + "\trule ID " + ruleStorage.get(i).ruleid);
     }
     
- 
-
     public void addRuleToStorage(FirewallRule rule, FwruleRegistryEntry entry) {
-
         rule.ruleid = entry.getRuleId();
         int[] arr;
         arr = parseIP(entry.getSourceIpAddress());
@@ -203,11 +191,8 @@ public class Flowguard {
         rule.tp_dst = Short.parseShort(entry.getDestinationPort());
         rule.action = (entry.getAction() == Action.Allow) ? FirewallRule.FirewallAction.ALLOW
                 : FirewallRule.FirewallAction.DENY;
-        rule.in_port = entry.getInPort();
-        rule.dpid = entry.getNode();
 
         ruleStorage.add(rule);
-        
         LOG.info("Rule for switch: {} added to the list: id:{} ", rule.dpid, rule.ruleid);
     }
     
@@ -228,34 +213,30 @@ public class Flowguard {
         rule.tp_dst = Short.parseShort(entry.getDestinationPort());
         rule.action = (entry.getAction() == Action.Allow) ? FirewallRule.FirewallAction.ALLOW
                 : FirewallRule.FirewallAction.DENY;
-        rule.in_port = entry.getInPort();
-        rule.dpid = entry.getNode();
-        
+
         //delete flow here
         String rule_name = "resolution_"+entry.getRuleId()+"_[0-9]*";// regex resolution_firewallID_resID
-        
-        List<FlowRuleNode> flowList = flowStorage.get(entry.getNode());
-        
-        /*
-        for(FlowRuleNode flow_rule: flowList){
-        	System.out.println("flow_rule.name : " + flow_rule.rule_name);
+        Set<String> setOfSwitches = fwruleSwitchList.get(rule.ruleid);
+        if((setOfSwitches != null) && (setOfSwitches.size() > 0)) {		//if fwrule has resolution then delete
+        	 for(String nodeId : setOfSwitches) {
+             	List<FlowRuleNode> flowList = flowStorage.get(nodeId);
+             	for(int i=0; i < flowList.size(); i++) {
+           	    	if((flowList.get(i).rule_name).matches(rule_name)){
+           	    		sg.delFlowEntry(nodeId, flowList.get(i));
+           	    	}
+           	    }
+             }
+        	 fwruleSwitchList.remove(rule.ruleid);		//delete firewall rule from fwruleSwitchList
         }
-        */
-        
-	    for(int i=0 ; i < flowList.size();i++){
-	    	//System.out.println("Flow_rule: "+ flow_rule.rule_name);
-	    	if((flowList.get(i).rule_name).matches(rule_name)){
-	    		//System.out.println("Deleting flow rule: " + flow_rule.rule_name);
-	    		sg.delFlowEntry(entry.getNode(), flowList.get(i));
-	    	}
-	    }
-       
-        
+        else {
+        	//Should never reach here
+        	LOG.info("switchSet is null!");
+        }
     }
 
     private int[] parseIP(String address) {
         int[] arr = new int[2];
-        if(address.equals("*")) {
+        if(address.equals("*") || address.equals("")) {
             arr[0] = 0;
             arr[1] = 0;
             return arr;

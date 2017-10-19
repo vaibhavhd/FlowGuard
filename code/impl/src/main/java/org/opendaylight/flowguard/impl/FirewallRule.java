@@ -7,22 +7,6 @@
  */
 package org.opendaylight.flowguard.impl;
 
-import org.opendaylight.controller.liblldp.EtherTypes;
-
-//import com.fasterxml.jackson.databind.annotation.JsonSerialize;
-//import org.openflow.protocol.OFMatch;
-
-import org.opendaylight.controller.liblldp.EtherTypes;
-import org.opendaylight.flowguard.packet.Ethernet;
-import org.opendaylight.flowguard.packet.IPacket;
-import org.opendaylight.flowguard.packet.IPv4;
-import org.opendaylight.flowguard.packet.TCP;
-import org.opendaylight.flowguard.packet.UDP;
-import org.opendaylight.yang.gen.v1.urn.ietf.params.xml.ns.yang.ietf.inet.types.rev130715.Uri;
-import org.opendaylight.yang.gen.v1.urn.opendaylight.inventory.rev130819.NodeConnectorId;
-import org.opendaylight.yang.gen.v1.urn.opendaylight.model.match.types.rev131026.ethernet.match.fields.EthernetType;
-
-
 
 //@JsonSerialize(using=FirewallRuleSerializer.class)
 public class FirewallRule implements Comparable<FirewallRule> {
