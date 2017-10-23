@@ -76,7 +76,7 @@ module flowguard {
 	     	config true;
 	     }
 	     leaf id {
-	     	type uint16;
+	     	type string;
 	     	config true;
 	     }
 	     leaf vlan-id {

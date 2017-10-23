@@ -89,7 +89,7 @@ public class Flowguard {
                 return;
             }
         }
-
+         
         this.importStaticFlows();
         this.importStaticRules();
 
@@ -315,7 +315,7 @@ public class Flowguard {
 
                 String nodeID = node.getId().getValue();
                 List<FlowRuleNode> list = FlowRuleNode.addruletable(flowList);
-                //writeToConflictRegistry(nodeID, list);
+                writeToConflictRegistry(nodeID, list);
 
                 this.flowStorage.put(nodeID, list);
                 LOG.info("{} flows added for switch {}", this.flowStorage.get(node.getId().getValue()).size(), node.getId().getValue());
@@ -405,7 +405,7 @@ public class Flowguard {
 	    	else
 	    		proto = ConflictInfo.Protocol.ANY;
 
-	    	ConflictGroupEntry newFlow = new ConflictGroupEntryBuilder().setId(rule.flowId).setVlanId(new Long(0))
+	    	ConflictGroupEntry newFlow = new ConflictGroupEntryBuilder().setId(rule.rule_name).setVlanId(new Long(0))
     	        .setDlDst(rule.dl_dst).setDlSrc(rule.dl_src).setL4Dst(rule.tp_dst).setL4Src(rule.tp_src)
     	        .setNwDst(IPv4.fromIPv4Address(rule.nw_dst_prefix)).setNwSrc(IPv4.fromIPv4Address(rule.nw_src_prefix))
     	        .setPriority(rule.priority).setProtocol(proto).setInPort("TODO").setAction(action)
@@ -426,7 +426,7 @@ public class Flowguard {
 	        /* Update the status for the visualization engine */
 	        /* The status is the synchronization flag for front-end with back-end */
 	        transaction = db.newWriteOnlyTransaction();
-	        InstanceIdentifier<FlowguardStatus> statusIid = InstanceIdentifier.create(FlowguardStatus.class);
+	        InstanceIdentifier<FlowguardStatus> statusIid = InstanceIdentifier.builder(FlowguardStatus.class).build();
 	        /* Update the status flag with the Switch ID which has been updated */
 	    	FlowguardStatus status = new FlowguardStatusBuilder().setFlowguardStatus(nodeID).build();
 	        transaction.merge(LogicalDatastoreType.CONFIGURATION, statusIid, status, true);
