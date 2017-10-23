@@ -37,7 +37,6 @@ and is available at http://www.eclipse.org/legal/epl-v10.html
     <feature version="${project.version}">odl-flowguard-rest</feature>
     <feature version="${restconf.version}">odl-mdsal-apidocs</feature>
     <feature version="${mdsal.version}">odl-mdsal-xsql</feature>
-    <feature version="${dluxapps.version}">odl-dluxapps-yangui</feature>
   </feature>
   <feature name='odl-flowguard-cli' version='${project.version}' description='OpenDaylight :: flowguard :: CLI'>
     <feature version="${project.version}">odl-flowguard</feature>
