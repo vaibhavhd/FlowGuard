@@ -161,20 +161,18 @@ public class Flowguard {
             // TODO Auto-generated catch block
             e.printStackTrace();
         }
-
         for(FwruleRegistryEntry entry : entries) {
             FirewallRule rule = new FirewallRule();
             addRuleToStorage(rule, entry);
         }
-        //quickSort(ruleStorage,0,ruleStorage.size()-1);
-        Collections.sort(ruleStorage, new Comparator<FirewallRule>()
-        		{
-        			public int compare(FirewallRule rule1,FirewallRule rule2) {
-        				int priority1 = rule1.priority;
-        				int priority2 = rule2.priority;
-        				return priority2 - priority1;
-        			}
-        		});
+        Collections.sort(ruleStorage, new Comparator<FirewallRule>()  //sort fwrule priority in descending order
+        	{
+        		public int compare(FirewallRule rule1,FirewallRule rule2) {
+        			int priority1 = rule1.priority;
+        			int priority2 = rule2.priority;
+        			return priority2 - priority1;
+        		}
+        	});
     }
     
     public void addRuleToStorage(FirewallRule rule, FwruleRegistryEntry entry) {
@@ -187,8 +185,8 @@ public class Flowguard {
         rule.nw_dst_prefix = arr[0];
         rule.nw_dst_maskbits = arr[1];
         rule.priority = entry.getPriority(); //get priority of the firewall rule
-        rule.tp_src = Short.parseShort(entry.getSourcePort());
-        rule.tp_dst = Short.parseShort(entry.getDestinationPort());
+        rule.tp_src = parseL4Port(entry.getSourcePort());
+        rule.tp_dst = parseL4Port(entry.getDestinationPort());
         rule.action = (entry.getAction() == Action.Allow) ? FirewallRule.FirewallAction.ALLOW
                 : FirewallRule.FirewallAction.DENY;
 
@@ -198,8 +196,6 @@ public class Flowguard {
     
     
     public void removeRuleFromStorage(FirewallRule rule, FwruleRegistryEntry entry){
-    	LOG.info("Entering removeRuleFromStorage");
-    	//create a function to convert FwRuleRegistryEntry -> FirewallRule
     	rule.ruleid = entry.getRuleId();
         int[] arr;
         arr = parseIP(entry.getSourceIpAddress());
@@ -209,12 +205,12 @@ public class Flowguard {
         rule.nw_dst_prefix = arr[0];
         rule.nw_dst_maskbits = arr[1];
         rule.priority = entry.getPriority(); //get priority of the firewall rule
-        rule.tp_src = Short.parseShort(entry.getSourcePort());
-        rule.tp_dst = Short.parseShort(entry.getDestinationPort());
+        rule.tp_src = parseL4Port(entry.getSourcePort());
+        rule.tp_dst = parseL4Port(entry.getDestinationPort());
         rule.action = (entry.getAction() == Action.Allow) ? FirewallRule.FirewallAction.ALLOW
                 : FirewallRule.FirewallAction.DENY;
-
-        //delete flow here
+        
+        LOG.info("Deleting flows that corresponding to a firewall rule");
         String rule_name = "resolution_"+entry.getRuleId()+"_[0-9]*";// regex resolution_firewallID_resID
         Set<String> setOfSwitches = fwruleSwitchList.get(rule.ruleid);
         if((setOfSwitches != null) && (setOfSwitches.size() > 0)) {		//if fwrule has resolution then delete
@@ -233,7 +229,28 @@ public class Flowguard {
         	LOG.info("switchSet is null!");
         }
     }
-
+    
+    /**Helper method
+     * This method is used to parse ports and check if ports = null
+     * @param port
+     * @return
+     */
+    private short parseL4Port(String port) {
+    	short portResult = 0;
+    	if(port == null || port.equals("") || port.equals("*")) {
+    		portResult = 0;
+    	}
+    	else {
+    		portResult = Short.parseShort(port);
+    	}
+    	return portResult;
+    }
+    
+    /**Helper method
+     * This method is used to parse IPAddr and checks if addr == null
+     * @param address
+     * @return
+     */
     private int[] parseIP(String address) {
         int[] arr = new int[2];
         if(address.equals("*") || address.equals("")) {
