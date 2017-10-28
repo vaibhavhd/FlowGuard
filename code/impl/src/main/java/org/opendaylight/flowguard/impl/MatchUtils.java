@@ -59,12 +59,14 @@ public class MatchUtils {
     matchBuilder.setIpMatch(ipmatch.build());
 
     TcpMatchBuilder tcpmatch = new TcpMatchBuilder();
-    tcpmatch.setTcpDestinationPort(tcpDstPort);
-    tcpmatch.setTcpSourcePort(tcpSrcPort);
+   
+    if(tcpDstPort.getValue() != 0) {
+    	tcpmatch.setTcpDestinationPort(tcpDstPort);
+    }
+    if(tcpSrcPort.getValue() != 0) {
+    	tcpmatch.setTcpSourcePort(tcpSrcPort);
+    }
     matchBuilder.setLayer4Match(tcpmatch.build());
-
     return matchBuilder;
   }
-
-
 }

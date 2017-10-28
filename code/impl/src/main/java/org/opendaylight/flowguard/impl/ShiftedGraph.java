@@ -452,9 +452,7 @@ public class ShiftedGraph {
         String destIP = IPv4.fromIPv4Address(ho.nw_dst_prefix)+"/"+Integer.toString(ho.nw_dst_maskbits);
         String srcIP = IPv4.fromIPv4Address(ho.nw_src_prefix)+"/"+Integer.toString(ho.nw_src_maskbits);
         
-
-        System.out.printf("Rule: DENY sourceIP(%s):(%s) to destIP(%s):(%s)\n", 
-        								srcIP,ho.tcp_src, destIP,ho.tcp_dst);
+        System.out.printf("Rule: DENY sourceIP(%s):(%s) to destIP(%s):(%s)\n", srcIP,ho.tcp_src, destIP,ho.tcp_dst);
 
         // Creating match object
         MatchBuilder matchBuilder = new MatchBuilder();
@@ -480,9 +478,9 @@ public class ShiftedGraph {
         
         addRuletoPlumbingGraph(dpid, flowBuilder.build());
         
-        
-        setOfSwiches = fwruleSwitchList.get(fwRuleId); 	//get all switches associate with a fwrule
-        if(setOfSwiches == null) {						//if null means fwrule did not have any resolution
+        //get all switches associate with a fwrule
+        setOfSwiches = fwruleSwitchList.get(fwRuleId); 	
+        if(setOfSwiches == null) {						//null means fwrule did not have any resolution
         	setOfSwiches = new HashSet<String>();
         	fwruleSwitchList.put(fwRuleId, setOfSwiches);
         }
@@ -568,11 +566,11 @@ public class ShiftedGraph {
         int i = 0;
         while(itr.hasNext()){
             FlowInfo fi = itr.next();
-            System.out.println("-----------------------------------------------------------------------------------");
-            System.out.println("(((flow_history : this is "+Integer.toString(i)+" th visits.)))");
-            System.out.println("Applied FlowRuleNode Name : "+fi.rule_node_name);
+            LOG.debug("-----------------------------------------------------------------------------------");
+            LOG.debug("(((flow_history : this is "+Integer.toString(i)+" th visits.)))");
+            LOG.debug("Applied FlowRuleNode Name : "+fi.rule_node_name);
             FlowInfo.printFlowInfo(fi);
-            System.out.println("-----------------------------------------------------------------------------------");
+            LOG.debug("-----------------------------------------------------------------------------------");
             i++;
         }
         /* InverseFlow is true when the sample flow has been propagated to the target */
@@ -605,7 +603,6 @@ public class ShiftedGraph {
         if(this.flowstorage.size()==0){
             this.flowstorage.add(flowinfo);
         }
-
     }
 
     /*
@@ -670,7 +667,6 @@ public class ShiftedGraph {
                  */
                // TODO CODE REMOVED FOR INDEX == 0
 
-
                 /*  IMPORTANT TODO
                  *  Reached here when ((index==0) && (Rule matches just one flow)) || index != 0
                  *  When a flow is installed/modified, index of the flow in flowtable is passed as "index".
@@ -687,6 +683,7 @@ public class ShiftedGraph {
                     // Moreover, dpid will be same ith rule is pulled from the node of sample flow.
                     System.out.println("RuleTable info: In_port "+ruletable.get(i).in_port+" Priority: "+ruletable.get(i).priority);
                     System.out.println("Sample packet info: "+sample.next_ingress_port);
+                    //L2 level match is being done here
                     if(sample.next_switch_dpid.equals(SWITCHDPID) && (ruletable.get(i).in_port == 0)
                             || sample.next_ingress_port == ruletable.get(i).in_port) {
                         FlowRuleNode flowRule = ruletable.get(i);
@@ -706,16 +703,20 @@ public class ShiftedGraph {
                             
                             if(flowRule.actionList == null) {
                                 flowRule = FlowRuleNode.computeFlow(flowRule, sample, null);
-                                if(flowRule.flow_info.is_finished) {
-                                	sample.is_finished = true;
-                                	//flowinfo.is_finished = true;
-                                	sample = flowRule.flow_info;
-                                    System.out.println("Flow has been dropped by the DROP rule/tablemiss entry");
-                                    this.printFlowInfo(sample, false);
-                                    return;
+                                if(flowRule.flow_info != null) {
+                                	
+                                	if (flowRule.flow_info.is_finished) {                               
+	                                	sample.is_finished = true;
+	                                	//flowinfo.is_finished = true;
+	                                	sample = flowRule.flow_info;
+	                                    System.out.println("Flow has been dropped by the DROP rule/tablemiss entry");
+	                                    this.printFlowInfo(sample, false);
+	                                    return;
+                                	}
+                                
+	                                sample = flowRule.flow_info;
+	                                continue;
                                 }
-                                sample = flowRule.flow_info;
-                                continue;
                             }
                             else {
                                 for (ActionList actionNode : flowRule.actionList) {
@@ -974,13 +975,13 @@ public class ShiftedGraph {
         sample.current_ho.nw_dst_maskbits = 0;//firewall_rules.get(i).nw_dst_maskbits;
         sample.current_ho.nw_src_prefix = 0;//firewall_rules.get(i).nw_src_prefix;//167772160;
         sample.current_ho.nw_src_maskbits = 0;//firewall_rules.get(i).nw_src_maskbits;= 
-        sample.current_ho.tcp_src = 0;
-        sample.current_ho.tcp_dst = 0;
+        sample.current_ho.tcp_src = firewallRule.tp_src;
+        sample.current_ho.tcp_dst = firewallRule.tp_dst;
         sample.current_switch_dpid = source.dpid;
         sample.current_ingress_port = source.port;
         sample.next_switch_dpid = source.dpid;
         sample.next_ingress_port = source.port;
-     
+        
         // TODO Work on next_ho
         sample.next_ho = new HeaderObject();
         sample.next_ho.nw_dst_prefix = 0;//firewall_rules.get(i).nw_dst_prefix;

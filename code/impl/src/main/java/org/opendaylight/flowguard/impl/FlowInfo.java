@@ -53,7 +53,7 @@ public class FlowInfo {
          */
         FlowInfo newflow = new FlowInfo();
         newflow.ruleHO = sample.ruleHO;
-        newflow.firewall_ruldid = sample.firewall_ruldid;//new String(sample.firewall_ruldid);
+        newflow.firewall_ruldid = sample.firewall_ruldid;
         newflow.flow_index = sample.flow_index;
         newflow.is_finished = sample.is_finished;
         newflow.current_ingress_port = sample.current_ingress_port;
@@ -217,5 +217,4 @@ public class FlowInfo {
         }
         return newflow;
     }
-
 }
