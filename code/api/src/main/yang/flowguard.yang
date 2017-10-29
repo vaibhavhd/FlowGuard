@@ -224,7 +224,7 @@ module flowguard {
         }
     }
 	container flowguard-status {
-		leaf flowguard-status {
+		leaf flowguard-node-status {
 			type string;
 		}
 	}

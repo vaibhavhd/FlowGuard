@@ -18,6 +18,7 @@ import java.util.concurrent.ExecutionException;
 
 import org.opendaylight.controller.md.sal.binding.api.DataBroker;
 import org.opendaylight.controller.md.sal.binding.api.ReadTransaction;
+import org.opendaylight.controller.md.sal.binding.api.ReadWriteTransaction;
 import org.opendaylight.controller.md.sal.binding.api.WriteTransaction;
 import org.opendaylight.controller.md.sal.common.api.data.LogicalDatastoreType;
 import org.opendaylight.controller.md.sal.common.api.data.TransactionCommitFailedException;
@@ -300,12 +301,10 @@ public class Flowguard {
 
         try {
             Optional<Nodes> optNodes= null;
-            Optional<Table> optTable = null;
-            Optional<Flow> optFlow = null;
 
             List<Node> nodeList;
             List<Flow> flowList;
-
+            List<Table> tableList;
             /* Retrieve all the switches in the operational data tree */
             optNodes = readTx.read(LogicalDatastoreType.OPERATIONAL, nodesIdentifier).get();
             /* If there are no operational nodes in the network - return*/
@@ -316,29 +315,36 @@ public class Flowguard {
 
             /* Iterate through the list of nodes(switches) for flow tables per node */
             for(Node node : nodeList){
-                InstanceIdentifier<Table> table = InstanceIdentifier.builder(Nodes.class).child(Node.class, new NodeKey(node.getId()))
-                        .augmentation(FlowCapableNode.class)
-                        .child(Table.class, new TableKey((short)0)).toInstance();  // TODO Table ID is hardcaoded to 0. What about other tables?
-                optTable = readTx.read(LogicalDatastoreType.OPERATIONAL, table).get();
-                flowList = optTable.get().getFlow();
+            	tableList = node.getAugmentation(FlowCapableNode.class).getTable();
+            	String nodeID = node.getId().getValue();
+            	
+            	for(Table table : tableList) {
+            		flowList = table.getFlow();
 
-                LOG.info("No. of flows in table ID {}: {}",optTable.get().getId(), flowList.size());
+                    LOG.info("No. of flows in table ID {}: {}",table.getId(), flowList.size());
+                    /* Iterate through the list of flows */
+                    for(Flow flow : flowList){
+                        LOG.info("Flow found with ID: {}, outport: {}, Instructions: {}", flow.getId().getValue()
+                                , flow.getOutPort(), flow.getInstructions());
+                    }
 
-                /* Iterate through the list of flows */
-                for(Flow flow : flowList){
-                    LOG.info("Flow found with ID: {}, outport: {}, Instructions: {}", flow.getId().getValue()
-                            , flow.getOutPort(), flow.getInstructions());
+                    List<FlowRuleNode> newList = FlowRuleNode.addruletable(flowList);
+                    
+                    List<FlowRuleNode> oldList = this.flowStorage.get(nodeID);
+                    if( oldList != null) {
+                    	for (FlowRuleNode rule : newList)
+                    	oldList.add(rule);
+                    }
+                    else {
+                    	this.flowStorage.put(nodeID, newList);
+                    }
+            	}
+            	LOG.info("{} flows added for switch {}", this.flowStorage.get(node.getId().getValue()).size(), node.getId().getValue());
+            	List<FlowRuleNode> list = this.flowStorage.get(nodeID);
+                if( list != null) {
+                	writeToConflictRegistry(nodeID, list);
                 }
-
-                String nodeID = node.getId().getValue();
-                List<FlowRuleNode> list = FlowRuleNode.addruletable(flowList);
-                writeToConflictRegistry(nodeID, list);
-
-                this.flowStorage.put(nodeID, list);
-                LOG.info("{} flows added for switch {}", this.flowStorage.get(node.getId().getValue()).size(), node.getId().getValue());
-
             }
-
         } catch (InterruptedException | ExecutionException e) {
             e.printStackTrace();
         }
@@ -442,13 +448,32 @@ public class Flowguard {
 
 	        /* Update the status for the visualization engine */
 	        /* The status is the synchronization flag for front-end with back-end */
-	        transaction = db.newWriteOnlyTransaction();
+	        Optional<FlowguardStatus> optStatus;
 	        InstanceIdentifier<FlowguardStatus> statusIid = InstanceIdentifier.builder(FlowguardStatus.class).build();
-	        /* Update the status flag with the Switch ID which has been updated */
-	    	FlowguardStatus status = new FlowguardStatusBuilder().setFlowguardStatus(nodeID).build();
-	        transaction.merge(LogicalDatastoreType.CONFIGURATION, statusIid, status, true);
-	        CheckedFuture<Void, TransactionCommitFailedException> futureStatus = transaction.submit();
-	        Futures.addCallback(futureStatus, new LoggingFuturesCallBack<Void>("Failed to update the Flowguard status", LOG));
+	        ReadWriteTransaction statusTransaction = db.newReadWriteTransaction();
+	        try {
+				optStatus = statusTransaction.read(LogicalDatastoreType.CONFIGURATION, statusIid).get();
+
+				if(optStatus != null) {
+					statusTransaction.delete(LogicalDatastoreType.CONFIGURATION, statusIid);
+			        CheckedFuture<Void, TransactionCommitFailedException> futureStatus = statusTransaction.submit();
+			        Futures.addCallback(futureStatus, new LoggingFuturesCallBack<Void>("Failed to update the Flowguard status", LOG));					
+				}
+				else {
+			        /* Update the status flag with the Switch ID which has been updated */
+			    	FlowguardStatus status = new FlowguardStatusBuilder().setFlowguardNodeStatus(nodeID).build();
+			    	statusTransaction.put(LogicalDatastoreType.CONFIGURATION, statusIid, status, true);
+			        CheckedFuture<Void, TransactionCommitFailedException> futureStatus = statusTransaction.submit();
+			        Futures.addCallback(futureStatus, new LoggingFuturesCallBack<Void>("Failed to update the Flowguard status", LOG));
+				}
+			} catch (InterruptedException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			} catch (ExecutionException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
+
 		}
 	}
 }
