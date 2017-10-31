@@ -974,22 +974,22 @@ public class ShiftedGraph {
     private void testSampleFlow(FirewallRule firewallRule, TopologyStruct source, TopologyStruct probe) {
         FlowInfo sample = new FlowInfo();
         sample.ruleHO = new HeaderObject();
-        sample.ruleHO.nw_src_prefix = firewallRule.nw_src_prefix;
-        sample.ruleHO.nw_src_maskbits = firewallRule.nw_src_maskbits;
-        sample.ruleHO.nw_dst_prefix = firewallRule.nw_dst_prefix;
-        sample.ruleHO.nw_dst_maskbits = firewallRule.nw_dst_maskbits;
+        sample.ruleHO.nw_src_prefix = source.hostIP;
+        sample.ruleHO.nw_src_maskbits = 32;
+        sample.ruleHO.nw_dst_prefix = probe.hostIP;
+        sample.ruleHO.nw_dst_maskbits = 32;
         sample.ruleHO.tcp_src = firewallRule.tp_src;
         sample.ruleHO.tcp_dst = firewallRule.tp_dst;
-        sample.firewall_ruldid = firewallRule.ruleid;//Integer.toString(firewallRule.ruleid);
+        sample.firewall_ruldid = firewallRule.ruleid;
 
         this.current_flow_index++;
         sample.flow_index = this.current_flow_index;
         sample.rule_node_name = "SourceNode";
         sample.current_ho = new HeaderObject();
-        sample.current_ho.nw_dst_prefix = 0;//firewall_rules.get(i).nw_dst_prefix;
-        sample.current_ho.nw_dst_maskbits = 0;//firewall_rules.get(i).nw_dst_maskbits;
-        sample.current_ho.nw_src_prefix = source.hostIP;//firewall_rules.get(i).nw_src_prefix;//167772160;
-        sample.current_ho.nw_src_maskbits = 32;//firewall_rules.get(i).nw_src_maskbits;=
+        sample.current_ho.nw_dst_prefix = 0;
+        sample.current_ho.nw_dst_maskbits = 0;
+        sample.current_ho.nw_src_prefix = source.hostIP;
+        sample.current_ho.nw_src_maskbits = 32;
         sample.current_ho.tcp_src = firewallRule.tp_src;
         sample.current_ho.tcp_dst = firewallRule.tp_dst;
         sample.current_switch_dpid = source.dpid;
@@ -999,10 +999,10 @@ public class ShiftedGraph {
 
         // TODO Work on next_ho
         sample.next_ho = new HeaderObject();
-        sample.next_ho.nw_dst_prefix = 0;//firewall_rules.get(i).nw_dst_prefix;
-        sample.next_ho.nw_dst_maskbits = 0;//firewall_rules.get(i).nw_dst_maskbits;
-        sample.next_ho.nw_src_prefix = 0;//firewall_rules.get(i).nw_src_prefix;
-        sample.next_ho.nw_src_maskbits = 0;//firewall_rules.get(i).nw_src_maskbits;
+        sample.next_ho.nw_dst_prefix = 0;
+        sample.next_ho.nw_dst_maskbits = 0;
+        sample.next_ho.nw_src_prefix = 0;
+        sample.next_ho.nw_src_maskbits = 0;
         sample.next_ho.tcp_src = 0;
         sample.next_ho.tcp_dst = 0;
 

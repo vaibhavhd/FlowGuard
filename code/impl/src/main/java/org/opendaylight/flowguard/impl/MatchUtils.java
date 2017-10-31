@@ -36,7 +36,7 @@ public class MatchUtils {
     ethTypeBuilder.setType(new EtherType(IPV4_LONG));
     eth.setEthernetType(ethTypeBuilder.build());
     matchBuilder.setEthernetMatch(eth.build());
-    
+
     Ipv4MatchBuilder ipv4match = new Ipv4MatchBuilder();
     ipv4match.setIpv4Destination(dstIp);
     ipv4match.setIpv4Source(srcIp);
@@ -50,23 +50,28 @@ public class MatchUtils {
 
     EthernetMatchBuilder ethType = new EthernetMatchBuilder();
     EthernetTypeBuilder ethTypeBuilder = new EthernetTypeBuilder();
+    boolean matchSet = false;
+
     ethTypeBuilder.setType(new EtherType(IPV4_LONG));
     ethType.setEthernetType(ethTypeBuilder.build());
     matchBuilder.setEthernetMatch(ethType.build());
 
-    IpMatchBuilder ipmatch = new IpMatchBuilder();
-    ipmatch.setIpProtocol((short) 6);
-    matchBuilder.setIpMatch(ipmatch.build());
-
     TcpMatchBuilder tcpmatch = new TcpMatchBuilder();
-   
+
     if(tcpDstPort.getValue() != 0) {
     	tcpmatch.setTcpDestinationPort(tcpDstPort);
+    	matchSet = true;
     }
     if(tcpSrcPort.getValue() != 0) {
     	tcpmatch.setTcpSourcePort(tcpSrcPort);
+    	matchSet = true;
     }
-    matchBuilder.setLayer4Match(tcpmatch.build());
+    if(matchSet) {
+        IpMatchBuilder ipmatch = new IpMatchBuilder();
+        ipmatch.setIpProtocol((short) 6);
+        matchBuilder.setIpMatch(ipmatch.build());
+        matchBuilder.setLayer4Match(tcpmatch.build());
+    }
     return matchBuilder;
   }
 }
