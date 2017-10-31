@@ -11,6 +11,7 @@ package org.opendaylight.flowguard.impl;
 public class TopologyStruct {
 	public String dpid;
     public int port;
+    public int hostIP;
 
     public TopologyStruct() {
 		// TODO Auto-generated constructor stub

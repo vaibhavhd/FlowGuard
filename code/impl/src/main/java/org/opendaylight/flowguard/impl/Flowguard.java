@@ -90,7 +90,7 @@ public class Flowguard {
                 return;
             }
         }
-         
+
         this.importStaticFlows();
         this.importStaticRules();
 
@@ -175,7 +175,7 @@ public class Flowguard {
         		}
         	});
     }
-    
+
     public void addRuleToStorage(FirewallRule rule, FwruleRegistryEntry entry) {
         rule.ruleid = entry.getRuleId();
         int[] arr;
@@ -192,10 +192,10 @@ public class Flowguard {
                 : FirewallRule.FirewallAction.DENY;
 
         ruleStorage.add(rule);
-        LOG.info("Rule for switch: {} added to the list: id:{} ", rule.dpid, rule.ruleid);
+        LOG.info("Rule added to the list: rule_id:{} ", rule.ruleid);
     }
-    
-    
+
+
     public void removeRuleFromStorage(FirewallRule rule, FwruleRegistryEntry entry){
     	rule.ruleid = entry.getRuleId();
         int[] arr;
@@ -210,7 +210,7 @@ public class Flowguard {
         rule.tp_dst = parseL4Port(entry.getDestinationPort());
         rule.action = (entry.getAction() == Action.Allow) ? FirewallRule.FirewallAction.ALLOW
                 : FirewallRule.FirewallAction.DENY;
-        
+
         LOG.info("Deleting flows that corresponding to a firewall rule");
         String rule_name = "resolution_"+entry.getRuleId()+"_[0-9]*";// regex resolution_firewallID_resID
         Set<String> setOfSwitches = fwruleSwitchList.get(rule.ruleid);
@@ -230,7 +230,7 @@ public class Flowguard {
         	LOG.info("switchSet is null!");
         }
     }
-    
+
     /**Helper method
      * This method is used to parse ports and check if ports = null
      * @param port
@@ -246,7 +246,7 @@ public class Flowguard {
     	}
     	return portResult;
     }
-    
+
     /**Helper method
      * This method is used to parse IPAddr and checks if addr == null
      * @param address
@@ -317,7 +317,7 @@ public class Flowguard {
             for(Node node : nodeList){
             	tableList = node.getAugmentation(FlowCapableNode.class).getTable();
             	String nodeID = node.getId().getValue();
-            	
+
             	for(Table table : tableList) {
             		flowList = table.getFlow();
 
@@ -329,7 +329,7 @@ public class Flowguard {
                     }
 
                     List<FlowRuleNode> newList = FlowRuleNode.addruletable(flowList);
-                    
+
                     List<FlowRuleNode> oldList = this.flowStorage.get(nodeID);
                     if( oldList != null) {
                     	for (FlowRuleNode rule : newList)
@@ -403,7 +403,7 @@ public class Flowguard {
         Topology flowTopology = getFlowTopology();
         return flowTopology.getLink();
     }
-    
+
 	public void addRule(FirewallRule rule) {
 		// TODO Auto-generated method stub
 
@@ -457,7 +457,7 @@ public class Flowguard {
 				if(optStatus != null) {
 					statusTransaction.delete(LogicalDatastoreType.CONFIGURATION, statusIid);
 			        CheckedFuture<Void, TransactionCommitFailedException> futureStatus = statusTransaction.submit();
-			        Futures.addCallback(futureStatus, new LoggingFuturesCallBack<Void>("Failed to update the Flowguard status", LOG));					
+			        Futures.addCallback(futureStatus, new LoggingFuturesCallBack<Void>("Failed to update the Flowguard status", LOG));
 				}
 				else {
 			        /* Update the status flag with the Switch ID which has been updated */

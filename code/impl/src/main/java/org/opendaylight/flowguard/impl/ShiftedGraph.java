@@ -81,10 +81,10 @@ public class ShiftedGraph {
     private String RESULT_PATH="/tmp/";
     private int resolution_index = 0;
     private int resolution_method = 0;
-    
+
     private Map<Integer, Set<String>> fwruleSwitchList;
     private Set<String> setOfSwiches;
-    
+
     private List<FirewallRule> ruleStorage;
 
     protected static Logger logger;
@@ -112,9 +112,9 @@ public class ShiftedGraph {
         ho.nw_src_prefix = flowinfo.next_ho.nw_src_prefix;
         ho.tcp_src = flowinfo.next_ho.tcp_src;
         ho.tcp_dst = flowinfo.next_ho.tcp_dst;
-  
-    
-        
+
+
+
         for(int i = flowinfo.flow_history.size()-1; i > 0; i--){
             String rulename = flowinfo.flow_history.get(i).rule_node_name;
             String dpid = flowinfo.flow_history.get(i).current_switch_dpid;
@@ -438,12 +438,12 @@ public class ShiftedGraph {
         rule.action = FirewallRule.FirewallAction.DENY;
         this.firewall.addRule(rule);
     }
-    
-   
+
+
     public void addFlowEntry(HeaderObject ho, String dpid, int port, int fwRuleId){
         // TODO Add to the plumbing graph too
         //Map<String, Object> entry = new HashMap<String, Object>();
- 
+
         String rulename = "resolution_"+ fwRuleId +"_"+Integer.toString(this.resolution_index);
         this.resolution_index++;
         System.out.printf("Adding a new rule(%s) to the node(%s) for inPort(%s)\n", rulename, dpid, port);
@@ -451,7 +451,7 @@ public class ShiftedGraph {
         NodeId nodeId = new NodeId(dpid);
         String destIP = IPv4.fromIPv4Address(ho.nw_dst_prefix)+"/"+Integer.toString(ho.nw_dst_maskbits);
         String srcIP = IPv4.fromIPv4Address(ho.nw_src_prefix)+"/"+Integer.toString(ho.nw_src_maskbits);
-        
+
         System.out.printf("Rule: DENY sourceIP(%s):(%s) to destIP(%s):(%s)\n", srcIP,ho.tcp_src, destIP,ho.tcp_dst);
 
         // Creating match object
@@ -475,11 +475,11 @@ public class ShiftedGraph {
         flowBuilder.setFlowName(flowId);
         flowBuilder.setHardTimeout(0);
         flowBuilder.setIdleTimeout(0);
-        
+
         addRuletoPlumbingGraph(dpid, flowBuilder.build());
-        
+
         //get all switches associate with a fwrule
-        setOfSwiches = fwruleSwitchList.get(fwRuleId); 	
+        setOfSwiches = fwruleSwitchList.get(fwRuleId);
         if(setOfSwiches == null) {						//null means fwrule did not have any resolution
         	setOfSwiches = new HashSet<String>();
         	fwruleSwitchList.put(fwRuleId, setOfSwiches);
@@ -504,7 +504,7 @@ public class ShiftedGraph {
         CheckedFuture<Void, TransactionCommitFailedException> future = transaction.submit();
         Futures.addCallback(future, new LoggingFuturesCallBack<Void>("Failed add firewall rule", LOG));
 
-        LOG.info("Added security rule with ip {} and port {} into node {}", destIP, port, dpid);
+        LOG.info("Added flow rule with ip {} and port {} into node {}", destIP, port, dpid);
     }
 
     private void addRuletoPlumbingGraph(String dpid, Flow flow) {
@@ -611,7 +611,7 @@ public class ShiftedGraph {
      */
     public void propagateFlow(FlowInfo flowinfo, TopologyStruct target, int index){
         FlowInfo sample = FlowInfo.valueCopy(flowinfo);
-        
+
         String targetdpid = target.dpid;
         int targetport = target.port;
         System.out.println("Propagating to target dpid: "+targetdpid+" port: "+targetport);
@@ -698,14 +698,16 @@ public class ShiftedGraph {
                         /* check for flow rule matching IP packet */
                         if((flowRule.dl_type == 0 || flowRule.dl_type  == EtherTypes.IPv4.intValue()) && flowRule.active == true){
                             System.out.println("ETH_TYPE matched/wildcarded: "+flowRule.dl_type);
+                            System.out.println("ETH_TYPE IPv4: "+ EtherTypes.IPv4.intValue());
+
                             //System.out.println("Number of actions in the rule: "+flowRule.actionList.size());
-                           
-                            
+
+
                             if(flowRule.actionList == null) {
                                 flowRule = FlowRuleNode.computeFlow(flowRule, sample, null);
                                 if(flowRule.flow_info != null) {
-                                	
-                                	if (flowRule.flow_info.is_finished) {                               
+
+                                	if (flowRule.flow_info.is_finished) {
 	                                	sample.is_finished = true;
 	                                	//flowinfo.is_finished = true;
 	                                	sample = flowRule.flow_info;
@@ -713,7 +715,7 @@ public class ShiftedGraph {
 	                                    this.printFlowInfo(sample, false);
 	                                    return;
                                 	}
-                                
+
 	                                sample = flowRule.flow_info;
 	                                continue;
                                 }
@@ -721,6 +723,7 @@ public class ShiftedGraph {
                             else {
                                 for (ActionList actionNode : flowRule.actionList) {
                                     FlowInfo old = sample;
+                                    int portBeforeoutputAction = sample.next_ingress_port;
                                     flowRule = FlowRuleNode.computeFlow(flowRule, sample, actionNode);
                                     /* Now sample should have some propagation history */
                                     if(flowRule.flow_info == null) {
@@ -780,6 +783,7 @@ public class ShiftedGraph {
                                     if(tempSample == null) {
                                         /* The next connection to the port in the present switch is not a switch node */
                                         System.out.println("Reached a host(or nothing) when searching for a node");
+                                        sample.next_ingress_port = portBeforeoutputAction;
                                         continue;
                                     } else {
                                         sample = tempSample;
@@ -800,7 +804,8 @@ public class ShiftedGraph {
                         } else {
                             // TODO unmatch_count++ ???
                             //  Link Layer Discovery Protocol (LLDP) comes here.
-                            System.out.println("Unrecognized Ethernet Type: " + flowRule.dl_type);
+                            System.out.println("Match failed at L2: Ethernet Type: " + flowRule.dl_type);
+                            System.out.println("Match failed at L2: Flow Status: " + flowRule.active);
                             unmatch_count++;
                             continue;
                         }
@@ -903,25 +908,30 @@ public class ShiftedGraph {
         //set and iterator to make sourcenode and probenode.
         int k = firewall_rules.size();
         for(int i = 0;i<k;i++){
-            if(firewall_rules.get(i).action == FirewallAction.DENY) { //&& firewall_rules.get(i).dpid == -1){
-                TopologyStruct source = findDpidPort(firewall_rules.get(i).nw_src_prefix);
-                TopologyStruct probe = findDpidPort(firewall_rules.get(i).nw_dst_prefix);
+            FirewallRule rule = firewall_rules.get(i);
+            if(rule.action == FirewallAction.DENY) {
+                Set<TopologyStruct> sourceList = findAllDpidPort(rule.nw_src_prefix, rule.nw_src_maskbits);
+                Set<TopologyStruct> probeList = findAllDpidPort(rule.nw_dst_prefix, rule.nw_dst_maskbits);
 
-                if(source == null) {
+                if(sourceList.size() == 0) {
                     System.out.printf("Host %s not found in the network(no corresponding source node)\n",
-                            IPv4.fromIPv4Address(firewall_rules.get(i).nw_src_prefix));
-                    continue;
+                            IPv4.fromIPv4Address(rule.nw_src_prefix));
+                    return;
                 }
-                if(probe == null) {
+                if(probeList.size() == 0) {
                     System.out.printf("Host %s not found in the network(no corresponding probe node)\n",
-                            IPv4.fromIPv4Address(firewall_rules.get(i).nw_dst_prefix));
-                    continue;
+                            IPv4.fromIPv4Address(rule.nw_dst_prefix));
+                    return;
                 }
-                System.out.printf("\nRule: %s | source node: %s | probe node: %s\n", firewall_rules.get(i).ruleid,
-                        source.dpid, probe.dpid);
-                testSampleFlow(firewall_rules.get(i), source, probe);
-           } else {
-                continue;
+                LOG.info("Found {} source hosts {} probe hosts",
+                        sourceList.size(), probeList.size());
+                for ( TopologyStruct source : sourceList) {
+                    for (TopologyStruct probe : probeList) {
+                        LOG.info("\nRule: {} | source node: {} port:{} | probe node: {} port:{}\n",
+                                rule.ruleid, source.dpid, source.port, probe.dpid, probe.port);
+                        testSampleFlow(rule, source, probe);
+                    }
+                }
             }
         }
 
@@ -936,23 +946,28 @@ public class ShiftedGraph {
         }
 
         if(rule.action == FirewallAction.DENY) {
-            TopologyStruct source = findDpidPort(rule.nw_src_prefix);
-            TopologyStruct probe = findDpidPort(rule.nw_dst_prefix);
+            Set<TopologyStruct> sourceList = findAllDpidPort(rule.nw_src_prefix, rule.nw_src_maskbits);
+            Set<TopologyStruct> probeList = findAllDpidPort(rule.nw_dst_prefix, rule.nw_dst_maskbits);
 
-            if(source == null) {
+            if(sourceList.size() == 0) {
                 System.out.printf("Host %s not found in the network(no corresponding source node)\n",
                         IPv4.fromIPv4Address(rule.nw_src_prefix));
                 return;
             }
-            if(probe == null) {
+            if(probeList.size() == 0) {
                 System.out.printf("Host %s not found in the network(no corresponding probe node)\n",
                         IPv4.fromIPv4Address(rule.nw_dst_prefix));
                 return;
             }
-            System.out.printf("\nRule: %s | source node: %s | probe node: %s\n", rule.ruleid,
-                    source.dpid, probe.dpid);
-
-            testSampleFlow(rule, source, probe);
+            LOG.info("Found {} source hosts {} probe hosts",
+                    sourceList.size(), probeList.size());
+            for ( TopologyStruct source : sourceList) {
+                for (TopologyStruct probe : probeList) {
+                    LOG.info("\nRule: {} | source node: {} port:{} | probe node: {} port:{}\n",
+                            rule.ruleid, source.dpid, source.port, probe.dpid, probe.port);
+                    testSampleFlow(rule, source, probe);
+                }
+            }
         }
     }
 
@@ -966,22 +981,22 @@ public class ShiftedGraph {
         sample.ruleHO.tcp_src = firewallRule.tp_src;
         sample.ruleHO.tcp_dst = firewallRule.tp_dst;
         sample.firewall_ruldid = firewallRule.ruleid;//Integer.toString(firewallRule.ruleid);
-        
+
         this.current_flow_index++;
         sample.flow_index = this.current_flow_index;
         sample.rule_node_name = "SourceNode";
         sample.current_ho = new HeaderObject();
         sample.current_ho.nw_dst_prefix = 0;//firewall_rules.get(i).nw_dst_prefix;
         sample.current_ho.nw_dst_maskbits = 0;//firewall_rules.get(i).nw_dst_maskbits;
-        sample.current_ho.nw_src_prefix = 0;//firewall_rules.get(i).nw_src_prefix;//167772160;
-        sample.current_ho.nw_src_maskbits = 0;//firewall_rules.get(i).nw_src_maskbits;= 
+        sample.current_ho.nw_src_prefix = source.hostIP;//firewall_rules.get(i).nw_src_prefix;//167772160;
+        sample.current_ho.nw_src_maskbits = 32;//firewall_rules.get(i).nw_src_maskbits;=
         sample.current_ho.tcp_src = firewallRule.tp_src;
         sample.current_ho.tcp_dst = firewallRule.tp_dst;
         sample.current_switch_dpid = source.dpid;
         sample.current_ingress_port = source.port;
         sample.next_switch_dpid = source.dpid;
         sample.next_ingress_port = source.port;
-        
+
         // TODO Work on next_ho
         sample.next_ho = new HeaderObject();
         sample.next_ho.nw_dst_prefix = 0;//firewall_rules.get(i).nw_dst_prefix;
@@ -990,7 +1005,7 @@ public class ShiftedGraph {
         sample.next_ho.nw_src_maskbits = 0;//firewall_rules.get(i).nw_src_maskbits;
         sample.next_ho.tcp_src = 0;
         sample.next_ho.tcp_dst = 0;
-        
+
         sample.target = new TopologyStruct();
         sample.target.dpid = probe.dpid;
         sample.target.port = probe.port;
@@ -1008,18 +1023,15 @@ public class ShiftedGraph {
         System.out.println(">>>>>>>>>>>>>>>>>>>>>>>>>>");
     }
 
-    /* Find switch based on the IP from firewall rule */
-    /* How will this work ideally for both masked and non masked addresses */
     /* Devices are learned on the network by device manager.
      * When a packet-in is received by a switch, an attachment point is created for the device.
      * Devices are updated as they are learned.
      * A device can have at max one "att point" per OF island.
      */
-    public static TopologyStruct findDpidPort(int IP_address){
-        TopologyStruct dpid_port = new TopologyStruct();
+    public  Set<TopologyStruct> findAllDpidPort(int IP_address, int IP_mask){
 
         InstanceIdentifier<Nodes> nodesIdentifier = InstanceIdentifier.builder(Nodes.class).toInstance();
-
+        Set<TopologyStruct> set = new HashSet<TopologyStruct>();
         try {
             Optional<Nodes> optNodes= null;
             Optional<Table> optTable = null;
@@ -1034,35 +1046,47 @@ public class ShiftedGraph {
 
             /* Iterate through the list of nodes(switches) for flow tables per node */
             for(Node node : nodeList){
-            	List<NodeConnector> connectorList = node.getNodeConnector();
-            	for (NodeConnector connector : connectorList) {
-            		AddressCapableNodeConnector acnc = connector.getAugmentation(AddressCapableNodeConnector.class);
-            		if(acnc != null && acnc.getAddresses() != null) {
-            	        // get address list from augmentation.
-            	        List<Addresses>  addresses = acnc.getAddresses();
-            	        for(Addresses address:addresses) {
-            	          //address.getMac();// to get MAC address observed on this port
-            	        	Ipv4Address ip = address.getIp().getIpv4Address();// to get IP address observed on this port
-            	        	int ipnum = InetAddresses.coerceToInteger(InetAddresses.forString(ip.getValue()));
-            	        	if(ipnum == IP_address) {
-            	        		dpid_port.dpid = node.getId().getValue();
-            	        		String connectorID = connector.getId().getValue();
-            	        		dpid_port.port = TopologyStruct.getPortfromURI(connectorID);
-            	        		return dpid_port;
-            	        	}
-            	          //address.getFirstSeen(); // first time the tuple was observed on this port
-            	          //address.getLastSeen(); // latest time the tuple was observed on this port
-            	        }
-            	      }
-            	}
+                List<NodeConnector> connectorList = node.getNodeConnector();
+                for (NodeConnector connector : connectorList) {
+                    AddressCapableNodeConnector acnc = connector.getAugmentation(AddressCapableNodeConnector.class);
+                    if(acnc != null && acnc.getAddresses() != null) {
+                        // get address list from augmentation.
+                        List<Addresses>  addresses = acnc.getAddresses();
+                        for(Addresses address:addresses) {
+                          //address.getMac();// to get MAC address observed on this port
+                            Ipv4Address ip = address.getIp().getIpv4Address();// to get IP address observed on this port
+                            int ipnum = InetAddresses.coerceToInteger(InetAddresses.forString(ip.getValue()));
+                            if (FlowRuleNode.matchIPAddress(IP_address, IP_mask, ipnum, 32)) {
+
+                                TopologyStruct dpid_port = new TopologyStruct();
+                                dpid_port.dpid = node.getId().getValue();
+                                String connectorID = connector.getId().getValue();
+                                dpid_port.port = TopologyStruct.getPortfromURI(connectorID);
+                                FlowInfo sample = new FlowInfo();
+                                sample.next_switch_dpid = dpid_port.dpid;
+                                sample.next_ingress_port = dpid_port.port;
+                                /* This below call is needed as it was observed that during search of host,
+                                 * all the switch-switch links are returned too. This is not as expected.
+                                 * However, this workaround (function returns null, if next node is a host),
+                                 * fixes it.
+                                 */
+                                if(this.findNextConnection(sample) == null) {
+                                    dpid_port.hostIP = ipnum;
+                                    set.add(dpid_port);
+                                }
+                            }
+                        }
+                      }
+                }
             }
         }
-	    catch (InterruptedException | ExecutionException e) {
-	        e.printStackTrace();
-	    }
-        /* Reaching here would mean that the matching device has not been found */
-        return null;
+        catch (InterruptedException | ExecutionException e) {
+            e.printStackTrace();
         }
+        /* Reaching here would mean that the matching device has not been found */
+        return set;
+    }
+
 
     public String getName() {
         return "ShiftedGraph";
@@ -1270,12 +1294,12 @@ public class ShiftedGraph {
     } */
 
     public void staticEntryDeleted(String dpid, String rulename){
-    	
+
     	if(rulename.startsWith("resolution")) {
             LOG.info("DataChangeNotification for a resolution. Skipping the test..");
             return;
         }
-    	
+
         FlowRuleNode changedFlow = this.findFlowRuleNode(dpid, rulename);
         if( changedFlow == null){
             LOG.info("Flow not found in plumbing graph!");
