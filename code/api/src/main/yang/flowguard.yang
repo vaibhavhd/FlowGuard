@@ -76,7 +76,7 @@ module flowguard {
 	     	config true;
 	     }
 	     leaf id {
-	     	type string;
+	     	type uint32;
 	     	config true;
 	     }
 	     leaf vlan-id {
@@ -160,6 +160,10 @@ module flowguard {
 	     leaf over-count {
 	     	type uint16;
 	     	config true;
+	     }
+	     leaf policy-count {
+	         type uint16;
+	         config true;
 	     }
 	     leaf conflict-type {
 	     	type string;
