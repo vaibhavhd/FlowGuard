@@ -77,6 +77,7 @@ public class FlowRuleNode {
     public List<Instruction> instructionList;
 
     public int corCount, genCount, redCount, shCount, overCount;
+    public int policyCount;
     public StringBuilder conflictList = new StringBuilder();
     public boolean resolution;
     public String mechanism = new String();

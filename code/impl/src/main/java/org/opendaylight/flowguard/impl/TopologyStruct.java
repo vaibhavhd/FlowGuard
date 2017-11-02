@@ -12,6 +12,7 @@ public class TopologyStruct {
 	public String dpid;
     public int port;
     public int hostIP;
+    public String macAddress;
 
     public TopologyStruct() {
 		// TODO Auto-generated constructor stub

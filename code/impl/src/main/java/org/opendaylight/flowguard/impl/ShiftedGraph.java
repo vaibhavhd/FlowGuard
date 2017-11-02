@@ -513,6 +513,7 @@ public class ShiftedGraph {
             this.FlowRuleNodes.remove(dpid);
         }
         ruletable = FlowRuleNode.addFlowRuleNode(ruletable, flow);
+        Flowguard.writeToConflictRegistry(dpid, ruletable);
         this.FlowRuleNodes.put(dpid, ruletable);
     }
 
@@ -559,22 +560,37 @@ public class ShiftedGraph {
 
     public void printFlowInfo(FlowInfo flowinfo, boolean inverseflow){
 
-        FlowInfo.printFlowInfo(flowinfo);
         Iterator<FlowInfo> itr = flowinfo.flow_history.iterator();
         System.out.println("*************** This is "+Integer.toString(flowinfo.flow_index)+" th flow ***************");
         System.out.println("*************** Firewall RuleID : "+flowinfo.firewall_ruldid+" ***************");
         int i = 0;
-        while(itr.hasNext()){
-            FlowInfo fi = itr.next();
-            LOG.debug("-----------------------------------------------------------------------------------");
-            LOG.debug("(((flow_history : this is "+Integer.toString(i)+" th visits.)))");
-            LOG.debug("Applied FlowRuleNode Name : "+fi.rule_node_name);
-            FlowInfo.printFlowInfo(fi);
-            LOG.debug("-----------------------------------------------------------------------------------");
-            i++;
-        }
+
         /* InverseFlow is true when the sample flow has been propagated to the target */
         if(inverseflow){
+            while(itr.hasNext()){
+                FlowInfo fi = itr.next();
+                //System.out.println("-----------------------------------------------------------------------------------");
+                //System.out.println("(((flow_history : this is "+Integer.toString(i)+" th visits.)))");
+                //System.out.println("Applied FlowRuleNode Name : "+fi.rule_node_name);
+                FlowInfo.printFlowInfo(fi);
+                List<FlowRuleNode> ruleNodes = this.FlowRuleNodes.get(fi.next_switch_dpid);
+                for ( FlowRuleNode ruleNode : ruleNodes ) {
+                    if(ruleNode.rule_name.equals(fi.rule_node_name)) {
+                        if (ruleNode.resolution == false) {
+                            ruleNode.conflictList.append("6");
+                            ruleNode.conflictList.append("." + fi.firewall_ruldid + ";");
+                        }
+                        ruleNode.resolution = true;
+                        ruleNode.mechanism = "S4-Packet Blocking";
+                        ruleNode.policyCount++;
+                        System.out.println("Added Conflict information for dpip: "+ fi.next_switch_dpid );
+                        break;
+                    }
+                }
+                System.out.println("-----------------------------------------------------------------------------------");
+                i++;
+            }
+
             HeaderObject ho = new HeaderObject();
             ho = this.computeInverseFlow(flowinfo);
         }
@@ -699,110 +715,119 @@ public class ShiftedGraph {
                         if((flowRule.dl_type == 0 || flowRule.dl_type  == EtherTypes.IPv4.intValue()) && flowRule.active == true){
                             System.out.println("ETH_TYPE matched/wildcarded: "+flowRule.dl_type);
                             System.out.println("ETH_TYPE IPv4: "+ EtherTypes.IPv4.intValue());
+                            if( FlowRuleNode.isWildcarded(flowRule.eth_src) || flowRule.eth_src.equals(sample.current_ho.dl_src)) {
+                                if( FlowRuleNode.isWildcarded(flowRule.eth_dst) || flowRule.eth_dst.equals(sample.current_ho.dl_dst)) {
 
-                            //System.out.println("Number of actions in the rule: "+flowRule.actionList.size());
+                                        System.out.println("Ethernet address matched/wildcarded");
 
+                                        if(flowRule.actionList == null) {
+                                            flowRule = FlowRuleNode.computeFlow(flowRule, sample, null);
+                                            if(flowRule.flow_info != null) {
 
-                            if(flowRule.actionList == null) {
-                                flowRule = FlowRuleNode.computeFlow(flowRule, sample, null);
-                                if(flowRule.flow_info != null) {
+                                            	if (flowRule.flow_info.is_finished) {
+            	                                	sample.is_finished = true;
+            	                                	//flowinfo.is_finished = true;
+            	                                	sample = flowRule.flow_info;
+            	                                    System.out.println("Flow has been dropped by the DROP rule/tablemiss entry");
+            	                                    this.printFlowInfo(sample, false);
+            	                                    return;
+                                            	}
 
-                                	if (flowRule.flow_info.is_finished) {
-	                                	sample.is_finished = true;
-	                                	//flowinfo.is_finished = true;
-	                                	sample = flowRule.flow_info;
-	                                    System.out.println("Flow has been dropped by the DROP rule/tablemiss entry");
-	                                    this.printFlowInfo(sample, false);
-	                                    return;
-                                	}
-
-	                                sample = flowRule.flow_info;
-	                                continue;
-                                }
-                            }
-                            else {
-                                for (ActionList actionNode : flowRule.actionList) {
-                                    FlowInfo old = sample;
-                                    int portBeforeoutputAction = sample.next_ingress_port;
-                                    flowRule = FlowRuleNode.computeFlow(flowRule, sample, actionNode);
-                                    /* Now sample should have some propagation history */
-                                    if(flowRule.flow_info == null) {
-                                        //unmatch_count++;
-                                        System.out.println("flowRule.flow_info is null.");
-                                        continue;
-                                    }
-                                    if(flowRule.flow_info.flow_history == null) {
-                                        // TODO what is this? Is it failure or a success??
-                                        /* This would mean that the sample flow could not be further matched and propogated */
-                                        //unmatch_count++;
-                                        System.out.println("Sample has no flow history: Returning");
-                                        continue;
-                                    }
-
-                                    /* Reaching here would mean that the matching flow had been found */
-                                    System.out.println("Sample information before propagation:");
-                                    System.out.println("Sample: "+sample.next_switch_dpid+" Port: "+sample.next_ingress_port);
-
-                                    sample = flowRule.flow_info;
-                                    System.out.println("Sample information after compute:");
-                                    System.out.println("Sample: "+sample.next_switch_dpid+" Port: "+sample.next_ingress_port);
-                                    if (sample.next_ingress_port == 0) {
-                                        System.out.println("Sample is not reachable: Packet drop by flow rule!");
-                                        this.printFlowInfo(sample, false);
-                                        sample.is_finished = true;
-                                        old.is_finished = true;
-                                        flowinfo.is_finished = true;
-                                        return;
-                                    } else {
-                                        /* If the flow has not reached the destination, find the next node to hop and propagate */
-                                        /* However, the OutputAction is a port number. Add dpid to it */
-                                        //sample.next_ingress_port = sample.next_switch_dpid + ":" + sample.next_ingress_port;
-                                    }
-
-                                    if(sample.next_switch_dpid.equals(targetdpid)){
-                                        //normal execution
-                                        if(sample.next_ingress_port == targetport) {
-                                            System.out.println("Flows are reached to the Destination!!!");
-                                            this.printFlowInfo(sample, true);
-                                            sample.is_finished = true;
-                                            old.is_finished = true;
-                                            flowinfo.is_finished = true;
-                                            return;
+            	                                sample = flowRule.flow_info;
+            	                                continue;
+                                            }
                                         }
-                                    }
+                                        else {
+                                            for (ActionList actionNode : flowRule.actionList) {
+                                                FlowInfo old = sample;
+                                                int portBeforeoutputAction = sample.next_ingress_port;
+                                                flowRule = FlowRuleNode.computeFlow(flowRule, sample, actionNode);
+                                                /* Now sample should have some propagation history */
+                                                if(flowRule.flow_info == null) {
+                                                    //unmatch_count++;
+                                                    System.out.println("flowRule.flow_info is null.");
+                                                    continue;
+                                                }
+                                                if(flowRule.flow_info.flow_history == null) {
+                                                    // TODO what is this? Is it failure or a success??
+                                                    /* This would mean that the sample flow could not be further matched and propogated */
+                                                    //unmatch_count++;
+                                                    System.out.println("Sample has no flow history: Returning");
+                                                    continue;
+                                                }
 
-                                    /* Update the rule with its flow info and respective flow infow's flow history */
-                                    this.FlowRuleNodes.get(SWITCHDPID).remove(i);
-                                    if(i == 0){
-                                        this.FlowRuleNodes.get(SWITCHDPID).add(flowRule);
-                                    }else{
-                                        this.FlowRuleNodes.get(SWITCHDPID).add(i, flowRule);
-                                    }
+                                                /* Reaching here would mean that the matching flow had been found */
+                                                System.out.println("Sample information before propagation:");
+                                                System.out.println("Sample: "+sample.next_switch_dpid+" Port: "+sample.next_ingress_port);
 
-                                    FlowInfo tempSample = this.findNextConnection(sample);
-                                    if(tempSample == null) {
-                                        /* The next connection to the port in the present switch is not a switch node */
-                                        System.out.println("Reached a host(or nothing) when searching for a node");
-                                        sample.next_ingress_port = portBeforeoutputAction;
-                                        continue;
-                                    } else {
-                                        sample = tempSample;
-                                    }
+                                                sample = flowRule.flow_info;
+                                                System.out.println("Sample information after compute:");
+                                                System.out.println("Sample: "+sample.next_switch_dpid+" Port: "+sample.next_ingress_port);
+                                                if (sample.next_ingress_port == 0) {
+                                                    System.out.println("Sample is not reachable: Packet drop by flow rule!");
+                                                    this.printFlowInfo(sample, false);
+                                                    sample.is_finished = true;
+                                                    old.is_finished = true;
+                                                    flowinfo.is_finished = true;
+                                                    return;
+                                                } else {
+                                                    /* If the flow has not reached the destination, find the next node to hop and propagate */
+                                                    /* However, the OutputAction is a port number. Add dpid to it */
+                                                    //sample.next_ingress_port = sample.next_switch_dpid + ":" + sample.next_ingress_port;
+                                                }
 
-                                    System.out.println("Node information after propagation:");
-                                    System.out.println("Node: "+sample.next_switch_dpid+" Port: "+sample.next_ingress_port);
-                                    propagateFlow(sample, target,0);
-                                    if(sample.is_finished) {
-                                    	System.out.println("Should not reach here");
-                                    	flowinfo.is_finished = true;
-                                    	old.is_finished = true;
-                                        return;
-                                    }
-                                }
+                                                if(sample.next_switch_dpid.equals(targetdpid)){
+                                                    //normal execution
+                                                    if(sample.next_ingress_port == targetport) {
+                                                        System.out.println("Flows are reached to the Destination!!!");
+                                                        this.printFlowInfo(sample, true);
+                                                        sample.is_finished = true;
+                                                        old.is_finished = true;
+                                                        flowinfo.is_finished = true;
+                                                        return;
+                                                    }
+                                                }
+
+                                                /* Update the rule with its flow info and respective flow infow's flow history */
+                                                this.FlowRuleNodes.get(SWITCHDPID).remove(i);
+                                                if(i == 0){
+                                                    this.FlowRuleNodes.get(SWITCHDPID).add(flowRule);
+                                                }else{
+                                                    this.FlowRuleNodes.get(SWITCHDPID).add(i, flowRule);
+                                                }
+
+                                                FlowInfo tempSample = this.findNextConnection(sample);
+                                                if(tempSample == null) {
+                                                    /* The next connection to the port in the present switch is not a switch node */
+                                                    System.out.println("Reached a host(or nothing) when searching for a node");
+                                                    sample.next_ingress_port = portBeforeoutputAction;
+                                                    continue;
+                                                } else {
+                                                    sample = tempSample;
+                                                }
+
+                                                System.out.println("Node information after propagation:");
+                                                System.out.println("Node: "+sample.next_switch_dpid+" Port: "+sample.next_ingress_port);
+                                                propagateFlow(sample, target,0);
+                                                if(sample.is_finished) {
+                                                	System.out.println("Should not reach here");
+                                                	flowinfo.is_finished = true;
+                                                	old.is_finished = true;
+                                                    return;
+                                                }
+                                            }
+                                        }
+                            } else {
+                                System.out.println("Ethernet DEST address match failed!!");
+                                unmatch_count++;
+                                continue;
                             }
-                            //break;
+                            } else {
+                                System.out.println("Ethernet DEST address match failed!!");
+                                unmatch_count++;
+                                continue;
+                            }
                         } else {
-                            // TODO unmatch_count++ ???
                             //  Link Layer Discovery Protocol (LLDP) comes here.
                             System.out.println("Match failed at L2: Ethernet Type: " + flowRule.dl_type);
                             System.out.println("Match failed at L2: Flow Status: " + flowRule.active);
@@ -996,7 +1021,8 @@ public class ShiftedGraph {
         sample.current_ingress_port = source.port;
         sample.next_switch_dpid = source.dpid;
         sample.next_ingress_port = source.port;
-
+        sample.current_ho.dl_src = source.macAddress;
+        sample.current_ho.dl_dst = probe.macAddress;
         // TODO Work on next_ho
         sample.next_ho = new HeaderObject();
         sample.next_ho.nw_dst_prefix = 0;
@@ -1056,6 +1082,7 @@ public class ShiftedGraph {
                           //address.getMac();// to get MAC address observed on this port
                             Ipv4Address ip = address.getIp().getIpv4Address();// to get IP address observed on this port
                             int ipnum = InetAddresses.coerceToInteger(InetAddresses.forString(ip.getValue()));
+                            String mac = address.getMac().getValue();
                             if (FlowRuleNode.matchIPAddress(IP_address, IP_mask, ipnum, 32)) {
 
                                 TopologyStruct dpid_port = new TopologyStruct();
@@ -1072,6 +1099,7 @@ public class ShiftedGraph {
                                  */
                                 if(this.findNextConnection(sample) == null) {
                                     dpid_port.hostIP = ipnum;
+                                    dpid_port.macAddress = mac;
                                     set.add(dpid_port);
                                 }
                             }

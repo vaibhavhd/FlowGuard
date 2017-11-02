@@ -62,7 +62,7 @@ import com.google.common.util.concurrent.Futures;
 public class Flowguard {
     private static final Logger LOG = LoggerFactory.getLogger(Flowguard.class);
     private ReadTransaction readTx;
-    private DataBroker db;
+    private static DataBroker db;
     private Map<TopologyStruct, TopologyStruct> topologyStorage;
     private Map<String, List<FlowRuleNode>> flowStorage;
     private List<FirewallRule> ruleStorage;
@@ -409,7 +409,7 @@ public class Flowguard {
 
 	}
 
-	private void writeToConflictRegistry(String nodeID, List<FlowRuleNode> list) {
+	static void writeToConflictRegistry(String nodeID, List<FlowRuleNode> list) {
 
 		for ( FlowRuleNode rule : list) {
 			WriteTransaction transaction = db.newWriteOnlyTransaction();
@@ -428,15 +428,29 @@ public class Flowguard {
 	    	else
 	    		proto = ConflictInfo.Protocol.ANY;
 
-	    	ConflictGroupEntry newFlow = new ConflictGroupEntryBuilder().setId(rule.rule_name).setVlanId(new Long(0))
+	    	StringBuilder conflictList = new StringBuilder(rule.conflictList);
+	    	LOG.info("Pushing new Conflict with conflict list {}",conflictList);
+	    	if(conflictList.length() != 0)
+	    	    conflictList.deleteCharAt(conflictList.length()-1);
+	    	ConflictGroupEntry newFlow = new ConflictGroupEntryBuilder().setId(new Long(rule.flowId)).setVlanId(new Long(0))
     	        .setDlDst(rule.dl_dst).setDlSrc(rule.dl_src).setL4Dst(rule.tp_dst).setL4Src(rule.tp_src)
     	        .setNwDst(IPv4.fromIPv4Address(rule.nw_dst_prefix)).setNwSrc(IPv4.fromIPv4Address(rule.nw_src_prefix))
-    	        .setPriority(rule.priority).setProtocol(proto).setInPort("TODO").setAction(action)
-    	        .setConflictGroupNumber(1).setConflictType(rule.conflictList.toString())
-    			.setShCount(rule.shCount).setGenCount(rule.genCount).setCorCount(rule.corCount).setRedCount(rule.redCount).setOverCount(rule.overCount)
+    	        .setPriority(rule.priority).setProtocol(proto).setInPort(Integer.toString(rule.in_port)).setAction(action)
+    	        .setConflictGroupNumber(1).setConflictType(conflictList.toString())
+    			.setShCount(rule.shCount).setGenCount(rule.genCount).setCorCount(rule.corCount)
+    			.setRedCount(rule.redCount).setOverCount(rule.overCount).setPolicyCount(rule.policyCount)
                 .setResolution(rule.resolution).setMechanism(rule.mechanism)
     			.build();
-
+/*
+          ConflictGroupEntry newFlow = new ConflictGroupEntryBuilder().setId(rule.rule_name).setVlanId(new Long(0))
+                  .setDlDst(rule.dl_dst).setDlSrc(rule.dl_src).setL4Dst(rule.tp_dst).setL4Src(rule.tp_src)
+                  .setNwDst(IPv4.fromIPv4Address(rule.nw_dst_prefix)).setNwSrc(IPv4.fromIPv4Address(rule.nw_src_prefix))
+                  .setPriority(rule.priority).setProtocol(proto).setInPort("TODO").setAction(action)
+                  .setConflictGroupNumber(1).setConflictType("1.5;5.4;2.3;2.1")
+                  .setShCount(1).setGenCount(2).setCorCount(3).setRedCount(4).setOverCount(5)
+                  .setResolution(rule.resolution).setMechanism(rule.mechanism)
+                  .build();
+*/
 	    	InstanceIdentifier<ConflictGroupEntry> conflict = InstanceIdentifier.create(ConflictInfoRegistry.class)
 	    			.child(ConflictSwitch.class, new ConflictSwitchKey(nodeID))
 	    			.child(ConflictTable.class, new  ConflictTableKey(0))

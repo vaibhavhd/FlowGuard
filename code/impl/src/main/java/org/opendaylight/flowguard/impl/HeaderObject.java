@@ -13,8 +13,8 @@ import com.google.common.net.InetAddresses;
 
 
 public class HeaderObject {
-    public long dl_src = 0;
-    public long dl_dst = 0;
+    public String dl_src;
+    public String dl_dst;
     public short dl_type = 0;
     public int nw_src_prefix = 0;
     public int nw_src_maskbits = 0;
@@ -50,7 +50,7 @@ public class HeaderObject {
 				", src_IP_mask="+Integer.toString(ho.nw_src_maskbits)+", dst_IP="+IPv4.fromIPv4Address(ho.nw_dst_prefix)+
 				", dst_IP_mask="+Integer.toString(ho.nw_dst_maskbits)+"}");
 		*/
-		
+
 		System.out.println("{ vlan = "+ho.vlan+", src_IP = "+ InetAddresses.fromInteger(ho.nw_src_prefix)+"/"+Integer.toString(ho.nw_src_maskbits)+
 				", dst_IP = "+InetAddresses.fromInteger(ho.nw_dst_prefix)+"/"+Integer.toString(ho.nw_dst_maskbits)+" }");
 		if(ho.diff != null){

@@ -26,8 +26,7 @@ public class FlowInfo {
     public int current_ingress_port;
     public String rule_node_name;
     public TopologyStruct target;
-    public String candidate_rule;    
-    
+    public String candidate_rule;
 
 
     public ArrayList<FlowInfo> flow_history;
@@ -81,7 +80,7 @@ public class FlowInfo {
             newflow.current_ho.vlan = sample.current_ho.vlan;
             newflow.current_ho.tcp_src = sample.current_ho.tcp_src;
             newflow.current_ho.tcp_dst = sample.current_ho.tcp_dst;
-            
+
             if(sample.current_ho.diff != null){
                 newflow.current_ho.diff = new ArrayList<HeaderObject>();
                 for(int i = 0; i < sample.current_ho.diff.size(); i++){
@@ -109,7 +108,7 @@ public class FlowInfo {
             newflow.next_ho.vlan = sample.next_ho.vlan;
             newflow.next_ho.tcp_src = sample.next_ho.tcp_src;
             newflow.next_ho.tcp_dst = sample.next_ho.tcp_dst;
-            
+
             if(sample.next_ho.diff != null){
                 newflow.next_ho.diff = new ArrayList<HeaderObject>();
                 for(int i = 0; i < sample.next_ho.diff.size(); i++){
@@ -154,7 +153,7 @@ public class FlowInfo {
         newflow.next_switch_dpid = sample.flow_history.get(k).next_switch_dpid;
         newflow.rule_node_name = sample.flow_history.get(k).rule_node_name;
         newflow.candidate_rule = sample.flow_history.get(k).candidate_rule;
-        
+
         if(sample.target != null){
             newflow.target = new TopologyStruct();
             newflow.target.dpid = sample.target.dpid;
@@ -172,7 +171,7 @@ public class FlowInfo {
             newflow.current_ho.vlan = sample.flow_history.get(k).current_ho.vlan;
             newflow.current_ho.tcp_src = sample.current_ho.tcp_src;
             newflow.current_ho.tcp_dst = sample.current_ho.tcp_dst;
-            
+
             if(sample.flow_history.get(k).current_ho.diff != null){
                 newflow.current_ho.diff = new ArrayList<HeaderObject>();
                 for(int i = 0; i < sample.flow_history.get(i).current_ho.diff.size(); i++){
