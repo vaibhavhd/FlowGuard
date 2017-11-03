@@ -582,7 +582,7 @@ public class ShiftedGraph {
                         }
                         ruleNode.resolution = true;
                         ruleNode.mechanism = "S4-Packet Blocking";
-                        ruleNode.policyCount++;
+                        ruleNode.policyCount = fi.firewall_ruldid;
                         System.out.println("Added Conflict information for dpip: "+ fi.next_switch_dpid );
                         break;
                     }
