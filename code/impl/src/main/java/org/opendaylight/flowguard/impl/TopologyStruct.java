@@ -23,8 +23,18 @@ public class TopologyStruct {
 		this.port = destPort;
 	}
 	public static int getPortfromURI(String URI) {
-		int port = Integer.valueOf(
-				URI.substring(URI.lastIndexOf(':') + 1 ));
-		return port;
+	    int port = 0;
+	    if(URI.substring(URI.lastIndexOf(':') + 1).equals("LOCAL"))
+	        port = 0;
+	    else {
+    	    try {
+        		port = Integer.valueOf(
+        				URI.substring(URI.lastIndexOf(':') + 1 ));
+    	    }
+    	    catch (NumberFormatException exp) {
+    	       System.out.println("String Input port found!!");
+    	    }
+	    }
+	    return port;
 	}
 }
