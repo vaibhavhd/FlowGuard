@@ -319,8 +319,15 @@ public class FlowRuleNode {
                             	node.action_out_port = 0;
                             	sendToControllerActionIndex = instance.actionList.size();
                             }
+                            else if(actionPort.equals("LOCAL")) {
+                                //TODO
+                            }
                             else {
-                            	node.action_out_port = Integer.valueOf(actionPort);
+                                try {
+                                    node.action_out_port = Integer.valueOf(actionPort);
+                                } catch (NumberFormatException exp) {
+                                    LOG.info("Port is not an integer value!! {} ", exp.getMessage());
+                                }
                             }
                             instance.actionList.add(node);
                             /* The set-field actions untill next output action have been populated in the actionList Object
