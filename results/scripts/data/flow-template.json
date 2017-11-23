@@ -45,8 +45,8 @@
              "flow-name": "flow1-1",
              "barrier": "true",
              "priority": "0",
-             "idle-timeout": "0",
-             "hard-timeout": "0",
+             "idle-timeout": "30",
+             "hard-timeout": "30",
              "table_id": "0"
          }
       ]

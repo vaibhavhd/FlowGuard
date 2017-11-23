@@ -1,0 +1,143 @@
+Three subnetworks: 
+192.168.1.* (5 hosts)
+172.16.0.* (3 hosts)
+10.0.0.* (4 hosts)
+
+mininet> dpctl dump-flows -O OpenFlow13 
+*** s1 ------------------------------------------------------------------------
+OFPST_FLOW reply (OF1.3) (xid=0x2):
+cookie=0x2b00000000000002, duration=335.306s, table=0, n_packets=68, n_bytes=5780, priority=100,dl_type=0x88cc actions=CONTROLLER:65535
+cookie=0x2b00000000000000, duration=331.426s, table=0, n_packets=253, n_bytes=23310, priority=2,in_port=6 actions=output:5,output:2,output:1,output:4,output:3
+cookie=0x2b00000000000001, duration=331.424s, table=0, n_packets=35, n_bytes=3122, priority=2,in_port=5 actions=output:6,output:2,output:1,output:4,output:3,CONTROLLER:65535
+cookie=0x2b00000000000002, duration=331.421s, table=0, n_packets=23, n_bytes=2002, priority=2,in_port=2 actions=output:6,output:5,output:1,output:4,output:3,CONTROLLER:65535
+cookie=0x2b00000000000003, duration=331.421s, table=0, n_packets=65, n_bytes=6062, priority=2,in_port=1 actions=output:6,output:5,output:2,output:4,output:3,CONTROLLER:65535
+cookie=0x2b00000000000004, duration=331.421s, table=0, n_packets=23, n_bytes=2002, priority=2,in_port=4 actions=output:6,output:5,output:2,output:1,output:3,CONTROLLER:65535
+cookie=0x2b00000000000005, duration=331.400s, table=0, n_packets=23, n_bytes=2002, priority=2,in_port=3 actions=output:6,output:5,output:2,output:1,output:4,CONTROLLER:65535
+cookie=0x2b00000000000001, duration=335.306s, table=0, n_packets=6, n_bytes=420, priority=0 actions=drop
+*** s2 ------------------------------------------------------------------------
+OFPST_FLOW reply (OF1.3) (xid=0x2):
+cookie=0x2b00000000000001, duration=335.309s, table=0, n_packets=136, n_bytes=11560, priority=100,dl_type=0x88cc actions=CONTROLLER:65535
+cookie=0x2b00000000000006, duration=331.420s, table=0, n_packets=141, n_bytes=12894, priority=2,in_port=5 actions=output:4,output:1,output:3,output:2
+cookie=0x2b00000000000007, duration=331.420s, table=0, n_packets=3, n_bytes=210, priority=2,in_port=4 actions=output:5,output:1,output:3,output:2,CONTROLLER:65535
+cookie=0x2b00000000000008, duration=331.413s, table=0, n_packets=52, n_bytes=4900, priority=2,in_port=1 actions=output:5,output:4,output:3,output:2,CONTROLLER:65535
+cookie=0x2b00000000000009, duration=331.412s, table=0, n_packets=38, n_bytes=3528, priority=2,in_port=3 actions=output:5,output:4,output:1,output:2,CONTROLLER:65535
+cookie=0x2b0000000000000a, duration=331.412s, table=0, n_packets=170, n_bytes=15260, priority=2,in_port=2 actions=output:5,output:4,output:1,output:3
+cookie=0x2b00000000000002, duration=335.309s, table=0, n_packets=5, n_bytes=350, priority=0 actions=drop
+*** s3 ------------------------------------------------------------------------
+OFPST_FLOW reply (OF1.3) (xid=0x2):
+cookie=0x2b00000000000000, duration=335.310s, table=0, n_packets=68, n_bytes=5780, priority=100,dl_type=0x88cc actions=CONTROLLER:65535
+cookie=0x2b0000000000000b, duration=331.409s, table=0, n_packets=22, n_bytes=1960, priority=2,in_port=4 actions=output:3,output:5,output:2,output:1,CONTROLLER:65535
+cookie=0x2b0000000000000c, duration=331.409s, table=0, n_packets=22, n_bytes=1960, priority=2,in_port=3 actions=output:4,output:5,output:2,output:1,CONTROLLER:65535
+cookie=0x2b0000000000000d, duration=331.409s, table=0, n_packets=36, n_bytes=3276, priority=2,in_port=5 actions=output:4,output:3,output:2,output:1,CONTROLLER:65535
+cookie=0x2b0000000000000e, duration=331.409s, table=0, n_packets=282, n_bytes=25676, priority=2,in_port=2 actions=output:4,output:3,output:5,output:1
+cookie=0x2b0000000000000f, duration=331.409s, table=0, n_packets=60, n_bytes=5628, priority=2,in_port=1 actions=output:4,output:3,output:5,output:2,CONTROLLER:65535
+cookie=0x2b00000000000000, duration=335.310s, table=0, n_packets=8, n_bytes=476, priority=0 actions=drop
+
+
+
+mininet> pingall
+*** Ping: testing ping reachability
+appServer -> conSer dataHist dataSer hmi plc1 plc2 printer r0 workCom 
+conSer -> appServer dataHist dataSer hmi plc1 plc2 printer r0 workCom 
+dataHist -> appServer conSer dataSer hmi plc1 plc2 printer r0 workCom 
+dataSer -> appServer conSer dataHist hmi plc1 plc2 printer r0 workCom 
+hmi -> appServer conSer dataHist dataSer plc1 plc2 printer r0 workCom 
+plc1 -> appServer conSer dataHist dataSer hmi plc2 printer r0 workCom 
+plc2 -> appServer conSer dataHist dataSer hmi plc1 printer r0 workCom 
+printer -> appServer conSer dataHist dataSer hmi plc1 plc2 r0 workCom 
+r0 -> appServer conSer dataHist dataSer hmi plc1 plc2 printer workCom 
+workCom -> appServer conSer dataHist dataSer hmi plc1 plc2 printer r0 
+*** Results: 0% dropped (90/90 received)
+
+
+
+Rules in the network:
+
+<fwrule-registry><fwrule-registry-entry><ruleId>6</ruleId><priority>50</priority><destinationPort/><sourceIpAddress>192.168.1.1/24</sourceIpAddress><sourcePort/><destinationIpAddress>172.16.0.1/24</destinationIpAddress><action>deny</action></fwrule-registry-entry>
+
+<fwrule-registry-entry><ruleId>7</ruleId><priority>50</priority><destinationPort/><sourceIpAddress>10.0.0.1/24</sourceIpAddress><sourcePort/><destinationIpAddress>192.168.1.1/24</destinationIpAddress><action>deny</action></fwrule-registry-entry></fwrule-registry>
+
+
+After violation resolution:
+
+mininet> dpctl dump-flows -O OpenFlow13 
+*** s1 ------------------------------------------------------------------------
+OFPST_FLOW reply (OF1.3) (xid=0x2):
+cookie=0x0, duration=3.612s, table=0, n_packets=0, n_bytes=0, priority=32767,ip,in_port=5,nw_src=192.168.1.5,nw_dst=172.16.0.1 actions=drop
+cookie=0x0, duration=3.585s, table=0, n_packets=0, n_bytes=0, priority=32767,ip,in_port=5,nw_src=192.168.1.5,nw_dst=172.16.0.2 actions=drop
+cookie=0x0, duration=3.550s, table=0, n_packets=0, n_bytes=0, priority=32767,ip,in_port=5,nw_src=192.168.1.5,nw_dst=172.16.0.3 actions=drop
+cookie=0x0, duration=3.526s, table=0, n_packets=0, n_bytes=0, priority=32767,ip,in_port=2,nw_src=192.168.1.2,nw_dst=172.16.0.1 actions=drop
+cookie=0x0, duration=3.526s, table=0, n_packets=0, n_bytes=0, priority=32767,ip,in_port=2,nw_src=192.168.1.2,nw_dst=172.16.0.2 actions=drop
+cookie=0x0, duration=3.526s, table=0, n_packets=0, n_bytes=0, priority=32767,ip,in_port=2,nw_src=192.168.1.2,nw_dst=172.16.0.3 actions=drop
+cookie=0x0, duration=3.526s, table=0, n_packets=0, n_bytes=0, priority=32767,ip,in_port=4,nw_src=192.168.1.4,nw_dst=172.16.0.1 actions=drop
+cookie=0x0, duration=3.526s, table=0, n_packets=0, n_bytes=0, priority=32767,ip,in_port=4,nw_src=192.168.1.4,nw_dst=172.16.0.2 actions=drop
+cookie=0x0, duration=3.523s, table=0, n_packets=0, n_bytes=0, priority=32767,ip,in_port=4,nw_src=192.168.1.4,nw_dst=172.16.0.3 actions=drop
+cookie=0x0, duration=3.523s, table=0, n_packets=0, n_bytes=0, priority=32767,ip,in_port=1,nw_src=192.168.1.1,nw_dst=172.16.0.1 actions=drop
+cookie=0x0, duration=3.493s, table=0, n_packets=0, n_bytes=0, priority=32767,ip,in_port=1,nw_src=192.168.1.1,nw_dst=172.16.0.2 actions=drop
+cookie=0x0, duration=3.478s, table=0, n_packets=0, n_bytes=0, priority=32767,ip,in_port=1,nw_src=192.168.1.1,nw_dst=172.16.0.3 actions=drop
+cookie=0x0, duration=3.474s, table=0, n_packets=0, n_bytes=0, priority=32767,ip,in_port=3,nw_src=192.168.1.3,nw_dst=172.16.0.1 actions=drop
+cookie=0x0, duration=3.470s, table=0, n_packets=0, n_bytes=0, priority=32767,ip,in_port=3,nw_src=192.168.1.3,nw_dst=172.16.0.2 actions=drop
+cookie=0x0, duration=3.461s, table=0, n_packets=0, n_bytes=0, priority=32767,ip,in_port=3,nw_src=192.168.1.3,nw_dst=172.16.0.3 actions=drop
+cookie=0x2b00000000000002, duration=502.826s, table=0, n_packets=101, n_bytes=8585, priority=100,dl_type=0x88cc actions=CONTROLLER:65535
+ookie=0x2b00000000000000, duration=498.946s, table=0, n_packets=453, n_bytes=40894, priority=2,in_port=6 actions=output:5,output:2,output:1,output:4,output:3
+cookie=0x2b00000000000001, duration=498.944s, table=0, n_packets=61, n_bytes=5222, priority=2,in_port=5 actions=output:6,output:2,output:1,output:4,output:3,CONTROLLER:65535
+cookie=0x2b00000000000002, duration=498.941s, table=0, n_packets=49, n_bytes=4102, priority=2,in_port=2 actions=output:6,output:5,output:1,output:4,output:3,CONTROLLER:65535
+cookie=0x2b00000000000003, duration=498.941s, table=0, n_packets=120, n_bytes=11060, priority=2,in_port=1 actions=output:6,output:5,output:2,output:4,output:3,CONTROLLER:65535
+cookie=0x2b00000000000004, duration=498.941s, table=0, n_packets=49, n_bytes=4102, priority=2,in_port=4 actions=output:6,output:5,output:2,output:1,output:3,CONTROLLER:65535
+cookie=0x2b00000000000005, duration=498.920s, table=0, n_packets=49, n_bytes=4102, priority=2,in_port=3 actions=output:6,output:5,output:2,output:1,output:4,CONTROLLER:65535
+cookie=0x2b00000000000001, duration=502.826s, table=0, n_packets=6, n_bytes=420, priority=0 actions=drop
+*** s2 ------------------------------------------------------------------------
+OFPST_FLOW reply (OF1.3) (xid=0x2):
+cookie=0x2b00000000000001, duration=502.830s, table=0, n_packets=202, n_bytes=17170, priority=100,dl_type=0x88cc actions=CONTROLLER:65535
+ookie=0x2b00000000000006, duration=498.941s, table=0, n_packets=261, n_bytes=23310, priority=2,in_port=5 actions=output:4,output:1,output:3,output:2
+cookie=0x2b00000000000007, duration=498.941s, table=0, n_packets=25, n_bytes=2142, priority=2,in_port=4 actions=output:5,output:1,output:3,output:2,CONTROLLER:65535
+cookie=0x2b00000000000008, duration=498.934s, table=0, n_packets=88, n_bytes=8204, priority=2,in_port=1 actions=output:5,output:4,output:3,output:2,CONTROLLER:65535
+cookie=0x2b00000000000009, duration=498.933s, table=0, n_packets=60, n_bytes=5460, priority=2,in_port=3 actions=output:5,output:4,output:1,output:2,CONTROLLER:65535
+cookie=0x2b0000000000000a, duration=498.933s, table=0, n_packets=330, n_bytes=28700, priority=2,in_port=2 actions=output:5,output:4,output:1,output:3
+cookie=0x2b00000000000002, duration=502.830s, table=0, n_packets=5, n_bytes=350, priority=0 actions=drop
+*** s3 ------------------------------------------------------------------------
+OFPST_FLOW reply (OF1.3) (xid=0x2):
+cookie=0x0, duration=4.320s, table=0, n_packets=0, n_bytes=0, priority=32767,ip,in_port=3,nw_src=10.0.0.2,nw_dst=192.168.1.2 actions=drop
+cookie=0x0, duration=4.261s, table=0, n_packets=0, n_bytes=0, priority=32767,ip,in_port=3,nw_src=10.0.0.2,nw_dst=192.168.1.5 actions=drop
+cookie=0x0, duration=4.217s, table=0, n_packets=0, n_bytes=0, priority=32767,ip,in_port=3,nw_src=10.0.0.2,nw_dst=192.168.1.1 actions=drop
+cookie=0x0, duration=4.199s, table=0, n_packets=0, n_bytes=0, priority=32767,ip,in_port=3,nw_src=10.0.0.2,nw_dst=192.168.1.4 actions=drop
+cookie=0x0, duration=4.160s, table=0, n_packets=0, n_bytes=0, priority=32767,ip,in_port=3,nw_src=10.0.0.2,nw_dst=192.168.1.3 actions=drop
+cookie=0x0, duration=4.128s, table=0, n_packets=0, n_bytes=0, priority=32767,ip,in_port=5,nw_src=10.0.0.4,nw_dst=192.168.1.2 actions=drop
+cookie=0x0, duration=4.095s, table=0, n_packets=0, n_bytes=0, priority=32767,ip,in_port=5,nw_src=10.0.0.4,nw_dst=192.168.1.5 actions=drop
+cookie=0x0, duration=4.061s, table=0, n_packets=0, n_bytes=0, priority=32767,ip,in_port=5,nw_src=10.0.0.4,nw_dst=192.168.1.1 actions=drop
+cookie=0x0, duration=4.028s, table=0, n_packets=0, n_bytes=0, priority=32767,ip,in_port=5,nw_src=10.0.0.4,nw_dst=192.168.1.4 actions=drop
+cookie=0x0, duration=3.988s, table=0, n_packets=0, n_bytes=0, priority=32767,ip,in_port=5,nw_src=10.0.0.4,nw_dst=192.168.1.3 actions=drop
+cookie=0x0, duration=3.955s, table=0, n_packets=0, n_bytes=0, priority=32767,ip,in_port=4,nw_src=10.0.0.3,nw_dst=192.168.1.2 actions=drop
+cookie=0x0, duration=3.919s, table=0, n_packets=0, n_bytes=0, priority=32767,ip,in_port=4,nw_src=10.0.0.3,nw_dst=192.168.1.5 actions=drop
+cookie=0x0, duration=3.885s, table=0, n_packets=0, n_bytes=0, priority=32767,ip,in_port=4,nw_src=10.0.0.3,nw_dst=192.168.1.1 actions=drop
+cookie=0x0, duration=3.849s, table=0, n_packets=0, n_bytes=0, priority=32767,ip,in_port=4,nw_src=10.0.0.3,nw_dst=192.168.1.4 actions=drop
+cookie=0x0, duration=3.812s, table=0, n_packets=0, n_bytes=0, priority=32767,ip,in_port=4,nw_src=10.0.0.3,nw_dst=192.168.1.3 actions=drop
+cookie=0x0, duration=3.777s, table=0, n_packets=0, n_bytes=0, priority=32767,ip,in_port=1,nw_src=10.0.0.1,nw_dst=192.168.1.2 actions=drop
+cookie=0x0, duration=3.746s, table=0, n_packets=0, n_bytes=0, priority=32767,ip,in_port=1,nw_src=10.0.0.1,nw_dst=192.168.1.5 actions=drop
+cookie=0x0, duration=3.711s, table=0, n_packets=0, n_bytes=0, priority=32767,ip,in_port=1,nw_src=10.0.0.1,nw_dst=192.168.1.1 actions=drop
+cookie=0x0, duration=3.679s, table=0, n_packets=0, n_bytes=0, priority=32767,ip,in_port=1,nw_src=10.0.0.1,nw_dst=192.168.1.4 actions=drop
+cookie=0x0, duration=3.643s, table=0, n_packets=0, n_bytes=0, priority=32767,ip,in_port=1,nw_src=10.0.0.1,nw_dst=192.168.1.3 actions=drop
+cookie=0x2b00000000000000, duration=502.830s, table=0, n_packets=101, n_bytes=8585, priority=100,dl_type=0x88cc actions=CONTROLLER:65535
+ookie=0x2b0000000000000b, duration=498.929s, table=0, n_packets=46, n_bytes=3976, priority=2,in_port=4 actions=output:3,output:5,output:2,output:1,CONTROLLER:65535
+cookie=0x2b0000000000000c, duration=498.929s, table=0, n_packets=46, n_bytes=3976, priority=2,in_port=3 actions=output:4,output:5,output:2,output:1,CONTROLLER:65535
+cookie=0x2b0000000000000d, duration=498.929s, table=0, n_packets=60, n_bytes=5292, priority=2,in_port=5 actions=output:4,output:3,output:2,output:1,CONTROLLER:65535
+cookie=0x2b0000000000000e, duration=498.929s, table=0, n_packets=522, n_bytes=46284, priority=2,in_port=2 actions=output:4,output:3,output:5,output:1
+cookie=0x2b0000000000000f, duration=498.929s, table=0, n_packets=108, n_bytes=9996, priority=2,in_port=1 actions=output:4,output:3,output:5,output:2,CONTROLLER:65535
+cookie=0x2b00000000000000, duration=502.830s, table=0, n_packets=8, n_bytes=476, priority=0 actions=drop
+mininet> pingall
+
+mininet> pingall
+*** Ping: testing ping reachability
+appServer -> X dataHist dataSer X X X printer X workCom 
+conSer -> X X X hmi plc1 plc2 X r0 X 
+dataHist -> appServer X dataSer X X X printer r0 workCom 
+dataSer -> appServer X dataHist X X X printer r0 workCom 
+hmi -> X conSer X X plc1 plc2 X r0 X 
+plc1 -> X conSer X X hmi plc2 X r0 X 
+plc2 -> X conSer X X hmi plc1 X r0 X 
+printer -> appServer X dataHist dataSer X X X X workCom 
+r0 -> appServer conSer dataHist dataSer hmi plc1 plc2 printer workCom 
+workCom -> appServer X dataHist dataSer X X X printer X 
+*** Results: 47% dropped (47/90 received)
+
+

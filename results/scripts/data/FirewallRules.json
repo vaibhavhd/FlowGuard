@@ -5,8 +5,8 @@
             "priority": "50",
             "sourceIpAddress": "10.0.0.1/32",
             "destinationIpAddress": "10.0.0.2/32",
-            "sourcePort": "1",
-            "destinationPort": "80",
+            "sourcePort": "",
+            "destinationPort": "",
             "action": "deny"
         },
         {
@@ -14,8 +14,8 @@
             "priority": "30",
             "sourceIpAddress": "10.0.0.2/32",
             "destinationIpAddress": "10.0.0.1/32",
-            "sourcePort": "1",
-            "destinationPort": "80",
+            "sourcePort": "",
+            "destinationPort": "",
             "action": "deny"
         },
         {
@@ -23,17 +23,17 @@
             "priority": "40",
             "sourceIpAddress": "10.0.0.3/32",
             "destinationIpAddress": "10.0.0.1/32",
-            "sourcePort": "1",
-            "destinationPort": "80",
+            "sourcePort": "",
+            "destinationPort": "",
             "action": "deny"
         },
         {
             "ruleId": "4",
-            "priority": "80",
+            "priority": "40",
             "sourceIpAddress": "10.0.0.3/32",
             "destinationIpAddress": "10.0.0.1/32",
-            "sourcePort": "1",
-            "destinationPort": "80",
+            "sourcePort": "",
+            "destinationPort": "",
             "action": "deny"
         },
         {
@@ -41,8 +41,8 @@
             "priority": "5",
             "sourceIpAddress": "10.0.0.3/32",
             "destinationIpAddress": "10.0.0.1/32",
-            "sourcePort": "1",
-            "destinationPort": "80",
+            "sourcePort": "",
+            "destinationPort": "",
             "action": "deny"
         }
     ]

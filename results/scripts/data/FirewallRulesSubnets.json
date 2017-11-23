@@ -1,0 +1,13 @@
+{
+    "fwrule-registry-entry": [
+        {
+            "ruleId": "8",
+            "priority": "50",
+            "sourceIpAddress": "10.0.0.1/24",
+            "destinationIpAddress": "192.168.1.1/24",
+            "sourcePort": "",
+            "destinationPort": "",
+            "action": "deny"
+        }
+   ]
+}
