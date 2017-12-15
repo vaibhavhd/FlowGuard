@@ -1,8 +1,16 @@
 \documentclass[sigconf]{acmart}
 
+% ACM Peer review
+% Removes citation information below abstract
+\settopmatter{printacmref=false} 
+% removes footnote with conference information in first column
+\renewcommand\footnotetextcopyrightpermission[1]{} 
+% removes running headers
+\pagestyle{plain} 
+
 \usepackage{booktabs} % For formal tables
-
-
+\usepackage{makecell} % for table
+\usepackage[inline]{enumitem} % for inline enumeration
 % Copyright
 %\setcopyright{none}
 %\setcopyright{acmcopyright}
@@ -37,15 +45,14 @@
 
 
 \begin{document}
-\title{Feasibility Study of SDN-Firewalls : Design Vulnerabilities and Mitigation Techniques}
-\titlenote{Produces the permission block, and
-  copyright information}
+\title{Challenges and preparedness of SDN-based Firewalls}
+%\titlenote{Produces the permission block, and copyright information}
 %\subtitle{Extended Abstract}
 %\subtitlenote{The full version of the author's guide is available as
 %  \texttt{acmart.pdf} document}
 
 \begin{comment}
-\author{Ben Trovato}
+\author{}
 \authornote{Dr.~Trovato insisted his name be first.}
 \orcid{1234-5678-9012}
 \affiliation{%
@@ -57,35 +64,13 @@
 }
 \email{trovato@corporation.com}
 
-\author{G.K.M. Tobin}
-\authornote{The secretary disavows any knowledge of this author's actions.}
-\affiliation{%
-  \institution{Institute for Clarity in Documentation}
-  \streetaddress{P.O. Box 1212}
-  \city{Dublin} 
-  \state{Ohio} 
-  \postcode{43017-6221}
-}
-\email{webmaster@marysville-ohio.com}
-
-\author{Lars Th{\o}rv{\"a}ld}
-\authornote{This author is the
-  one who did all the really hard work.}
-\affiliation{%
-  \institution{The Th{\o}rv{\"a}ld Group}
-  \streetaddress{1 Th{\o}rv{\"a}ld Circle}
-  \city{Hekla} 
-  \country{Iceland}}
-\email{larst@affiliation.org}
-
 % The default list of authors is too long for headers.
 \renewcommand{\shortauthors}{B. Trovato et al.}
 \end{comment}
 
 \begin{abstract}
-	Software-Defined Networking (SDN) is a novel approach towards network programmability. It provides physical separation of a control plane and forwarding plane. The SDN controller maintains the centralized view of the network and provides the ability to program the forwarding plane. However, the SDN network architecture has been prone to several security vulnerabilities since its very inception. At the same time, SDN Controllers and the its protocols are rapidly changing to address the scaling demands of complex enterprise networks. However, the rate at which SDN framework has been evolving remains unmatched by the advancements to address its security issues. \\ 
-	According to our study, existing defense mechanisms are obsolete or incomplete to defend the latest SDN infrastructure. SDN firewalls in particular lack measures to provide robust security against attacks originating from outside and within the network. This paper surveys existing SDN firewall designs and their shortcomings to protect advanced controllers and protocol. By testing these solutions on the production size of a network, new attack vectors have been discovered. Corresponding threat detection techniques and respective mitigation strategies are also proposed.
-	\footnote{This is an abstract footnote}
+	Software-Defined Networking (SDN) is a novel approach towards network programmability. It provides physical separation of a control and forwarding planes. The SDN controller maintains the centralized view of entire forwarding plane and provides the ability to program a network. Controllers and related protocols are rapidly evolving to address the scaling demands of complex enterprise networks. At the same time, the SDN architecture has been prone to several security vulnerabilities since its very inception. The rate at which SDN framework is evolving remains unmatched by the advancements to address its security issues. \\ 
+	According to our study, existing defense mechanisms, particularly SDN-based firewalls face challenges to defend the latest SDN infrastructure. Firewalls for SDN lack measures to provide robust security against attacks originating from outside and within the network. This paper surveys existing SDN firewall designs and their shortcomings to protect enterprise size of infrastructures which use production ready controllers. By evaluating one of these solutions on a complex network, new attack vectors and vulnerabilities have been discovered. Corresponding threat detection techniques and respective mitigation strategies are also proposed.
 \end{abstract}
 
 %
@@ -118,12 +103,12 @@
 </ccs2012>  
 \end{CCSXML}
 
-\ccsdesc[500]{Computer systems organization~Network properties}
-\ccsdesc[300]{Network Security}
-\ccsdesc[100]{Firewalls}
+%\ccsdesc[500]{Computer systems organization~Network properties}
+%\ccsdesc[300]{Network Security}
+%\ccsdesc[100]{Firewalls}
 
 
-\keywords{Software Defined Networking (SDN), Network Security, OpenFlow}
+%\keywords{Software Defined Networking (SDN), Network Security, OpenFlow}
 
 
 \maketitle
